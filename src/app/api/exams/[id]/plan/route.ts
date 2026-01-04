@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/db';
-import Exam from '@/lib/db/models/exam';
-import StudySession from '@/lib/db/models/study-session';
+import Exam from '@/models/Exam';
+import StudySession from '@/models/StudySession';
+import User from '@/models/User';
 
 // This function is a placeholder for a more complex scheduling algorithm
 function createSessionSchedule(materials: any[], examDate: Date) {
@@ -19,9 +20,11 @@ function createSessionSchedule(materials: any[], examDate: Date) {
 
       sessions.push({
         title: `${material.chapter} - Part ${i + 1}`,
-        material: material.chapter,
-        scheduledDate: new Date(currentDate),
-        duration: 60, // 60-minute session
+        subject: material.chapter,
+        startTime: new Date(currentDate),
+        endTime: new Date(currentDate.getTime() + 60 * 60000), // 60 minutes later
+        isCompleted: false,
+        checklist: [],
       });
 
       // Schedule the next session for the next day
@@ -45,24 +48,30 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession();
-  if (!session) {
+  if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   await dbConnect();
 
   try {
+    const user = await User.findOne({ email: session.user.email });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     const exam = await Exam.findOne({
       _id: params.id,
-      // @ts-ignore
-      userId: session.user.id,
+      user: user._id,
     });
 
     if (!exam) {
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
 
-    const prioritizedMaterials = [...exam.studyMaterials].sort((a, b) => {
+    // Note: This assumes the new Exam model has studyMaterials field
+    const studyMaterials = (exam as any).studyMaterials || [];
+    const prioritizedMaterials = [...studyMaterials].sort((a, b) => {
       const scoreA = a.difficulty + (5 - a.confidence);
       const scoreB = b.difficulty + (5 - b.confidence);
       return scoreB - scoreA;
@@ -71,21 +80,20 @@ export async function GET(
     const plan = createSessionSchedule(prioritizedMaterials, exam.date);
 
     // Clear existing plan for this exam
-    // @ts-ignore
-    await StudySession.deleteMany({ userId: session.user.id, examId: params.id });
+    await StudySession.deleteMany({ user: user._id, exam: exam._id });
 
     // Save new plan
     const sessionsToSave = plan.map(p => ({
       ...p,
-      // @ts-ignore
-      userId: session.user.id,
-      examId: params.id,
+      user: user._id,
+      exam: exam._id,
     }));
 
     const savedSessions = await StudySession.insertMany(sessionsToSave);
 
     return NextResponse.json({ data: savedSessions }, { status: 200 });
   } catch (error) {
+    console.error('Error generating plan:', error);
     return NextResponse.json({ error: 'Error generating plan' }, { status: 500 });
   }
 }
