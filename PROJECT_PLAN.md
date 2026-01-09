@@ -20,19 +20,183 @@ Build a web-based study planner that helps students create, track, and execute p
 
 ### 3. Session Execution
 - Start Learning button with countdown timer
+- Full Pomodoro timer implementation (25min study, 5min break)
+- Session counter and progress tracking
 - Automatic break insertion for sessions >25min
-- Real-time progress tracking
-- Checkbox system for study items
-- Notes and self-evaluation (1-5 stars)
-- Session completion validation
 
-### 4. Calendar & Visualization
-- Monthly/weekly calendar view
-- Study session mapping
-- Exam date highlighting
-- Progress bars for exam preparation
-- List view sidebar
-- Interactive session details
+### 4. Advanced Session Distribution Algorithm
+-# Study Planner - Complete Project Plan
+
+## 🎯 **CORE ALGORITHM CONCEPTS**
+
+### **Three-Layer Pressure System**
+
+#### **1️⃣ Session Volume Calculator (Already Working)**
+```
+Difficulty (1-5) + Confidence (1-5) → Total Sessions Needed
+- Higher difficulty = more sessions
+- Lower confidence = more sessions  
+- Base range: 2-6 sessions per material
+```
+
+#### **2️⃣ Daily Capacity Pressure (How Many Slots Per Day)**
+```
+Adaptive formula based on time available:
+- 5+ days: Gentle (1-2 sessions/day)
+- 3-4 days: Moderate (2-3 sessions/day)  
+- 1-2 days: Intense (2-3 sessions/day)
+Creates natural buildup, not extreme spikes
+```
+
+#### **3️⃣ Session Allocation Pressure (Which Exam Gets The Slot)**
+```
+For each available slot:
+- Time since last session (longer = higher priority)
+- Remaining sessions (more = higher priority)
+- Exam proximity (closer = higher priority)
+Highest pressure exam gets the slot
+```
+
+## 📅 **Algorithm Flow**
+
+### **Step 1: Calculate Total Sessions**
+```
+For each exam: Difficulty/Confidence → Sessions Needed
+Exam A: 4 sessions, Exam B: 4 sessions, Exam C: 4 sessions
+```
+
+### **Step 2: Calculate Daily Capacity**
+```
+For each day: Time available → Sessions per day
+Monday: 2 slots, Tuesday: 2 slots, Wednesday: 3 slots, etc.
+```
+
+### **Step 3: Allocate Sessions Daily**
+```
+For each day's slots:
+Calculate pressure for each exam
+Give slots to highest pressure exams
+Update remaining sessions
+```
+
+## 🧮 **Formulas to Implement**
+
+### **Daily Capacity Formula:**
+```
+if (days_available >= 5) {
+    daily_capacity = 1.5 + (0.5 × progress_percentage)
+} else if (days_available >= 3) {
+    daily_capacity = 2.0 + (0.5 × progress_percentage)  
+} else {
+    daily_capacity = 2.5 + (0.5 × progress_percentage)
+}
+Cap at 3 sessions maximum
+```
+
+### **Allocation Pressure Formula:**
+```
+pressure = (days_since_last_study × 0.3) + 
+          (remaining_sessions × 0.4) + 
+          (exam_urgency × 0.3)
+```
+
+## 🎯 **Key Behaviors**
+
+### **Natural Study Flow:**
+- Early weeks: Calm, even distribution
+- Later weeks: Gradual intensity increase  
+- Final days: Focused preparation
+- No extreme spikes (1→3→1→3 patterns)
+
+### **Multi-Exam Fairness:**
+- Each exam gets calculated sessions
+- Earlier exams get priority early
+- Later exams get focus later
+- No exam gets starved completely
+
+### **Adaptive Intensity:**
+- Start early → Gentle schedule
+- Start late → Intense but manageable
+- Progress reduces pressure naturally
+
+## 🛠️ **Implementation Steps**
+
+### **Step 1: Daily Capacity Calculator**
+```typescript
+calculateDailyCapacity(daysAvailable: number, currentDay: number, totalDays: number): number
+```
+
+### **Step 2: Allocation Pressure Calculator**  
+```typescript
+calculateExamPressure(exam: Exam, lastStudied: Date, remainingSessions: number): number
+```
+
+### **Step 3: Daily Session Distributor**
+```typescript
+allocateDailySessions(exams: Exam[], dailyCapacity: number): SessionAllocation[]
+```
+
+### **Step 4: Full Integration**
+```typescript
+scheduleStudySessions() → Uses all three systems together
+```
+
+## 📊 **Test Cases**
+
+### **Case 1: Early Start (5 days, 3 exams)**
+```
+Expected: 2,2,2,2,2 sessions per day
+Gentle, consistent, calm
+```
+
+### **Case 2: Moderate Start (3 days, 3 exams)**
+```
+Expected: 2,2,3 sessions per day  
+Buildup toward end
+```
+
+### **Case 3: Late Start (2 days, 3 exams)**
+```
+Expected: 3,3 sessions per day
+Intense but focused
+```
+
+## 🚀 **Current Status**
+
+### ✅ **Completed:**
+- [x] Session volume calculator (difficulty/confidence → sessions)
+- [x] Material parsing ("Chapter 1-4" → individual chapters)
+- [x] Single exam scheduling (continuous study)
+- [x] Natural chapter progression (1→2→3→4)
+
+### 🔄 **In Progress:**
+- [ ] Daily capacity pressure calculator
+- [ ] Session allocation pressure calculator  
+- [ ] Multi-exam distribution system
+- [ ] Full three-layer integration
+
+### 🎯 **Next Steps:**
+1. Implement daily capacity calculator (Step 1)
+2. Add allocation pressure calculator (Step 2)
+3. Create daily session distributor (Step 3)
+4. Integrate full system (Step 4)
+5. Test with real exam scenarios
+
+## 🛠️ **Tech Stack**
+
+- **Frontend:** Next.js 14, React, TypeScript, TailwindCSS
+- **Backend:** Next.js API routes, MongoDB with Mongoose
+- **Authentication:** NextAuth.js
+- **Calendar:** FullCalendar
+- **State Management:** SWR for data fetching
+
+## 📱 **Key Features**
+
+- **Three-Layer Pressure System:** Volume + Capacity + Allocation
+- **Adaptive Scheduling:** Gentle buildup based on time available
+- **Multi-Exam Support:** Fair distribution across competing exams
+- **Material Progression:** Natural chapter progression
+- **Calendar Integration:** Visual schedule with automatic updates
 
 ### 5. Exam Management
 - Create and manage exams

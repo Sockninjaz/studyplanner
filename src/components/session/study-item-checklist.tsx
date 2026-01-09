@@ -17,7 +17,7 @@ interface Props {
 }
 
 export default function StudyItemChecklist({ sessionId, items }: Props) {
-  const [studyItems, setStudyItems] = useState(items);
+  const [studyItems, setStudyItems] = useState(items || []);
 
   const handleToggle = async (itemId: string, completed: boolean) => {
     const updatedItems = studyItems.map((item) =>
@@ -39,19 +39,23 @@ export default function StudyItemChecklist({ sessionId, items }: Props) {
     <div className="mt-8">
       <h3 className="mb-4 text-xl font-semibold">Study Items</h3>
       <ul className="space-y-3">
-        {studyItems.map((item) => (
-          <li key={item._id} className="flex items-center rounded-lg bg-gray-50 p-4">
-            <input
-              type="checkbox"
-              checked={item.completed}
-              onChange={(e) => handleToggle(item._id, e.target.checked)}
-              className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-            />
-            <label className={`ml-3 block text-gray-900 ${item.completed ? 'line-through' : ''}`}>
-              {item.material}
-            </label>
-          </li>
-        ))}
+        {studyItems && studyItems.length > 0 ? (
+          studyItems.map((item) => (
+            <li key={item._id} className="flex items-center rounded-lg bg-gray-50 p-4">
+              <input
+                type="checkbox"
+                checked={item.completed}
+                onChange={(e) => handleToggle(item._id, e.target.checked)}
+                className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <label className={`ml-3 block text-gray-900 ${item.completed ? 'line-through' : ''}`}>
+                {item.material}
+              </label>
+            </li>
+          ))
+        ) : (
+          <li className="text-gray-500 text-center py-4">No study items available</li>
+        )}
       </ul>
     </div>
   );

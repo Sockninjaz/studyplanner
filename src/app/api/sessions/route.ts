@@ -18,7 +18,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const sessions = await StudySession.find({ user: user._id });
+    const { searchParams } = new URL(request.url);
+    const examId = searchParams.get('examId');
+
+    let query: any = { user: user._id };
+    if (examId) {
+      query.exam = examId;
+    }
+
+    const sessions = await StudySession.find(query).sort({ startTime: 1 });
     return NextResponse.json({ data: sessions }, { status: 200 });
   } catch (error) {
     console.error('Error fetching sessions:', error);
