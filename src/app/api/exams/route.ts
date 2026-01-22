@@ -4,58 +4,7 @@ import dbConnect from '@/lib/db';
 import Exam from '@/models/Exam';
 import User from '@/models/User';
 import StudySession from '@/models/StudySession';
-import { AdvancedScheduler } from '@/lib/scheduling/advancedScheduler';
-
-// Planning algorithm from PROJECT_PLAN.md
-function calculateSessionTime(material: any) {
-  const difficultyWeight = material.difficulty * 0.6;
-  const confidenceGap = (5 - material.confidence) * 0.4;
-  const complexityMultiplier = 1 + (difficultyWeight + confidenceGap) / 10;
-  
-  return material.estimatedHours * 60 * complexityMultiplier; // in minutes
-}
-
-function createSessionSchedule(materials: any[], examDate: Date) {
-  const sessions = [];
-  let currentDate = new Date();
-  currentDate.setDate(currentDate.getDate() + 1); // Start planning from tomorrow
-
-  for (const material of materials) {
-    const sessionTime = calculateSessionTime(material);
-    const numSessions = Math.ceil(sessionTime / 60); // Assuming 60-minute sessions for simplicity
-
-    // Parse material topics (e.g., "chapter 3-5, photosynthesis, hand-out")
-    const topics = material.chapter.split(',').map((t: string) => t.trim());
-    
-    for (let i = 0; i < numSessions; i++) {
-      if (currentDate >= examDate) break;
-
-      // Distribute topics across sessions
-      const topicIndex = i % topics.length;
-      const sessionTopic = topics[topicIndex];
-      
-      // Create checklist items for this session
-      const checklist = topics.map((topic: string) => ({
-        task: topic,
-        completed: false
-      }));
-
-      sessions.push({
-        title: `Study: ${sessionTopic}`,
-        subject: sessionTopic,
-        startTime: new Date(currentDate),
-        endTime: new Date(currentDate.getTime() + 60 * 60000), // 60 minutes later
-        isCompleted: false,
-        checklist: checklist,
-      });
-
-      // Schedule the next session for the next day
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-  }
-
-  return sessions;
-}
+import { StudyPlannerV1 } from '@/lib/scheduling/advancedScheduler';
 
 export async function GET(request: Request) {
   const session = await getServerSession();
@@ -94,8 +43,6 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    console.log('Received request body:', JSON.stringify(body, null, 2));
-    
     const { subject, date, studyMaterials: studyMaterialsData } = body;
 
     if (!subject || !date || !studyMaterialsData || studyMaterialsData.length === 0) {
@@ -105,20 +52,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Convert study materials to proper format
-    const studyMaterials = studyMaterialsData.map((material: any, index: number) => {
-      console.log(`Material ${index}:`, material);
-      
-      return {
-        chapter: material.chapter,
-        difficulty: parseInt(material.difficulty.toString()),
-        confidence: parseInt(material.confidence.toString()),
-        completed: false,
-        // Note: estimatedHours is no longer needed - algorithm calculates it
-      };
-    });
+    const studyMaterials = studyMaterialsData.map((material: any) => ({
+      chapter: material.chapter,
+      difficulty: parseInt(material.difficulty.toString()),
+      confidence: parseInt(material.confidence.toString()),
+      user_estimated_total_hours: material.user_estimated_total_hours || 10, // V1 requirement
+      completed: false,
+    }));
 
-    // Create exam
     const exam = new Exam({
       subject,
       date: new Date(date),
@@ -126,72 +67,83 @@ export async function POST(request: Request) {
       studyMaterials,
     });
     
-    console.log('About to save exam:', JSON.stringify(exam, null, 2));
-    
     await exam.save();
-    console.log('Exam saved successfully!');
 
-    // Use advanced scheduler to create balanced study sessions
-    console.log('Starting advanced scheduler...');
+    // --- V1 Scheduler Integration ---
+    console.log('Starting V1 Scheduler...');
+
+    // The V1 scheduler generates a holistic plan, so we clear old sessions first.
+    await StudySession.deleteMany({ user: user._id });
+
+    // Fetch all exams for the user, including the one just created.
+    const allUserExams = await Exam.find({ user: user._id });
+
+    // Prepare inputs for the V1 scheduler.
+    const userInputs = {
+      daily_max_hours: body.daily_max_hours || 4,
+      start_date: new Date(),
+      exams: allUserExams.map(e => ({
+        id: e._id.toString(),
+        subject: e.subject,
+        exam_date: e.date,
+        difficulty: e.studyMaterials[0]?.difficulty || 3,
+        confidence: e.studyMaterials[0]?.confidence || 3,
+        user_estimated_total_hours: e.studyMaterials[0]?.user_estimated_total_hours || 10,
+        can_study_after_exam: true,
+      })),
+    };
+
+    const scheduler = new StudyPlannerV1(userInputs);
+    const result = scheduler.generatePlan();
+
     let sessionsToSave: any[] = [];
-    try {
-      // Get user's preferred daily intensity (from request body or default to 3)
-      const userMaxSessionsPerDay = body.maxSessionsPerDay || 3;
-      console.log(`User max sessions per day: ${userMaxSessionsPerDay}`);
-      
-      const scheduler = new AdvancedScheduler(userMaxSessionsPerDay);
-      
-      // Get all existing exams for this user
-      console.log('Fetching existing exams...');
-      const existingExams = await Exam.find({ user: user._id, _id: { $ne: exam._id } });
-      console.log(`Found ${existingExams.length} existing exams`);
-      
-      // Get existing sessions for this user
-      console.log('Fetching existing sessions...');
-      const existingSessions = await StudySession.find({ user: user._id });
-      console.log(`Found ${existingSessions.length} existing sessions`);
-      
-      // Create balanced schedule considering all exams
-      console.log('Creating balanced schedule...');
-      const studySessions = await scheduler.scheduleStudySessions(
-        exam,
-        existingExams,
-        existingSessions
-      );
-      console.log(`Scheduler returned ${studySessions.length} sessions`);
+    if ('error' in result) {
+      console.error('Scheduler V1 Error:', result.error);
+      // Even if scheduling fails, the exam was still created.
+      // We return a specific error response that the frontend can handle.
+      return NextResponse.json({ 
+        error: result.error, 
+        choices: result.choices,
+        exam_created: true,
+      }, { status: 400 });
+    } else {
+      // Plan generated successfully, transform it into StudySession models.
+      const dailySchedules = result;
+      for (const day of dailySchedules) {
+        for (const subjectId in day.subjects) {
+          const hours = day.subjects[subjectId];
+          const numChunks = Math.round(hours / 0.5); // 30-min chunks
 
-      // Save study sessions
-      sessionsToSave = studySessions.map(session => ({
-        ...session,
-        user: user._id,
-        exam: exam._id,
-      }));
-
-      await StudySession.insertMany(sessionsToSave);
-      console.log('Study sessions saved successfully!');
-      
-      // Trigger calendar refresh event
-      if (typeof window !== 'undefined') {
-        const event = new CustomEvent('calendarUpdated', { 
-          detail: { examId: exam._id, sessionsCount: sessionsToSave.length }
-        });
-        window.dispatchEvent(event);
+          for (let i = 0; i < numChunks; i++) {
+            const examForSubject = allUserExams.find(e => e._id.toString() === subjectId);
+            if (examForSubject) {
+              sessionsToSave.push({
+                user: user._id,
+                exam: examForSubject._id,
+                title: `Study: ${examForSubject.subject}`,
+                subject: examForSubject.subject,
+                startTime: new Date(new Date(day.date).getTime() + i * 30 * 60000), // Stagger chunks
+                endTime: new Date(new Date(day.date).getTime() + (i + 1) * 30 * 60000),
+                isCompleted: false,
+              });
+            }
+          }
+        }
       }
-    } catch (schedulerError) {
-      console.error('Scheduler error:', schedulerError);
-      console.log('Exam created but study sessions failed. Continuing without sessions...');
+      await StudySession.insertMany(sessionsToSave);
+      console.log(`V1 Scheduler saved ${sessionsToSave.length} session chunks.`);
     }
 
     return NextResponse.json({ 
       data: { 
         exam, 
         sessions: sessionsToSave,
-        message: `Created exam with ${sessionsToSave.length} study sessions`
+        message: `Created exam and ${sessionsToSave.length} study sessions`
       }, 
       status: 201 
     });
   } catch (error) {
-    console.error('Error creating exam:', error);
+    console.error('Error in POST /api/exams:', error);
     return NextResponse.json({ error: 'Error creating exam' }, { status: 500 });
   }
 }
