@@ -14,11 +14,21 @@ interface CreateExamModalProps {
   isOpen: boolean;
   onClose: () => void;
   dailyMaxHours: number;
+  adjustmentPercentage: number;
+  sessionDuration: number;
 }
 
-export default function CreateExamModal({ isOpen, onClose, dailyMaxHours }: CreateExamModalProps) {
+export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjustmentPercentage, sessionDuration }: CreateExamModalProps) {
   const [subject, setSubject] = useState('');
-  const [date, setDate] = useState('');
+  
+  // Calculate default date (1 week from now)
+  const getDefaultDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    return date.toISOString().split('T')[0];
+  };
+  
+  const [date, setDate] = useState(getDefaultDate());
   const [studyMaterial, setStudyMaterial] = useState<StudyMaterial>({
     chapter: 'Chapters 1-5',
     difficulty: 3,
@@ -43,6 +53,8 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours }: Crea
           subject,
           date,
           daily_max_hours: dailyMaxHours,
+          adjustment_percentage: adjustmentPercentage,
+          session_duration: sessionDuration,
           studyMaterials: [studyMaterial], // API expects an array
         }),
       });

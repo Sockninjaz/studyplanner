@@ -11,10 +11,19 @@ interface ExamData {
   can_study_after_exam: boolean; // Default: true
 }
 
+interface ExistingSession {
+  date: Date;
+  subjectId: string;
+  duration: number; // in hours
+}
+
 interface UserInputs {
   daily_max_hours: number;
+  adjustment_percentage: number; // Max percentage adjustment for difficulty/confidence
+  session_duration: number; // Duration of each study session in minutes
   start_date: Date;
   exams: ExamData[];
+  existing_sessions?: ExistingSession[];
 }
 
 // §2. Internal State
@@ -34,6 +43,17 @@ interface DailySchedule {
   date: Date;
   total_hours: number;
   subjects: { [subjectId: string]: number };
+  is_overloaded?: boolean; // New field to indicate overload
+  overload_amount?: number; // How much over the daily limit
+}
+
+interface ScheduleResult {
+  schedule: DailySchedule[];
+  overload_info?: {
+    total_overload_hours: number;
+    overloaded_days: number;
+    message: string;
+  };
 }
 
 export class StudyPlannerV1 {
@@ -46,9 +66,22 @@ export class StudyPlannerV1 {
     this.subjects = this.initializeInternalState(inputs.exams);
   }
 
+  private getExistingHoursForDate(date: Date): number {
+    if (!this.inputs.existing_sessions) return 0;
+    
+    const dateStr = date.toISOString().split('T')[0];
+    const totalHours = this.inputs.existing_sessions
+      .filter(session => session.date.toISOString().split('T')[0] === dateStr)
+      .reduce((total, session) => total + session.duration, 0);
+    
+    console.log(`  📅 ${dateStr}: Existing hours = ${totalHours}/${this.inputs.daily_max_hours}`);
+    return totalHours;
+  }
+
   private calculateTotalHours(exam: ExamData): number {
-    const difficultyMultiplier = 1 + (exam.difficulty - 3) * 0.25;
-    const confidenceMultiplier = 1 - (exam.confidence - 3) * 0.25;
+    const maxAdjustmentPercent = Math.min(this.inputs.adjustment_percentage, 25) / 100;
+    const difficultyMultiplier = 1 + (exam.difficulty - 3) * maxAdjustmentPercent;
+    const confidenceMultiplier = 1 - (exam.confidence - 3) * maxAdjustmentPercent;
     const adjustmentFactor = (difficultyMultiplier + confidenceMultiplier) / 2;
     const calculatedHours = exam.user_estimated_total_hours * adjustmentFactor;
     return Math.max(1, Math.round(calculatedHours));
@@ -68,7 +101,7 @@ export class StudyPlannerV1 {
     }));
   }
 
-  public generatePlan(): DailySchedule[] | { error: string; choices: string[] } {
+  public generatePlan(): DailySchedule[] | { error: string; choices: string[] } | ScheduleResult {
     const lastExamDate = new Date(Math.max(...this.inputs.exams.map(e => e.exam_date.getTime())));
     const totalRequiredHours = this.subjects.reduce((sum, s) => sum + s.remaining_hours, 0);
     const totalAvailableDays = (lastExamDate.getTime() - this.inputs.start_date.getTime()) / (1000 * 3600 * 24);
@@ -77,12 +110,7 @@ export class StudyPlannerV1 {
     console.log(`V1 Plan Generation Start: ${this.inputs.start_date.toISOString()} to ${lastExamDate.toISOString()}`);
     console.log(`Total required hours: ${totalRequiredHours}, Max possible hours: ${maxPossibleHours}`);
 
-    if (totalRequiredHours > maxPossibleHours) {
-      return {
-        error: 'Overload: Total required hours exceed maximum possible study time.',
-        choices: ['Increase daily max', 'Reduce all subjects proportionally', 'Sacrifice lowest-priority subjects'],
-      };
-    }
+    // Remove the early failure check - always try to schedule even if overloaded
 
     let currentDate = new Date(this.inputs.start_date);
     while (currentDate <= lastExamDate) {
@@ -95,90 +123,104 @@ export class StudyPlannerV1 {
       });
 
       const daySchedule: DailySchedule = { date: new Date(currentDate), total_hours: 0, subjects: {} };
-      const STUDY_CHUNK_HOURS = 0.5;
+      const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
+      
+      // Get existing hours for this day
+      const existingHours = this.getExistingHoursForDate(currentDate);
+      const remainingCapacity = this.inputs.daily_max_hours - existingHours;
 
-      console.log(`\n--- Planning for Day: ${currentDate.toISOString().split('T')[0]} ---`);
+      console.log(`\n--- 📋 Planning for Day: ${currentDate.toISOString().split('T')[0]} ---`);
+      console.log(`📊 Capacity: ${existingHours} used, ${remainingCapacity} available`);
 
-      while (daySchedule.total_hours < this.inputs.daily_max_hours) {
+      let chunksScheduled = 0;
+      let isOverloaded = false;
+      
+      // Try to schedule sessions for any subject that needs time
+      // Continue scheduling even if overloaded, but track the overload
+      while (true) {
         const eligibleSubjects = this.subjects.filter(s => {
-          const isActive = s.state === 'ACTIVE';
+          const isActive = s.state === 'ACTIVE' && s.remaining_hours >= STUDY_CHUNK_HOURS;
           if (!isActive) return false;
 
           const notTooEarly = this.checkEarlyCompletion(s, STUDY_CHUNK_HOURS);
           if (!notTooEarly) {
-            console.log(`  - Subject ${s.subject} rejected (rule §3.1): Would complete too early.`);
+            console.log(`    ❌ ${s.subject}: Would complete too early`);
             return false;
           }
           return true;
         });
 
         if (eligibleSubjects.length === 0) {
-          console.log('  - No eligible subjects to schedule today.');
+          console.log('    🚫 No eligible subjects need more study time');
           break;
         }
 
+        // Sort by priority and pick the best subject
         eligibleSubjects.sort((a, b) => this.calculatePriorityScore(b) - this.calculatePriorityScore(a));
-        let subjectAssigned = false;
-
-        for (const bestSubject of eligibleSubjects) {
-          console.log(`  - Trying subject: ${bestSubject.subject} (Score: ${this.calculatePriorityScore(bestSubject).toFixed(2)})`);
-          const canAssign = this.checkSubjectDominance(bestSubject.id, STUDY_CHUNK_HOURS, daySchedule);
-          if (canAssign) {
-            console.log(`    -> Assigning ${STUDY_CHUNK_HOURS * 60} mins to ${bestSubject.subject}`);
-            daySchedule.subjects[bestSubject.id] = (daySchedule.subjects[bestSubject.id] || 0) + STUDY_CHUNK_HOURS;
-            daySchedule.total_hours += STUDY_CHUNK_HOURS;
-            bestSubject.remaining_hours -= STUDY_CHUNK_HOURS;
-            bestSubject.last_study_day = new Date(currentDate);
-            if (bestSubject.remaining_hours <= 0) {
-              bestSubject.state = 'DONE';
-              console.log(`    -> Subject ${bestSubject.subject} is now DONE.`);
-            }
-            subjectAssigned = true;
-            break;
-          } else {
-            console.log(`    -> Cannot assign to ${bestSubject.subject} (rule §3.4): Subject dominance.`);
-          }
+        const bestSubject = eligibleSubjects[0];
+        
+        // Check if this would cause overload
+        const wouldBeOverloaded = (existingHours + daySchedule.total_hours + STUDY_CHUNK_HOURS) > this.inputs.daily_max_hours;
+        
+        if (wouldBeOverloaded && !isOverloaded) {
+          console.log(`    ⚠️  OVERLOAD WARNING: Exceeding daily limit of ${this.inputs.daily_max_hours}h`);
+          isOverloaded = true;
         }
-
-        if (!subjectAssigned) {
-          console.log('  - Could not assign any subject this chunk (all top priorities failed dominance check).');
+        
+        console.log(`    ${wouldBeOverloaded ? '🔴' : '✅'} Scheduling ${STUDY_CHUNK_HOURS}h for ${bestSubject.subject} (Priority: ${this.calculatePriorityScore(bestSubject).toFixed(2)})`);
+        
+        daySchedule.subjects[bestSubject.id] = (daySchedule.subjects[bestSubject.id] || 0) + STUDY_CHUNK_HOURS;
+        daySchedule.total_hours += STUDY_CHUNK_HOURS;
+        bestSubject.remaining_hours -= STUDY_CHUNK_HOURS;
+        bestSubject.last_study_day = new Date(currentDate);
+        
+        if (bestSubject.remaining_hours <= 0) {
+          bestSubject.state = 'DONE';
+          console.log(`    🎉 ${bestSubject.subject} is now COMPLETED!`);
+        }
+        
+        chunksScheduled++;
+        
+        // Stop if all subjects are done
+        if (this.subjects.every(s => s.state === 'DONE')) {
           break;
         }
       }
 
-      const isNearActiveExam = this.subjects.some(s => s.state === 'ACTIVE' && s.days_to_exam <= 3);
-      if (isNearActiveExam && daySchedule.total_hours === 0) {
-        console.log('  - Forcing session due to rule §3.2 (No empty days near exams).');
-        const eligibleSubjects = this.subjects.filter(s => s.state === 'ACTIVE');
-        if (eligibleSubjects.length > 0) {
-          eligibleSubjects.sort((a, b) => this.calculatePriorityScore(b) - this.calculatePriorityScore(a));
-          const bestSubject = eligibleSubjects[0];
-          daySchedule.subjects[bestSubject.id] = (daySchedule.subjects[bestSubject.id] || 0) + STUDY_CHUNK_HOURS;
-          daySchedule.total_hours += STUDY_CHUNK_HOURS;
-          bestSubject.remaining_hours -= STUDY_CHUNK_HOURS;
-          bestSubject.last_study_day = new Date(currentDate);
-          if (bestSubject.remaining_hours <= 0) { bestSubject.state = 'DONE'; }
-          console.log(`    -> Forced assignment of ${STUDY_CHUNK_HOURS * 60} mins to ${bestSubject.subject}`);
-        }
+      // Mark overload if applicable
+      if (daySchedule.total_hours > remainingCapacity) {
+        daySchedule.is_overloaded = true;
+        daySchedule.overload_amount = daySchedule.total_hours - remainingCapacity;
+        console.log(`  🔴 OVERLOAD: ${daySchedule.overload_amount.toFixed(1)}h over limit (${daySchedule.total_hours}h scheduled, ${remainingCapacity}h available)`);
       }
 
       if (daySchedule.total_hours > 0) {
         this.schedule.push(daySchedule);
+        console.log(`  📝 Scheduled ${daySchedule.total_hours}h today across ${Object.keys(daySchedule.subjects).length} subjects`);
       }
 
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    const remainingTotalHours = this.subjects.reduce((sum, s) => s.state === 'ACTIVE' ? sum + s.remaining_hours : sum, 0);
-    if (remainingTotalHours > 1) {
-      console.warn('Could not schedule all hours due to constraints.');
+    // Always return the schedule, even if overloaded
+    const overloadedDays = this.schedule.filter(day => day.is_overloaded);
+    const totalOverloadHours = overloadedDays.reduce((sum, day) => sum + (day.overload_amount || 0), 0);
+    
+    if (totalOverloadHours > 0) {
+      console.log(`\n🔴 SCHEDULE OVERLOAD: ${totalOverloadHours.toFixed(1)}h over limits across ${overloadedDays.length} days`);
+      
+      // Return schedule with overload information
       return {
-        error: `Overload: Could not schedule ${Math.round(remainingTotalHours)} hours due to constraints like 'no early completion'.`,
-        choices: ['Increase daily max', 'Reduce subject hours', 'Allow earlier completion'],
+        schedule: this.schedule,
+        overload_info: {
+          total_overload_hours: totalOverloadHours,
+          overloaded_days: overloadedDays.length,
+          message: `Schedule exceeds daily limits by ${totalOverloadHours.toFixed(1)}h total. Overloaded sessions will be displayed in red.`
+        }
       };
     }
 
-    return this.schedule;
+    return { schedule: this.schedule };
   }
 
   private checkEarlyCompletion(subject: InternalSubjectState, hoursToAssign: number): boolean {

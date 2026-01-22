@@ -2,23 +2,22 @@
 
 import ExamList from '@/components/exams/exam-list';
 import CreateExamModal from '@/components/exams/create-exam-modal';
+import UserPreferences from '@/components/user/user-preferences';
 import { useState, useEffect } from 'react';
+
+interface UserPreferences {
+  daily_study_limit: number;
+  adjustment_percentage: number;
+  session_duration: number;
+}
 
 export default function ExamsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [dailyMaxHours, setDailyMaxHours] = useState(4);
-
-  // Load and save dailyMaxHours from/to localStorage
-  useEffect(() => {
-    const savedHours = localStorage.getItem('dailyMaxHours');
-    if (savedHours) {
-      setDailyMaxHours(parseInt(savedHours, 10));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('dailyMaxHours', dailyMaxHours.toString());
-  }, [dailyMaxHours]);
+  const [userPreferences, setUserPreferences] = useState<UserPreferences>({
+    daily_study_limit: 4,
+    adjustment_percentage: 25,
+    session_duration: 30,
+  });
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -27,32 +26,30 @@ export default function ExamsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Exams</h1>
-        <div className="flex items-center gap-4">
-          <div>
-            <label htmlFor="daily-max-hours" className="block text-sm font-medium text-gray-700">
-              Daily Study Cap (Hours)
-            </label>
-            <input
-              type="number"
-              id="daily-max-hours"
-              name="daily-max-hours"
-              min="1"
-              max="12"
-              value={dailyMaxHours}
-              onChange={(e) => setDailyMaxHours(parseInt(e.target.value, 10) || 1)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-          </div>
-          <button
-            onClick={openModal}
-            className="self-end bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            + Add Exam
-          </button>
+        <button
+          onClick={openModal}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          + Add Exam
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <ExamList />
+        </div>
+        <div className="lg:col-span-1">
+          <UserPreferences onPreferencesChange={setUserPreferences} />
         </div>
       </div>
-      <ExamList />
-      <CreateExamModal isOpen={isModalOpen} onClose={closeModal} dailyMaxHours={dailyMaxHours} />
+      
+      <CreateExamModal 
+        isOpen={isModalOpen} 
+        onClose={closeModal} 
+        dailyMaxHours={userPreferences.daily_study_limit}
+        adjustmentPercentage={userPreferences.adjustment_percentage}
+        sessionDuration={userPreferences.session_duration}
+      />
     </div>
   );
 }
