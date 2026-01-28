@@ -77,6 +77,11 @@ export default function ExamForm() {
 
       // Revalidate the exams list
       mutate('/api/exams');
+      
+      // Refresh the calendar
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('calendarUpdated'));
+      }
     } catch (error) {
       console.error(error);
       alert('Failed to create exam');

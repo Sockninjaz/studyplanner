@@ -13,15 +13,17 @@ export default function Calendar() {
   const { data, error, isLoading, mutate } = useSWR('/api/calendar/events', fetcher);
 
   useEffect(() => {
-    const handleCalendarUpdate = () => {
+    const handleUpdate = () => {
       console.log('Calendar update event received, refreshing...');
       mutate();
     };
 
     if (typeof window !== 'undefined') {
-      window.addEventListener('calendarUpdated', handleCalendarUpdate);
+      window.addEventListener('calendarUpdated', handleUpdate);
+      window.addEventListener('examDeleted', handleUpdate);
       return () => {
-        window.removeEventListener('calendarUpdated', handleCalendarUpdate);
+        window.removeEventListener('calendarUpdated', handleUpdate);
+        window.removeEventListener('examDeleted', handleUpdate);
       };
     }
   }, [mutate]);

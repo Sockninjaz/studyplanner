@@ -17,6 +17,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    console.log('📊 User preferences from DB:', {
+      daily_study_limit: user.daily_study_limit,
+      adjustment_percentage: user.adjustment_percentage,
+      session_duration: user.session_duration
+    });
+
     return NextResponse.json({ 
       daily_study_limit: user.daily_study_limit || 4,
       adjustment_percentage: user.adjustment_percentage || 25,

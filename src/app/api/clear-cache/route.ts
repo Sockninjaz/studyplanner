@@ -7,7 +7,9 @@ export async function POST() {
     await dbConnect();
     
     // Drop the exams collection to clear the old schema
-    await mongoose.connection.db.dropCollection('exams');
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.dropCollection('exams');
+    }
     
     return NextResponse.json({ message: 'Cache cleared successfully' });
   } catch (error) {

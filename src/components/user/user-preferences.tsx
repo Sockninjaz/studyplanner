@@ -26,17 +26,88 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
     fetchPreferences();
   }, []);
 
+  // Save preferences to localStorage when they change, sync with server on load
+  useEffect(() => {
+    if (!isLoading) {
+      // Save to localStorage immediately
+      console.log('Saving to localStorage:', preferences);
+      localStorage.setItem('userPreferences', JSON.stringify(preferences));
+    }
+  }, [preferences, isLoading]);
+
+  // Sync localStorage with server on page load
+  useEffect(() => {
+    console.log('Component mounted, checking for localStorage sync...');
+    const syncWithServer = async () => {
+      const savedPrefs = localStorage.getItem('userPreferences');
+      console.log('Found in localStorage for sync:', savedPrefs);
+      if (savedPrefs) {
+        try {
+          const prefs = JSON.parse(savedPrefs);
+          console.log('Syncing to server with prefs:', prefs);
+          // Save to server in background
+          const response = await fetch('/api/user/preferences', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(prefs),
+          });
+          console.log('Sync response status:', response.status);
+        } catch (error) {
+          console.error('Failed to sync preferences with server:', error);
+        }
+      } else {
+        console.log('No localStorage found to sync');
+      }
+    };
+
+    syncWithServer();
+  }, []);
+
   const fetchPreferences = async () => {
     try {
+      console.log('Fetching preferences...');
+      
+      // First check localStorage for immediate response
+      const savedPrefs = localStorage.getItem('userPreferences');
+      console.log('localStorage preferences:', savedPrefs);
+      
+      let localStoragePrefs = null;
+      if (savedPrefs) {
+        try {
+          const prefs = JSON.parse(savedPrefs);
+          console.log('Parsed localStorage preferences:', prefs);
+          localStoragePrefs = prefs;
+          setPreferences(prefs);
+          onPreferencesChange?.(prefs);
+        } catch (error) {
+          console.error('Error parsing localStorage preferences:', error);
+        }
+      }
+
+      // Then fetch from server for latest data
       const res = await fetch('/api/user/preferences');
+      console.log('Server response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
-        setPreferences({
+        console.log('Server preferences data:', data);
+        const serverPrefs = {
           daily_study_limit: data.daily_study_limit || 4,
           adjustment_percentage: data.adjustment_percentage || 25,
           session_duration: data.session_duration || 30,
-        });
-        onPreferencesChange?.(preferences);
+        };
+        console.log('Final server preferences:', serverPrefs);
+        
+        // Only use server data if localStorage doesn't exist or is older
+        // For now, let's keep localStorage as the source of truth
+        if (!localStoragePrefs) {
+          console.log('No localStorage prefs, using server data');
+          setPreferences(serverPrefs);
+          onPreferencesChange?.(serverPrefs);
+          localStorage.setItem('userPreferences', JSON.stringify(serverPrefs));
+        } else {
+          console.log('Keeping localStorage prefs as source of truth');
+        }
       }
     } catch (error) {
       console.error('Error fetching preferences:', error);
@@ -45,9 +116,10 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
     }
   };
 
-  const savePreferences = async () => {
+  const savePreferences = async (showMessage = true) => {
+    console.log('Manual save triggered, showMessage:', showMessage);
     setIsSaving(true);
-    setMessage('');
+    if (showMessage) setMessage('');
 
     try {
       const res = await fetch('/api/user/preferences', {
@@ -55,20 +127,42 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(preferences),
       });
+      
+      console.log('Save response status:', res.status);
 
       if (res.ok) {
         const data = await res.json();
-        setMessage('Preferences saved successfully!');
+        console.log('Save response data:', data);
+        // Update localStorage with saved preferences
+        localStorage.setItem('userPreferences', JSON.stringify(preferences));
+        console.log('Updated localStorage with:', preferences);
+        
+        // Dispatch event to notify other components
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('preferencesUpdated'));
+        }
+        
+        if (showMessage) {
+          setMessage('Preferences saved successfully!');
+        }
         onPreferencesChange?.(preferences);
       } else {
         const errorData = await res.json();
-        setMessage(`Error: ${errorData.error}`);
+        console.log('Save error:', errorData);
+        if (showMessage) {
+          setMessage(`Error: ${errorData.error}`);
+        }
       }
     } catch (error) {
-      setMessage('Error saving preferences');
+      console.error('Save error:', error);
+      if (showMessage) {
+        setMessage('Error saving preferences');
+      }
     } finally {
       setIsSaving(false);
-      setTimeout(() => setMessage(''), 3000);
+      if (showMessage) {
+        setTimeout(() => setMessage(''), 3000);
+      }
     }
   };
 
@@ -178,7 +272,7 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         )}
 
         <button
-          onClick={savePreferences}
+          onClick={() => savePreferences()}
           disabled={isSaving}
           className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >

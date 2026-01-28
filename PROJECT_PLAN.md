@@ -17,6 +17,7 @@ Build a web-based study planner that helps students create, track, and execute p
 - Time distribution based on difficulty and confidence gaps
 - Automatic break scheduling (Pomodoro technique)
 - Calendar conflict resolution
+-user input for session duration is respected and the confidence and difficulty setting can only change the user imput by a percentage of 25%
 
 ### 3. Session Execution
 - Start Learning button with countdown timer
@@ -28,34 +29,6 @@ Build a web-based study planner that helps students create, track, and execute p
 -# Study Planner - Complete Project Plan
 
 ## 🎯 **CORE ALGORITHM CONCEPTS**
-
-### **Three-Layer Pressure System**
-
-#### **1️⃣ Session Volume Calculator (Already Working)**
-```
-Difficulty (1-5) + Confidence (1-5) → Total Sessions Needed
-- Higher difficulty = more sessions
-- Lower confidence = more sessions  
-- Base range: 2-6 sessions per material
-```
-
-#### **2️⃣ Daily Capacity Pressure (How Many Slots Per Day)**
-```
-Adaptive formula based on time available:
-- 5+ days: Gentle (1-2 sessions/day)
-- 3-4 days: Moderate (2-3 sessions/day)  
-- 1-2 days: Intense (2-3 sessions/day)
-Creates natural buildup, not extreme spikes
-```
-
-#### **3️⃣ Session Allocation Pressure (Which Exam Gets The Slot)**
-```
-For each available slot:
-- Time since last session (longer = higher priority)
-- Remaining sessions (more = higher priority)
-- Exam proximity (closer = higher priority)
-Highest pressure exam gets the slot
-```
 
 ## 📅 **Algorithm Flow**
 
@@ -78,6 +51,22 @@ Calculate pressure for each exam
 Give slots to highest pressure exams
 Update remaining sessions
 ```
+
+## 🎯 **CURRENT ALGORITHM IMPLEMENTATION**
+
+### **Scheduling Approach**
+The system uses a simpler, more direct approach:
+
+1. **Backward Planning** - Places sessions working backwards from exam date
+2. **Workload Balancing** - Moves sessions from overloaded days to underloaded days
+3. **Subject Diversification** - Avoids clustering same subject on one day
+
+### **Key Features**
+- Final review sessions protected (day before exam)
+- Subject diversification enforced (max 2 sessions per subject per day)
+- Workload evening for better distribution across days
+- Timezone-aware date handling
+- Session duration respected from user preferences
 
 ## 🧮 **Formulas to Implement**
 
@@ -168,19 +157,30 @@ Intense but focused
 - [x] Material parsing ("Chapter 1-4" → individual chapters)
 - [x] Single exam scheduling (continuous study)
 - [x] Natural chapter progression (1→2→3→4)
+- [x] Timezone-aware date handling
+- [x] Session duration preference sync
+- [x] Workload balancing with diversification
+- [x] Final review session protection
 
 ### 🔄 **In Progress:**
-- [ ] Daily capacity pressure calculator
-- [ ] Session allocation pressure calculator  
-- [ ] Multi-exam distribution system
-- [ ] Full three-layer integration
+- [ ] Testing and validation of current implementation
+- [ ] Performance optimization for large datasets
+- [ ] Edge case handling (e.g., very short prep times)
+
+### 📋 **To Do List:**
+- [ ] **Manual Session Movement** - Allow users to drag/drop sessions manually, with algorithm respecting manual changes when updating schedule
+- [ ] **Auto-update on Exam Deletion** - When removing an exam, automatically update the remaining schedule
+- [ ] **Intense Planning Mode** - Handle scenarios with little time + lot of material (cramming optimization)
+- [ ] **Progress-aware Planning** - Adjust schedule when some sessions are already completed
+- [ ] **Dark Mode** - Add dark theme toggle for better UX
+- [ ] **Subject Presets** - Pre-populated subject list (Math, Chemistry, Physics, etc.) for faster exam creation
 
 ### 🎯 **Next Steps:**
-1. Implement daily capacity calculator (Step 1)
-2. Add allocation pressure calculator (Step 2)
-3. Create daily session distributor (Step 3)
-4. Integrate full system (Step 4)
-5. Test with real exam scenarios
+1. Test current implementation thoroughly
+2. Remove debug logging once stable
+3. Add comprehensive error handling
+4. Implement manual session movement with algorithm respect
+5. Add dark mode and subject presets for UX improvements
 
 ## 🛠️ **Tech Stack**
 
@@ -192,9 +192,13 @@ Intense but focused
 
 ## 📱 **Key Features**
 
-- **Three-Layer Pressure System:** Volume + Capacity + Allocation
-- **Adaptive Scheduling:** Gentle buildup based on time available
-- **Multi-Exam Support:** Fair distribution across competing exams
+- **Backward Planning:** Places sessions working backwards from exam date
+- **Workload Balancing:** Even distribution across available days
+- **Subject Diversification:** Avoids clustering same subject
+- **Final Review Protection:** Ensures review session day before exam
+- **Timezone Awareness:** Correct date handling across timezones
+- **Preference Sync:** Session duration updates across components
+- **Multi-Exam Support:** Handles multiple competing exams
 - **Material Progression:** Natural chapter progression
 - **Calendar Integration:** Visual schedule with automatic updates
 

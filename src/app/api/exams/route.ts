@@ -43,6 +43,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    console.log('API received body:', body);
     const { subject, date, studyMaterials: studyMaterialsData, adjustment_percentage, session_duration } = body;
 
     if (!subject || !date || !studyMaterialsData || studyMaterialsData.length === 0) {
@@ -56,9 +57,11 @@ export async function POST(request: Request) {
       chapter: material.chapter,
       difficulty: parseInt(material.difficulty.toString()),
       confidence: parseInt(material.confidence.toString()),
-      user_estimated_total_hours: material.user_estimated_total_hours || 10, // V1 requirement
+      user_estimated_total_hours: material.user_estimated_total_hours || 5, // Default to 5 hours instead of 10
       completed: false,
     }));
+
+    console.log('StudyMaterials to save:', JSON.stringify(studyMaterials, null, 2));
 
     const exam = new Exam({
       subject,
@@ -72,8 +75,13 @@ export async function POST(request: Request) {
     // --- V1 Scheduler Integration ---
     console.log('Starting V1 Scheduler...');
 
-    // Fetch existing sessions to avoid over-scheduling
-    const existingSessions = await StudySession.find({ user: user._id });
+    // Fetch all exams for the user, including the one just created.
+    const allUserExams = await Exam.find({ user: user._id });
+    console.log('Exams from database:', JSON.stringify(allUserExams, null, 2));
+    
+    // Fetch existing sessions to preserve and rebalance
+    let existingSessions = await StudySession.find({ user: user._id });
+    console.log(`Found ${existingSessions.length} existing sessions to rebalance`);
     
     // Transform existing sessions for scheduler
     const existingSessionsForScheduler = existingSessions.map(session => ({
@@ -82,26 +90,75 @@ export async function POST(request: Request) {
       duration: (session.endTime.getTime() - session.startTime.getTime()) / (1000 * 3600), // Convert to hours
     }));
 
-    // Fetch all exams for the user, including the one just created.
-    const allUserExams = await Exam.find({ user: user._id });
-
     // Prepare inputs for the V1 scheduler.
+    console.log('🔧 API received values:', {
+      daily_max_hours: body.daily_max_hours,
+      adjustment_percentage: body.adjustment_percentage,
+      session_duration: body.session_duration,
+    });
+    
+    // Use the values from the request body (from current UI state) first
+    // These should be the most up-to-date values from the frontend
     const userInputs = {
       daily_max_hours: body.daily_max_hours || user.daily_study_limit || 4,
-      adjustment_percentage: adjustment_percentage || user.adjustment_percentage || 25,
-      session_duration: session_duration || user.session_duration || 30,
+      adjustment_percentage: body.adjustment_percentage || user.adjustment_percentage || 25,
+      session_duration: body.session_duration || user.session_duration || 30,
       start_date: new Date(),
       existing_sessions: existingSessionsForScheduler,
-      exams: allUserExams.map(e => ({
-        id: e._id.toString(),
-        subject: e.subject,
-        exam_date: e.date,
-        difficulty: e.studyMaterials[0]?.difficulty || 3,
-        confidence: e.studyMaterials[0]?.confidence || 3,
-        user_estimated_total_hours: e.studyMaterials[0]?.user_estimated_total_hours || 10,
-        can_study_after_exam: true,
-      })),
+      exams: allUserExams.map(e => {
+        console.log(`Database exam date for ${e.subject}:`, e.date, 'typeof:', typeof e.date);
+        return {
+          id: e._id.toString(),
+          subject: e.subject,
+          exam_date: e.date,
+          difficulty: e.studyMaterials[0]?.difficulty || 3,
+          confidence: e.studyMaterials[0]?.confidence || 3,
+          user_estimated_total_hours: e.studyMaterials[0]?.user_estimated_total_hours || 5, // Default to 5 hours instead of 10
+          can_study_after_exam: e.can_study_after_exam,
+        };
+      }),
     };
+    
+    console.log('🔧 Final scheduler inputs:', {
+      daily_max_hours: userInputs.daily_max_hours,
+      adjustment_percentage: userInputs.adjustment_percentage,
+      session_duration: userInputs.session_duration,
+    });
+    
+    // Also update the user's saved preferences with these latest values
+    if (body.daily_max_hours || body.adjustment_percentage || body.session_duration) {
+      try {
+        if (body.daily_max_hours) user.daily_study_limit = body.daily_max_hours;
+        if (body.adjustment_percentage) user.adjustment_percentage = body.adjustment_percentage;
+        if (body.session_duration) user.session_duration = body.session_duration;
+        await user.save();
+        console.log('✅ Updated user preferences with latest values');
+      } catch (error) {
+        console.error('⚠️  Failed to update user preferences:', error);
+      }
+    }
+
+    // If multiple exams exist, delete ALL existing sessions to apply new diversified schedule
+    const hasMultipleExams = allUserExams.length > 1;
+    console.log(`Exam count: ${allUserExams.length}, hasMultipleExams: ${hasMultipleExams}, existingSessions: ${existingSessions.length}`);
+    
+    if (hasMultipleExams && existingSessions.length > 0) {
+      console.log(`Multiple exams detected - deleting ${existingSessions.length} existing sessions to reschedule with diversification`);
+      console.log('Existing sessions before deletion:', existingSessions.map(s => ({ subject: s.subjectId, date: s.date })));
+      
+      await StudySession.deleteMany({ 
+        user: user._id,
+        exam: { $in: allUserExams.map(e => e._id) }
+      });
+      
+      existingSessions = []; // Clear the array since we deleted everything
+      // Update userInputs to reflect the deleted sessions
+      userInputs.existing_sessions = [];
+      
+      console.log('Sessions deleted, userInputs.existing_sessions set to empty array');
+    } else {
+      console.log('Not deleting sessions - either single exam or no existing sessions');
+    }
 
     const scheduler = new StudyPlannerV1(userInputs);
     const result = scheduler.generatePlan();
@@ -118,7 +175,6 @@ export async function POST(request: Request) {
       }, { status: 400 });
     } else {
       // Plan generated successfully, add only the new sessions
-      const result = scheduler.generatePlan();
       
       // Handle different return types
       let dailySchedules: any[];
@@ -143,21 +199,58 @@ export async function POST(request: Request) {
         console.log(`🔴 Creating schedule with overload: ${overloadInfo.message}`);
       }
       
+      console.log(`API DEBUG: Starting session creation, dailySchedules length: ${dailySchedules.length}`);
+      console.log(`API DEBUG: existingSessions length: ${existingSessions.length}`);
+      console.log(`API DEBUG: existingSessions details:`, existingSessions.map(s => ({
+        examId: s.exam.toString(),
+        date: s.startTime.toISOString().split('T')[0],
+        subject: s.subject
+      })));
+      
       for (const day of dailySchedules) {
         for (const subjectId in day.subjects) {
           const hours = day.subjects[subjectId];
-          const numChunks = Math.round(hours / (sessionDurationMinutes / 60)); // Use custom session duration
-
-          for (let i = 0; i < numChunks; i++) {
-            const examForSubject = allUserExams.find(e => e._id.toString() === subjectId);
-            if (examForSubject) {
-              // Check if this session already exists to avoid duplicates
-              const sessionStart = new Date(new Date(day.date).getTime() + i * sessionDurationMinutes * 60000);
-              const sessionEnd = new Date(new Date(day.date).getTime() + (i + 1) * sessionDurationMinutes * 60000);
+          const sessionDurationHours = sessionDurationMinutes / 60;
+          
+          // Calculate how many sessions are needed based on hours
+          // If scheduler says 2 hours and session duration is 1 hour, create 2 sessions
+          const numChunks = Math.ceil(hours / sessionDurationHours);
+          
+          const examForSubject = allUserExams.find(e => e._id.toString() === subjectId);
+          if (examForSubject) {
+            // Check how many sessions already exist for this subject on this day
+            const existingSessionsForDay = existingSessions.filter(existing => 
+              existing.exam.toString() === subjectId &&
+              existing.startTime.toISOString().split('T')[0] === day.date.toISOString().split('T')[0]
+            );
+            
+            console.log(`API DEBUG: Filtering for subjectId ${subjectId}, day ${day.date.toISOString().split('T')[0]}`);
+            console.log(`API DEBUG: All existing sessions:`, existingSessions.map(s => ({
+              exam: s.exam.toString(),
+              date: s.startTime.toISOString().split('T')[0],
+              subject: s.subject
+            })));
+            
+            console.log(`API DEBUG: Day ${day.date.toISOString().split('T')[0]}, Subject ${examForSubject.subject}`);
+            console.log(`API DEBUG: Hours: ${hours}, numChunks: ${numChunks}, existingSessionsForDay: ${existingSessionsForDay.length}`);
+            
+            // Only create the difference between needed and existing
+            const sessionsToCreate = Math.max(0, numChunks - existingSessionsForDay.length);
+            
+            console.log(`API DEBUG: sessionsToCreate: ${sessionsToCreate}`);
+            
+            for (let i = 0; i < sessionsToCreate; i++) {
+              // Stagger sessions throughout the day to avoid overlap
+              const sessionStart = new Date(day.date);
+              sessionStart.setHours(9 + ((existingSessionsForDay.length + i) * 2), 0, 0, 0); // 9 AM, 11 AM, 1 PM, etc.
+              const sessionEnd = new Date(sessionStart.getTime() + sessionDurationMinutes * 60000);
+              
+              // Create a unique identifier for each session
+              const sessionIdentifier = `${subjectId}-${day.date.toISOString().split('T')[0]}-${existingSessionsForDay.length + i}`;
               
               const existingSession = existingSessions.find(existing => 
                 existing.exam.toString() === subjectId &&
-                existing.startTime.getTime() === sessionStart.getTime()
+                existing.startTime.toISOString().split('T')[0] === day.date.toISOString().split('T')[0]
               );
               
               // Only add if it doesn't already exist
@@ -165,13 +258,13 @@ export async function POST(request: Request) {
                 sessionsToSave.push({
                   user: user._id,
                   exam: examForSubject._id,
-                  title: `Study: ${examForSubject.subject}`,
+                  title: `Study: ${examForSubject.subject}${numChunks > 1 ? ` (${existingSessionsForDay.length + i + 1}/${numChunks})` : ''}`,
                   subject: examForSubject.subject,
                   startTime: sessionStart,
                   endTime: sessionEnd,
                   isCompleted: false,
-                  isOverloaded: day.is_overloaded || false, // Mark if this session is in an overloaded day
-                  overloadAmount: day.overload_amount || 0, // How much over the limit this day is
+                  isOverloaded: day.is_overloaded || false,
+                  overloadAmount: day.overload_amount || 0,
                 });
               }
             }

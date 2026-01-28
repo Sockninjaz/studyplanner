@@ -46,6 +46,13 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
     setIsSubmitting(true);
 
     try {
+      console.log('🚀 Creating exam with preferences:', {
+        dailyMaxHours,
+        adjustmentPercentage,
+        sessionDuration,
+        studyMaterial
+      });
+      
       const res = await fetch('/api/exams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,6 +72,22 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
       }
 
       mutate('/api/exams');
+      
+      // Refresh the calendar
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('calendarUpdated'));
+      }
+      
+      // Reset form state
+      setSubject('');
+      setDate(getDefaultDate());
+      setStudyMaterial({
+        chapter: 'Chapters 1-5',
+        difficulty: 3,
+        confidence: 3,
+        user_estimated_total_hours: 5,
+      });
+      
       onClose();
     } catch (error) {
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to create exam'}`);
