@@ -99,9 +99,59 @@ export class StudyPlannerV1 {
     
     const inputStartStr = this.inputs.start_date.toISOString().split('T')[0];
     const inputStartUTC = new Date(inputStartStr + 'T00:00:00.000Z');
-    const startDateUTC = nowUTC > inputStartUTC ? nowUTC : inputStartUTC;
+    let startDateUTC = nowUTC > inputStartUTC ? nowUTC : inputStartUTC;
     
-    console.log(`  Input start: ${inputStartStr}, Using start date: ${startDateUTC.toISOString().split('T')[0]}`);
+    console.log(`  Input start: ${inputStartStr}, Initial start date: ${startDateUTC.toISOString().split('T')[0]}`);
+    
+    // Check if this exam has a large gap from the previous exam
+    // If so, start valid slots after the previous exam to avoid clustering
+    const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
+    const totalHours = this.calculateTotalHours(exam);
+    const totalSessions = Math.ceil(totalHours / STUDY_CHUNK_HOURS);
+    
+    // Find the closest earlier exam (exam that happens before this one)
+    // Compare using date strings to avoid timezone issues
+    const earlierExams = this.inputs.exams
+      .filter(e => {
+        if (e.id === exam.id) return false;
+        const eDate = e.exam_date.toISOString().split('T')[0];
+        return eDate < examDateStr;
+      })
+      .sort((a, b) => b.exam_date.getTime() - a.exam_date.getTime()); // Sort by date descending
+    
+    if (earlierExams.length > 0) {
+      const closestEarlierExam = earlierExams[0];
+      const earlierExamDateStr = closestEarlierExam.exam_date.toISOString().split('T')[0];
+      const earlierExamDateUTC = new Date(earlierExamDateStr + 'T00:00:00.000Z');
+      
+      // Calculate the gap between the earlier exam and this exam
+      const gapDays = Math.floor((examDateUTC.getTime() - earlierExamDateUTC.getTime()) / (24 * 60 * 60 * 1000));
+      
+      console.log(`  🔍 Gap check for ${exam.subject}:`);
+      console.log(`    Earlier exam: ${closestEarlierExam.subject} on ${earlierExamDateStr}`);
+      console.log(`    This exam: ${exam.subject} on ${examDateStr}`);
+      console.log(`    Gap: ${gapDays} days, Sessions needed: ${totalSessions}`);
+      console.log(`    Threshold: ${totalSessions + 2} days`);
+      
+      // If gap is large enough for this exam's sessions (with buffer), use isolated distribution
+      // Gap needs to be at least: sessions needed + 2 day buffer
+      if (gapDays >= totalSessions + 2) {
+        // Start from the day after the earlier exam
+        const newStartDate = new Date(earlierExamDateUTC.getTime() + 24 * 60 * 60 * 1000);
+        console.log(`    newStartDate: ${newStartDate.toISOString().split('T')[0]}, current startDateUTC: ${startDateUTC.toISOString().split('T')[0]}`);
+        // Use getTime() for reliable date comparison
+        if (newStartDate.getTime() > startDateUTC.getTime()) {
+          startDateUTC = new Date(newStartDate);
+          console.log(`    ✓ Large gap detected! Using isolated distribution starting from ${startDateUTC.toISOString().split('T')[0]}`);
+        } else {
+          console.log(`    ✗ newStartDate not greater than startDateUTC, not applying isolation`);
+        }
+      } else {
+        console.log(`    ✗ Gap (${gapDays}) < threshold (${totalSessions + 2}), not applying isolation`);
+      }
+    }
+    
+    console.log(`  Final start date: ${startDateUTC.toISOString().split('T')[0]}`);
     
     // Determine the last valid study day
     let lastValidDay: Date;
@@ -213,7 +263,60 @@ export class StudyPlannerV1 {
           .filter(dateStr => availableDatesSet.has(dateStr));
       }
       
-      if (hasMultipleExams) {
+      // Check if this exam is isolated (has a large gap from earlier exams)
+      // If isolated, treat it like a single exam and skip diversification rules
+      const examDateStr = exam.exam_date.toISOString().split('T')[0];
+      const earlierExams = this.inputs.exams
+        .filter(e => {
+          if (e.id === exam.id) return false;
+          const eDate = e.exam_date.toISOString().split('T')[0];
+          return eDate < examDateStr;
+        })
+        .sort((a, b) => b.exam_date.getTime() - a.exam_date.getTime());
+      
+      // An exam is isolated ONLY if it has a large gap from the closest earlier OR same-day exam
+      // If there are other exams on the same day or close by, it's NOT isolated
+      let isIsolatedExam = false;
+      
+      // Check for same-day or close exams (within the session count + 2 days)
+      const closeExams = this.inputs.exams.filter(e => {
+        if (e.id === exam.id) return false;
+        const eDate = e.exam_date.toISOString().split('T')[0];
+        const thisExamDateUTC = new Date(examDateStr + 'T00:00:00.000Z');
+        const otherExamDateUTC = new Date(eDate + 'T00:00:00.000Z');
+        const daysDiff = Math.abs(Math.floor((thisExamDateUTC.getTime() - otherExamDateUTC.getTime()) / (24 * 60 * 60 * 1000)));
+        // Consider exams within (totalSessions + 2) days as "close"
+        return daysDiff < totalSessions + 2;
+      });
+      
+      if (closeExams.length === 0 && earlierExams.length > 0) {
+        // No close exams, but there are earlier exams - check if gap is large enough
+        const closestEarlierExam = earlierExams[0];
+        const earlierExamDateStr = closestEarlierExam.exam_date.toISOString().split('T')[0];
+        const earlierExamDateUTC = new Date(earlierExamDateStr + 'T00:00:00.000Z');
+        const thisExamDateUTC = new Date(examDateStr + 'T00:00:00.000Z');
+        const gapDays = Math.floor((thisExamDateUTC.getTime() - earlierExamDateUTC.getTime()) / (24 * 60 * 60 * 1000));
+        
+        if (gapDays >= totalSessions + 2) {
+          isIsolatedExam = true;
+          console.log(`  🏝️ ${exam.subject} is ISOLATED (gap: ${gapDays} days from ${closestEarlierExam.subject}) - using single-exam distribution`);
+        }
+      } else if (closeExams.length === 0 && earlierExams.length === 0) {
+        // No close exams and no earlier exams - check if there are ANY other exams
+        const otherExams = this.inputs.exams.filter(e => e.id !== exam.id);
+        if (otherExams.length === 0) {
+          // Truly single exam
+          isIsolatedExam = true;
+          console.log(`  🏝️ ${exam.subject} is ISOLATED (only exam) - using single-exam distribution`);
+        } else {
+          // There are other exams but they're all later - not isolated, use diversification
+          console.log(`  ${exam.subject} has later exams nearby - using diversification`);
+        }
+      } else {
+        console.log(`  ${exam.subject} has ${closeExams.length} close exam(s) - NOT isolated`);
+      }
+      
+      if (hasMultipleExams && !isIsolatedExam) {
         console.log(`  Multiple exams detected - applying diversification (not reusing existing sessions)`);
       } else {
         console.log(`  Existing session dates for ${exam.subject}:`, existingSessionDates);
@@ -221,8 +324,8 @@ export class StudyPlannerV1 {
       
       let sessionCount = 0;
       
-      // Only reuse existing sessions for single exam scenarios
-      if (existingSessionDates.length > 0 && !hasMultipleExams) {
+      // Only reuse existing sessions for single exam scenarios or isolated exams
+      if (existingSessionDates.length > 0 && (!hasMultipleExams || isIsolatedExam)) {
         console.log(`  Reusing ${existingSessionDates.length} existing session dates`);
         
         for (const existingDate of existingSessionDates) {
@@ -265,7 +368,8 @@ export class StudyPlannerV1 {
           
           console.log(`  Days used by other exams:`, Array.from(otherExamDays));
           
-          // Strategy: Prefer days NOT used by other exams, max 2 consecutive sessions
+          // Strategy: For isolated exams, use simple consecutive distribution
+          // For non-isolated exams, prefer days NOT used by other exams, max 2 consecutive sessions
           const selectedDays: Date[] = [];
           let consecutiveCount = 0;
           let lastSelectedDate: Date | null = null;
@@ -273,51 +377,79 @@ export class StudyPlannerV1 {
           // Work backwards from the latest available day
           const reversedDays = [...unassignedDays].reverse();
           
-          for (const day of reversedDays) {
-            if (selectedDays.length >= sessionsToPlace) {
-              console.log(`  Stopping: selected ${selectedDays.length} days, need ${sessionsToPlace} sessions`);
-              break;
-            }
-            
-            const dateStr = day.toISOString().split('T')[0];
-            const isUsedByOther = otherExamDays.has(dateStr);
-            
-            if (lastSelectedDate === null) {
-              // First session: prefer day NOT used by other exams
-              if (!isUsedByOther || selectedDays.length === 0) {
+          if (isIsolatedExam) {
+            // ISOLATED EXAM: Simple consecutive distribution (like single-exam mode)
+            console.log(`  Using simple consecutive distribution for isolated exam`);
+            for (const day of reversedDays) {
+              if (selectedDays.length >= sessionsToPlace) break;
+              
+              const dateStr = day.toISOString().split('T')[0];
+              
+              if (lastSelectedDate === null) {
                 selectedDays.push(day);
                 lastSelectedDate = day;
-                consecutiveCount = 1;
-                console.log(`  Selected ${dateStr} (first session, used by other: ${isUsedByOther})`);
-              }
-            } else {
-              // Calculate gap from last selected date
-              const daysDiff = Math.floor((lastSelectedDate.getTime() - day.getTime()) / (24 * 60 * 60 * 1000));
-              const isConsecutive = daysDiff === 1;
-              
-              // Rule: Max 2 consecutive sessions
-              if (isConsecutive && consecutiveCount >= 2) {
-                console.log(`  Skipping ${dateStr} (would be 3rd consecutive session)`);
-                continue;
-              }
-              
-              // Respect max interval
-              if (daysDiff <= MAX_INTERVAL_DAYS + 1) {
-                const daysRemaining = reversedDays.filter(d => d < day).length;
-                const sessionsRemaining = sessionsToPlace - selectedDays.length - 1;
+                console.log(`  Selected ${dateStr} (first session)`);
+              } else {
+                const daysDiff = Math.floor((lastSelectedDate.getTime() - day.getTime()) / (24 * 60 * 60 * 1000));
                 
-                // Skip if used by other exam and we have alternatives
-                if (isUsedByOther && daysRemaining >= sessionsRemaining * 1.5) {
-                  console.log(`  Skipping ${dateStr} (used by other exam, ${daysRemaining} days left)`);
+                // Only respect max interval, no diversification rules
+                if (daysDiff <= MAX_INTERVAL_DAYS + 1) {
+                  selectedDays.push(day);
+                  lastSelectedDate = day;
+                  console.log(`  Selected ${dateStr} (${daysDiff} days from last)`);
+                } else {
+                  console.log(`  Skipping ${dateStr} (would violate max interval: ${daysDiff} days)`);
+                }
+              }
+            }
+          } else {
+            // NON-ISOLATED EXAM: Apply diversification rules
+            for (const day of reversedDays) {
+              if (selectedDays.length >= sessionsToPlace) {
+                console.log(`  Stopping: selected ${selectedDays.length} days, need ${sessionsToPlace} sessions`);
+                break;
+              }
+              
+              const dateStr = day.toISOString().split('T')[0];
+              const isUsedByOther = otherExamDays.has(dateStr);
+              
+              if (lastSelectedDate === null) {
+                // First session: prefer day NOT used by other exams
+                if (!isUsedByOther || selectedDays.length === 0) {
+                  selectedDays.push(day);
+                  lastSelectedDate = day;
+                  consecutiveCount = 1;
+                  console.log(`  Selected ${dateStr} (first session, used by other: ${isUsedByOther})`);
+                }
+              } else {
+                // Calculate gap from last selected date
+                const daysDiff = Math.floor((lastSelectedDate.getTime() - day.getTime()) / (24 * 60 * 60 * 1000));
+                const isConsecutive = daysDiff === 1;
+                
+                // Rule: Max 2 consecutive sessions
+                if (isConsecutive && consecutiveCount >= 2) {
+                  console.log(`  Skipping ${dateStr} (would be 3rd consecutive session)`);
                   continue;
                 }
                 
-                selectedDays.push(day);
-                lastSelectedDate = day;
-                consecutiveCount = isConsecutive ? consecutiveCount + 1 : 1;
-                console.log(`  Selected ${dateStr} (${daysDiff} days from last, consecutive: ${consecutiveCount}, used by other: ${isUsedByOther})`);
-              } else {
-                console.log(`  Skipping ${dateStr} (would violate max interval: ${daysDiff} days)`);
+                // Respect max interval
+                if (daysDiff <= MAX_INTERVAL_DAYS + 1) {
+                  const daysRemaining = reversedDays.filter(d => d < day).length;
+                  const sessionsRemaining = sessionsToPlace - selectedDays.length - 1;
+                  
+                  // Skip if used by other exam and we have alternatives
+                  if (isUsedByOther && daysRemaining >= sessionsRemaining * 1.5) {
+                    console.log(`  Skipping ${dateStr} (used by other exam, ${daysRemaining} days left)`);
+                    continue;
+                  }
+                  
+                  selectedDays.push(day);
+                  lastSelectedDate = day;
+                  consecutiveCount = isConsecutive ? consecutiveCount + 1 : 1;
+                  console.log(`  Selected ${dateStr} (${daysDiff} days from last, consecutive: ${consecutiveCount}, used by other: ${isUsedByOther})`);
+                } else {
+                  console.log(`  Skipping ${dateStr} (would violate max interval: ${daysDiff} days)`);
+                }
               }
             }
           }
@@ -539,7 +671,9 @@ export class StudyPlannerV1 {
     })));
     
     for (const exam of sortedExams) {
+      console.log(`\n📅 Generating valid slots for ${exam.subject} (exam date: ${exam.exam_date.toISOString().split('T')[0]})`);
       const validSlots = this.generateValidSlotsForExam(exam);
+      console.log(`📅 Valid slots for ${exam.subject}: ${validSlots.map(d => d.toISOString().split('T')[0]).join(', ')}`);
       const sessionMap = this.assignSessionsEvenly(exam, validSlots);
       this.preliminarySchedules.set(exam.id, sessionMap);
     }
@@ -693,6 +827,9 @@ export class StudyPlannerV1 {
       processedAssignments.add(key);
     }
     
+    // Add all valid days to the schedule (even empty ones) so balancing can use them
+    this.addEmptyDaysToSchedule(mergedSchedule);
+    
     // BALANCING STEP: Redistribute sessions for even workload
     this.balanceWorkload(mergedSchedule);
     
@@ -700,6 +837,38 @@ export class StudyPlannerV1 {
     this.fixMaxIntervalViolations(mergedSchedule);
     
     return mergedSchedule;
+  }
+
+  private addEmptyDaysToSchedule(mergedSchedule: Map<string, Map<string, number>>): void {
+    // Only add empty days that are within the range of existing scheduled sessions
+    // This prevents balancing from moving isolated exam sessions to early empty days
+    
+    const allDates = Array.from(mergedSchedule.keys()).sort();
+    if (allDates.length === 0) return;
+    
+    const firstDate = new Date(allDates[0] + 'T00:00:00.000Z');
+    const lastDate = new Date(allDates[allDates.length - 1] + 'T00:00:00.000Z');
+    
+    // Only add empty days between existing scheduled days (not before or after)
+    const currentDate = new Date(firstDate);
+    while (currentDate <= lastDate) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      if (!mergedSchedule.has(dateStr)) {
+        // Check if any exam can use this day
+        const isValidForAnyExam = this.inputs.exams.some(exam => {
+          const validSlots = this.generateValidSlotsForExam(exam);
+          return validSlots.some(slot => slot.toISOString().split('T')[0] === dateStr);
+        });
+        
+        if (isValidForAnyExam) {
+          mergedSchedule.set(dateStr, new Map());
+          console.log(`Added empty day ${dateStr} to schedule for potential balancing`);
+        }
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
   }
 
   private balanceWorkload(mergedSchedule: Map<string, Map<string, number>>): void {
@@ -1064,7 +1233,17 @@ export class StudyPlannerV1 {
             let bestDay: string | null = null;
             let lowestIntensity = Infinity;
             
+            // Get valid slots for this exam to ensure we only move to valid days
+            const validSlots = this.generateValidSlotsForExam(exam);
+            const validDatesSet = new Set(validSlots.map(s => s.toISOString().split('T')[0]));
+            
             for (const day of availableDays) {
+              // Skip if this day is not valid for this exam
+              if (!validDatesSet.has(day)) {
+                console.log(`    Skipping ${day} - not valid for ${exam.subject}`);
+                continue;
+              }
+              
               const daySchedule = mergedSchedule.get(day)!;
               const intensity = Array.from(daySchedule.values()).reduce((sum, s) => sum + s, 0);
               

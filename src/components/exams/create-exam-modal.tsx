@@ -10,6 +10,18 @@ interface StudyMaterial {
   user_estimated_total_hours: number;
 }
 
+interface OverloadedDay {
+  date: string;
+  sessions: number;
+  limit: number;
+}
+
+interface OverloadWarningData {
+  examId: string;
+  warning: string;
+  overloadedDays: OverloadedDay[];
+}
+
 interface CreateExamModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,6 +48,55 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
     user_estimated_total_hours: 5,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [overloadWarning, setOverloadWarning] = useState<OverloadWarningData | null>(null);
+  const [isDeletingExam, setIsDeletingExam] = useState(false);
+
+  const finishAndClose = () => {
+    mutate('/api/exams');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('calendarUpdated'));
+    }
+    setSubject('');
+    setDate(getDefaultDate());
+    setStudyMaterial({
+      chapter: 'Chapters 1-5',
+      difficulty: 3,
+      confidence: 3,
+      user_estimated_total_hours: 5,
+    });
+    setOverloadWarning(null);
+    onClose();
+  };
+
+  const handleDeleteExam = async () => {
+    if (!overloadWarning?.examId) return;
+    
+    setIsDeletingExam(true);
+    try {
+      const res = await fetch(`/api/exams/${overloadWarning.examId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to delete exam');
+      }
+      
+      mutate('/api/exams');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('calendarUpdated'));
+      }
+      setOverloadWarning(null);
+      // Keep the form open so user can adjust and try again
+    } catch (error) {
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to delete exam'}`);
+    } finally {
+      setIsDeletingExam(false);
+    }
+  };
+
+  const handleContinueWithOverload = () => {
+    finishAndClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,29 +127,25 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
         }),
       });
 
+      const responseData = await res.json();
+      
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to create exam');
+        throw new Error(responseData.error || 'Failed to create exam');
       }
 
-      mutate('/api/exams');
-      
-      // Refresh the calendar
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('calendarUpdated'));
+      // Check for overload warning and show confirmation modal
+      if (responseData.data?.overloadWarning && responseData.data?.overloadedDays) {
+        setOverloadWarning({
+          examId: responseData.data.exam._id,
+          warning: responseData.data.overloadWarning,
+          overloadedDays: responseData.data.overloadedDays,
+        });
+        // Don't close yet - wait for user decision
+        return;
       }
-      
-      // Reset form state
-      setSubject('');
-      setDate(getDefaultDate());
-      setStudyMaterial({
-        chapter: 'Chapters 1-5',
-        difficulty: 3,
-        confidence: 3,
-        user_estimated_total_hours: 5,
-      });
-      
-      onClose();
+
+      // No overload - proceed normally
+      finishAndClose();
     } catch (error) {
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to create exam'}`);
     } finally {
@@ -146,6 +203,54 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
           </button>
         </div>
       </div>
+
+      {/* Overload Warning Modal */}
+      {overloadWarning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black bg-opacity-60" />
+          <div className="relative z-[60] w-full max-w-md mx-4 bg-white rounded-xl shadow-2xl">
+            <div className="px-6 py-4 border-b bg-amber-50">
+              <h2 className="text-xl font-bold text-amber-800 flex items-center gap-2">
+                <span className="text-2xl">⚠️</span> Daily Limit Exceeded
+              </h2>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <p className="text-gray-700">
+                Your schedule has <strong>{overloadWarning.overloadedDays.length} day(s)</strong> that exceed your daily limit of <strong>{overloadWarning.overloadedDays[0]?.limit} sessions</strong>.
+              </p>
+              <div className="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
+                <p className="text-sm font-medium text-gray-600 mb-2">Affected days:</p>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  {overloadWarning.overloadedDays.map((day) => (
+                    <li key={day.date} className="flex justify-between">
+                      <span>{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                      <span className="text-amber-600 font-medium">{day.sessions} sessions (limit: {day.limit})</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <p className="text-sm text-gray-500">
+                You can delete this exam and adjust your schedule, or continue with the overloaded days.
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t bg-gray-50 flex gap-3">
+              <button
+                onClick={handleDeleteExam}
+                disabled={isDeletingExam}
+                className="flex-1 inline-flex justify-center rounded-md border border-red-300 bg-white py-2 px-4 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50 disabled:opacity-50"
+              >
+                {isDeletingExam ? 'Deleting...' : 'Delete Exam'}
+              </button>
+              <button
+                onClick={handleContinueWithOverload}
+                className="flex-1 inline-flex justify-center rounded-md border border-transparent bg-amber-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-amber-700"
+              >
+                Continue Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

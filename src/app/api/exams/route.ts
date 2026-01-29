@@ -164,6 +164,9 @@ export async function POST(request: Request) {
     const result = scheduler.generatePlan();
 
     let sessionsToSave: any[] = [];
+    let overloadWarning: string | null = null;
+    let overloadedDays: { date: string; sessions: number; limit: number }[] = [];
+    
     if ('error' in result) {
       console.error('Scheduler V1 Error:', result.error);
       // Even if scheduling fails, the exam was still created.
@@ -194,7 +197,32 @@ export async function POST(request: Request) {
       
       const sessionDurationMinutes = userInputs.session_duration;
       
-      // Check if there's overload information
+      // Check for overloaded days and generate warning
+      const maxSessionsPerDay = Math.floor(userInputs.daily_max_hours / (sessionDurationMinutes / 60));
+      
+      for (const day of dailySchedules) {
+        let totalSessionsOnDay = 0;
+        for (const subjectId in day.subjects) {
+          const hours = day.subjects[subjectId];
+          totalSessionsOnDay += Math.ceil(hours / (sessionDurationMinutes / 60));
+        }
+        if (totalSessionsOnDay > maxSessionsPerDay) {
+          overloadedDays.push({
+            date: day.date.toISOString().split('T')[0],
+            sessions: totalSessionsOnDay,
+            limit: maxSessionsPerDay
+          });
+        }
+      }
+      
+      if (overloadedDays.length > 0) {
+        overloadWarning = `Warning: ${overloadedDays.length} day(s) exceed your daily limit of ${maxSessionsPerDay} sessions. ` +
+          `Days affected: ${overloadedDays.map(d => `${d.date} (${d.sessions} sessions)`).join(', ')}. ` +
+          `Consider extending your study period or reducing material.`;
+        console.log(`⚠️ OVERLOAD WARNING: ${overloadWarning}`);
+      }
+      
+      // Check if there's overload information from scheduler
       if (overloadInfo) {
         console.log(`🔴 Creating schedule with overload: ${overloadInfo.message}`);
       }
@@ -284,7 +312,9 @@ export async function POST(request: Request) {
       data: { 
         exam, 
         sessions: sessionsToSave,
-        message: `Created exam and ${sessionsToSave.length} study sessions`
+        message: `Created exam and ${sessionsToSave.length} study sessions`,
+        overloadWarning: overloadWarning,
+        overloadedDays: overloadedDays.length > 0 ? overloadedDays : undefined
       }, 
       status: 201 
     });
