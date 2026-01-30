@@ -169,17 +169,7 @@ export class StudyPlannerV1 {
     return validSlots;
   }
 
-  public getValidSlotsForAllExams(): { [examName: string]: string[] } {
-    const result: { [examName: string]: string[] } = {};
-    
-    for (const exam of this.inputs.exams) {
-      const validSlots = this.generateValidSlotsForExam(exam);
-      result[exam.subject] = validSlots.map(date => date.toISOString().split('T')[0]);
-    }
-    
-    return result;
-  }
-
+  
   private assignSessionsEvenly(exam: ExamData, validSlots: Date[]): Map<string, number> {
     console.log(`\n*** assignSessionsEvenly called for ${exam.subject} ***`);
     const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
@@ -310,9 +300,12 @@ export class StudyPlannerV1 {
           console.log(`  🏝️ ${exam.subject} is ISOLATED (only exam) - using single-exam distribution`);
         } else {
           // There are other exams but they're all later - not isolated, use diversification
+          isIsolatedExam = false;
           console.log(`  ${exam.subject} has later exams nearby - using diversification`);
         }
       } else {
+        // Has close exams - definitely not isolated
+        isIsolatedExam = false;
         console.log(`  ${exam.subject} has ${closeExams.length} close exam(s) - NOT isolated`);
       }
       

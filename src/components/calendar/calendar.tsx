@@ -92,7 +92,6 @@ export default function Calendar() {
         eventClick={(info) => {
           // Prevent default navigation for certain events if needed
           if (info.event.extendedProps?.type === 'exam') {
-            // You could open a modal here instead of navigation
             info.jsEvent.preventDefault();
             window.location.href = '/exams';
           }
@@ -102,6 +101,18 @@ export default function Calendar() {
           const event = info.event;
           if (event.extendedProps?.type === 'exam') {
             info.el.style.cursor = 'pointer';
+          } else if (event.extendedProps?.type === 'session') {
+            // Add cursor pointer for sessions
+            info.el.style.cursor = 'pointer';
+            
+            // Add strikethrough for completed sessions
+            if (event.extendedProps?.isCompleted) {
+              const titleElement = info.el.querySelector('.fc-event-title') as HTMLElement;
+              if (titleElement) {
+                titleElement.style.textDecoration = 'line-through';
+                titleElement.style.opacity = '0.7';
+              }
+            }
           }
         }}
       />

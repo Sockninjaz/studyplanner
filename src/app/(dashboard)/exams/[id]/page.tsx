@@ -4,7 +4,6 @@ import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import StudyMaterialForm from '@/components/exams/study-material-form';
 import StudyMaterialList from '@/components/exams/study-material-list';
-import StudyPlan from '@/components/exams/study-plan';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -31,7 +30,6 @@ export default function ExamDetailPage() {
 
       <StudyMaterialForm examId={id as string} />
       <StudyMaterialList materials={studyMaterials} />
-      <StudyPlan examId={id as string} />
     </div>
   );
 }

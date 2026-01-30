@@ -6,8 +6,6 @@ import { mutate } from 'swr';
 export default function StudyMaterialForm({ examId }: { examId: string }) {
   const [chapter, setChapter] = useState('');
   const [book, setBook] = useState('');
-  const [difficulty, setDifficulty] = useState(3);
-  const [confidence, setConfidence] = useState(3);
   const [estimatedHours, setEstimatedHours] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,10 +21,9 @@ export default function StudyMaterialForm({ examId }: { examId: string }) {
         },
         body: JSON.stringify({
           chapter,
-          book,
-          difficulty,
-          confidence,
-          estimatedHours,
+          difficulty: 3, // Default difficulty
+          confidence: 3, // Default confidence
+          user_estimated_total_hours: estimatedHours,
         }),
       });
 
@@ -37,8 +34,6 @@ export default function StudyMaterialForm({ examId }: { examId: string }) {
       // Clear form
       setChapter('');
       setBook('');
-      setDifficulty(3);
-      setConfidence(3);
       setEstimatedHours(1);
 
       // Revalidate the exam details
@@ -80,35 +75,7 @@ export default function StudyMaterialForm({ examId }: { examId: string }) {
             required
           />
         </div>
-        <div>
-          <label htmlFor="difficulty" className="mb-2 block text-sm font-medium text-gray-700">
-            Difficulty: {difficulty}
-          </label>
-          <input
-            type="range"
-            id="difficulty"
-            min="1"
-            max="5"
-            value={difficulty}
-            onChange={(e) => setDifficulty(parseInt(e.target.value, 10))}
-            className="w-full"
-          />
-        </div>
-        <div>
-          <label htmlFor="confidence" className="mb-2 block text-sm font-medium text-gray-700">
-            Confidence: {confidence}
-          </label>
-          <input
-            type="range"
-            id="confidence"
-            min="1"
-            max="5"
-            value={confidence}
-            onChange={(e) => setConfidence(parseInt(e.target.value, 10))}
-            className="w-full"
-          />
-        </div>
-        <div className="md:col-span-2">
+                <div className="md:col-span-2">
           <label htmlFor="estimatedHours" className="mb-2 block text-sm font-medium text-gray-700">
             Estimated Hours
           </label>
