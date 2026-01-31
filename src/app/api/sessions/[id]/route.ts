@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/db';
 import StudySession from '@/models/StudySession';
 import User from '@/models/User';
+import Exam from '@/models/Exam';
 
 export async function GET(
   request: Request,
@@ -24,7 +25,7 @@ export async function GET(
     const studySession = await StudySession.findOne({
       _id: params.id,
       user: user._id,
-    });
+    }).populate('exam');
 
     if (!studySession) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });

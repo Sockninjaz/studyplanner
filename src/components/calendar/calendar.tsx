@@ -6,12 +6,20 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function Calendar() {
+interface CalendarProps {
+  onSessionClick?: (sessionId: string) => void;
+  onAddItemClick?: (date: string) => void;
+  sidebarOpen?: boolean;
+  sidebarCollapsed?: boolean;
+}
+
+export default function Calendar({ onSessionClick, onAddItemClick, sidebarOpen, sidebarCollapsed }: CalendarProps) {
   const { data, error, isLoading, mutate } = useSWR('/api/calendar/events', fetcher);
+  const calendarRef = useRef<FullCalendar>(null);
 
   const handleEventDrop = async (info: any) => {
     const { event } = info;
@@ -58,6 +66,28 @@ export default function Calendar() {
     }
   }, [mutate]);
 
+  useEffect(() => {
+    // Trigger calendar resize when sidebar state changes
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      // Use setTimeout to ensure the DOM has updated before resizing
+      setTimeout(() => {
+        calendarApi.updateSize();
+      }, 300); // Match the transition duration
+    }
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    // Trigger calendar resize when main sidebar state changes
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      // Use setTimeout to ensure the DOM has updated before resizing
+      setTimeout(() => {
+        calendarApi.updateSize();
+      }, 300); // Match the transition duration
+    }
+  }, [sidebarCollapsed]);
+
   if (error) return <div>Failed to load calendar events</div>;
   if (isLoading) return <div>Loading...</div>;
 
@@ -66,12 +96,13 @@ export default function Calendar() {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md">
       <FullCalendar
+        ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
+        initialView="listYear"
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',
-          right: 'dayGridMonth,timeGridWeek,listWeek',
+          right: 'dayGridMonth,timeGridWeek,listWeek,listYear',
         }}
         events={events}
         editable={true}
@@ -89,12 +120,49 @@ export default function Calendar() {
           month: 'long', 
           year: 'numeric' 
         }}
-        eventClick={(info) => {
-          // Prevent default navigation for certain events if needed
+                eventClick={(info) => {
+          info.jsEvent.preventDefault();
+          
           if (info.event.extendedProps?.type === 'exam') {
-            info.jsEvent.preventDefault();
             window.location.href = '/exams';
+          } else if (info.event.extendedProps?.type === 'session' && info.event.extendedProps?.sessionId) {
+            // Open session in sidebar
+            if (onSessionClick) {
+              onSessionClick(info.event.extendedProps.sessionId);
+            }
           }
+        }}
+        dayCellDidMount={(info) => {
+          // Add + button to date cells on hover
+          const dayCell = info.el;
+          const dateStr = info.dateStr;
+          
+          // Create + button element
+          const addButton = document.createElement('button');
+          addButton.innerHTML = '+';
+          addButton.className = 'absolute top-1 right-1 w-6 h-6 bg-indigo-600 text-white rounded-full text-xs font-bold hover:bg-indigo-700 transition-colors opacity-0 hover:opacity-100 pointer-events-none z-10';
+          addButton.title = 'Add exam or event';
+          
+          // Add hover effects to show/hide button
+          dayCell.style.position = 'relative';
+          dayCell.addEventListener('mouseenter', () => {
+            addButton.style.opacity = '1';
+            addButton.style.pointerEvents = 'auto';
+          });
+          dayCell.addEventListener('mouseleave', () => {
+            addButton.style.opacity = '0';
+            addButton.style.pointerEvents = 'none';
+          });
+          
+          // Handle button click
+          addButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (onAddItemClick) {
+              onAddItemClick(dateStr);
+            }
+          });
+          
+          dayCell.appendChild(addButton);
         }}
         eventDidMount={(info) => {
           // Add custom styling or tooltips if needed

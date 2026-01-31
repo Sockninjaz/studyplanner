@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import Timer from '@/components/session/timer';
 import StudyItemChecklist from '@/components/session/study-item-checklist';
+import StudyMaterialsDisplay from '@/components/session/study-materials-display';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -88,8 +89,9 @@ export default function SessionExecutionPage() {
         </div>
       ) : (
         <>
-          <Timer duration={duration} onComplete={handleSessionComplete} />
+          <Timer duration={duration} onComplete={handleSessionComplete} sessionId={id as string} session={session} />
           <StudyItemChecklist sessionId={id as string} items={session.checklist || []} />
+          <StudyMaterialsDisplay exam={session.exam || null} />
         </>
       )}
     </div>

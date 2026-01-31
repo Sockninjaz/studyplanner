@@ -1,3 +1,78 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --primary-color: 40, 57, 135;
+  --primary-rgb: rgb(40, 57, 135);
+  --secondary-color: 253, 231, 76;
+  --secondary-rgb: rgb(253, 231, 76);
+  --accent-color: 66, 191, 221;
+  --accent-rgb: rgb(66, 191, 221);
+  --accent-2-color: 250, 175, 205;
+  --accent-2-rgb: rgb(250, 175, 205);
+  --neutral-dark: #4a4a4a;
+  --neutral-light: #f8f6ef;
+}
+
+@layer base {
+  .bg-primary {
+    background-color: rgb(var(--primary-color));
+  }
+  
+  .bg-secondary {
+    background-color: var(--secondary-rgb);
+  }
+  
+  .bg-accent {
+    background-color: var(--accent-rgb);
+  }
+  
+  .bg-accent-2 {
+    background-color: var(--accent-2-rgb);
+  }
+  
+  .bg-neutral-dark {
+    background-color: var(--neutral-light);
+  }
+  
+  .bg-neutral-light {
+    background-color: var(--neutral-light);
+  }
+  
+  .text-primary {
+    color: var(--primary-rgb);
+  }
+  
+  .text-secondary {
+    color: var(--secondary-rgb);
+  }
+  
+  .text-accent {
+    color: var(--accent-rgb);
+  }
+  
+  .text-accent-2 {
+    color: var(--accent-2-rgb);
+  }
+  
+  .text-neutral-dark {
+    color: var(--neutral-dark);
+  }
+  
+  .text-neutral-light {
+    color: var(--neutral-light);
+  }
+  
+  .border-primary {
+    border-color: var(--primary-rgb);
+  }
+  
+  .border-neutral-dark {
+    border-color: var(--neutral-dark);
+  }
+  
+  .border-neutral-light {
+    border-color: var(--neutral-light);
+  }
+}
