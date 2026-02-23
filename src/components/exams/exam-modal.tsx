@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { mutate } from 'swr';
+import EditExamModal from './edit-exam-modal';
 
 interface StudySession {
   _id: string;
@@ -31,19 +32,22 @@ interface ExamModalProps {
   exam: Exam | null;
   isOpen: boolean;
   onClose: () => void;
+  initialEditMode?: boolean;
 }
 
-export default function ExamModal({ exam, isOpen, onClose }: ExamModalProps) {
+export default function ExamModal({ exam, isOpen, onClose, initialEditMode = false }: ExamModalProps) {
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   useEffect(() => {
     if (exam && isOpen) {
       fetchSessions();
+      setIsEditOpen(initialEditMode);
     }
-  }, [exam, isOpen]);
+  }, [exam, isOpen, initialEditMode]);
 
   const fetchSessions = async () => {
     if (!exam) return;
@@ -116,6 +120,15 @@ export default function ExamModal({ exam, isOpen, onClose }: ExamModalProps) {
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">{exam.subject}</h2>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsEditOpen(true)}
+                className="text-blue-500 hover:text-blue-700 transition-colors"
+                title="Edit exam"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
               <button
                 onClick={() => {
                   console.log('Delete button clicked!');
@@ -260,6 +273,20 @@ export default function ExamModal({ exam, isOpen, onClose }: ExamModalProps) {
           </div>
         </div>
       </div>
+
+      {/* Edit Exam Modal */}
+      {exam && (
+        <EditExamModal
+          exam={exam}
+          isOpen={isEditOpen}
+          onClose={() => {
+            setIsEditOpen(false);
+            // Refresh sessions and close the exam modal so data is fresh
+            fetchSessions();
+            onClose();
+          }}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (

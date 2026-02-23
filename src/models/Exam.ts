@@ -30,6 +30,7 @@ const ExamSchema: Schema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   studyMaterials: [StudyMaterialSchema],
   can_study_after_exam: { type: Boolean, default: false },
-});
+  color: { type: String },
+}, { timestamps: true });
 
 export default mongoose.models.Exam || mongoose.model<IExam>('Exam', ExamSchema);

@@ -13,6 +13,10 @@ const handler = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials, req) {
+        console.log('=== AUTH DEBUG ===');
+        console.log('Authorize function called');
+        console.log('Credentials:', credentials?.email ? 'Email provided' : 'No email');
+        
         if (!credentials?.email || !credentials?.password) {
           console.log('Missing credentials');
           return null;

@@ -15,6 +15,7 @@ interface Exam {
   _id: string;
   subject: string;
   date: Date;
+  color?: string;
 }
 
 interface SidebarProps {
@@ -37,28 +38,28 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   useEffect(() => {
     fetchExams();
     fetchPreferences();
-    
+
     // Listen for exam deletion events
     const handleExamDeleted = () => {
       fetchExams();
     };
-    
+
     // Listen for preference updates
     const handlePreferencesUpdated = () => {
       fetchPreferences();
     };
-    
+
     // Listen for calendar updates (when exams are created)
     const handleCalendarUpdated = () => {
       fetchExams();
     };
-    
+
     if (typeof window !== 'undefined') {
       window.addEventListener('examDeleted', handleExamDeleted);
       window.addEventListener('preferencesUpdated', handlePreferencesUpdated);
       window.addEventListener('calendarUpdated', handleCalendarUpdated);
     }
-    
+
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('examDeleted', handleExamDeleted);
@@ -128,7 +129,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
 
         // Refresh the exam list
         fetchExams();
-        
+
         // Dispatch a custom event to notify other components like the calendar
         window.dispatchEvent(new CustomEvent('examDeleted'));
 
@@ -140,15 +141,13 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
 
   return (
     <>
-      <aside 
-        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-white duration-300 ease-linear lg:static lg:translate-x-0 ${
-          isCollapsed ? 'w-16' : 'w-72'
-        } flex-col`}
+      <aside
+        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-white duration-300 ease-linear lg:static lg:translate-x-0 ${isCollapsed ? 'w-16' : 'w-72'
+          } flex-col`}
         style={{ backgroundColor: 'rgb(54, 65, 86)' }}
       >
-        <div className={`flex items-center justify-between gap-2 ${
-          isCollapsed ? 'px-2 py-4' : 'px-6 py-5 lg:py-6'
-        }`}>
+        <div className={`flex items-center justify-between gap-2 ${isCollapsed ? 'px-2 py-4' : 'px-6 py-5 lg:py-6'
+          }`}>
           {!isCollapsed && (
             <Link href="/">
             </Link>
@@ -178,17 +177,17 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                 <ul className="mb-6 flex flex-col gap-1.5">
                   <li>
                     <Link href="/calendar" className="group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
-                      Calendar
+                      Schedule
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/today" className="group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                      Today
                     </Link>
                   </li>
                   <li>
                     <Link href="/exams" className="group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
                       Exams
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/session" className="group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
-                      New Session
                     </Link>
                   </li>
                 </ul>
@@ -197,19 +196,19 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
 
             {isCollapsed && (
               <div className="space-y-1">
-                <Link href="/calendar" className="flex justify-center py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors" title="Calendar">
+                <Link href="/calendar" className="flex justify-center py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors" title="Schedule">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </Link>
+                <Link href="/today" className="flex justify-center py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors" title="Today">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </Link>
                 <Link href="/exams" className="flex justify-center py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors" title="Exams">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477 4.5 1.253" />
-                  </svg>
-                </Link>
-                <Link href="/session" className="flex justify-center py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors" title="New Session">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </Link>
               </div>
@@ -233,19 +232,34 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                     <li className="px-4 py-3 text-base text-white opacity-60">No exams scheduled</li>
                   ) : (
                     exams.map((exam, index) => {
-                      // Color assignment logic - same as calendar list view
-                      const getExamColor = (subject: string, examIndex: number) => {
+                      // Use stored color or stable fallback
+                      const getExamColor = (exam: Exam) => {
+                        if (exam.color) return exam.color;
+
                         const colors = [
                           'rgb(253, 231, 76)', // Yellow
                           'rgb(72, 86, 150)',  // Blue  
                           'rgb(250, 175, 205)', // Pink
                           'rgb(66, 191, 221)',  // Cyan
+                          'rgb(167, 139, 250)', // Lavender
+                          'rgb(52, 211, 153)',  // Mint
+                          'rgb(251, 146, 60)',  // Orange/Peach
+                          'rgb(45, 212, 191)',  // Teal
                         ];
-                        return colors[examIndex % colors.length];
+
+                        // Stable ID-based fallback
+                        // Use a simple hash function (djb2-like) for better distribution than simple sum
+                        let hash = 0;
+                        const str = exam._id;
+                        for (let i = 0; i < str.length; i++) {
+                          hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                          hash |= 0; // Convert to 32bit integer
+                        }
+                        return colors[Math.abs(hash) % colors.length];
                       };
-                      
-                      const examColor = getExamColor(exam.subject, index);
-                      
+
+                      const examColor = getExamColor(exam);
+
                       return (
                         <li key={exam._id}>
                           <div className="w-full group relative flex items-center gap-3 rounded-lg font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
@@ -253,7 +267,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                               onClick={() => openExamModal(exam)}
                               className="flex-1 flex items-center gap-3 py-3 px-4 text-left"
                             >
-                              <div 
+                              <div
                                 className="w-4 h-4 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: examColor }}
                               />
@@ -270,7 +284,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                               className="px-3 py-3 text-red-400 hover:text-red-300"
                               aria-label={`Delete ${exam.subject}`}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                             </button>
                           </div>
                         </li>

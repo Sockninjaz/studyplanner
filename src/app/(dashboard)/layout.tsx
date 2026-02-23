@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, createContext, useContext } from 'react';
-import Header from "@/components/shared/header";
+
 import Sidebar from "@/components/shared/sidebar";
 
 interface SidebarContextType {
@@ -34,14 +34,12 @@ export default function DashboardLayout({
     <SidebarContext.Provider value={{ isSidebarCollapsed, toggleSidebar }}>
       <div className="flex h-screen overflow-hidden">
         <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
-        <div className={`relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 ${
-          isSidebarCollapsed ? 'ml-0' : 'lg:ml-0'
-        }`}>
-          <Header isSidebarCollapsed={isSidebarCollapsed} onToggleSidebar={toggleSidebar} />
+        <div className={`relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 ${isSidebarCollapsed ? 'ml-0' : 'lg:ml-0'
+          }`}>
+
           <main>
-            <div className={`mx-auto transition-all duration-300 p-4 md:p-6 2xl:p-10 ${
-              isSidebarCollapsed ? 'max-w-screen-2xl' : 'max-w-screen-2xl'
-            }`}>
+            <div className={`mx-auto transition-all duration-300 p-4 md:p-6 2xl:p-10 ${isSidebarCollapsed ? 'max-w-screen-2xl' : 'max-w-screen-2xl'
+              }`}>
               {children}
             </div>
           </main>

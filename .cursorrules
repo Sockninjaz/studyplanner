@@ -1,0 +1,69 @@
+# Strong Constraint Prompt
+
+When fixing a bug or issue:
+- Do NOT remove, simplify, bypass, or disable the core system in order to eliminate the problem.
+- Do NOT rewrite or replace the existing architecture unless explicitly instructed.
+- Do NOT change the fundamental session distribution logic.
+- Do NOT reduce functionality to make the issue disappear.
+
+The goal is to:
+- Identify the root cause of the issue.
+- Fix the specific faulty interaction.
+- Preserve all existing intended behavior.
+- Maintain the current architecture and scheduling logic.
+- If the issue is caused by recalculation scope, boundary conditions, or state leakage between exams, then fix that interaction — not the entire scheduling mechanism.
+
+Before proposing a solution:
+- Clearly explain the root cause.
+- Identify exactly where the logic breaks.
+- Show why the proposed fix solves the issue without removing existing features.
+- Only targeted fixes are acceptable. Broad simplifications are not.
+
+# Core Principles
+**1. Simple Solutions First**
+Always prefer simple solutions over complex ones. Avoid over-engineering when straightforward approach works. Don't introduce new patterns unless absolutely necessary.
+
+**2. Avoid Code Duplication**
+Check for existing similar functionality before writing new code. Reuse existing patterns and components. Keep DRY (Don't Repeat Yourself).
+
+**3. Environment-Aware Code**
+Write code that works in dev, test, and prod. Consider different environments in implementation. Don't hardcode environment-specific values.
+
+**4. Careful Changes**
+Only make changes you understand and are well-understood. Think about what other areas might be affected. Don't break existing functionality.
+
+**5. Clean, Organized Code**
+Keep files under 200-300 lines when possible. Refactor when files get too long. Remove old implementation when adding new patterns.
+
+**6. No Mock Data in Production**
+Mock data only for tests, never for dev/prod. Never add fake data patterns to real code. Don't overwrite environment files without asking.
+
+**7. Thorough Testing**
+Write tests for major functionality. Verify changes work as expected. Test edge cases and error conditions.
+
+# How These Principles Are Applied
+
+**Color System Implementation:**
+- Started with complex approach → MongoDB schema issues
+- Simplified to hash-based assignment → Still had issues
+- Simplified further to sequential assignment → Better but still complex
+- Final approach: Subject-based color calculation (simple, reliable)
+
+**Authentication Debugging:**
+- Added detailed logging to identify 401 error source
+- Used existing debugging patterns (console.log, browser dev tools)
+- Identified network vs code issue by analyzing error patterns
+
+**Code Quality:**
+- Removed duplicate logic when consolidating color systems
+- Used consistent patterns across components
+- Maintained backward compatibility while fixing issues
+
+**These Preferences Guide All Future Work:**
+When asked to implement new features or fix issues:
+1. Start with the simplest working solution
+2. Check for existing patterns before creating new ones
+3. Add proper debugging to track issues
+4. Keep code clean and organized
+5. Test thoroughly before considering complete
+These preferences ensure maintainable, reliable code that doesn't introduce unnecessary complexity.

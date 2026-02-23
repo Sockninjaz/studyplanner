@@ -4,7 +4,6 @@ import useSWR from 'swr';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import { useEffect, useRef } from 'react';
 
@@ -97,12 +96,12 @@ export default function Calendar({ onSessionClick, onAddItemClick, sidebarOpen, 
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md">
       <FullCalendar
         ref={calendarRef}
-        plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
-        initialView="listYear"
+        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+        initialView="dayGridMonth"
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',
-          right: 'dayGridMonth,timeGridWeek,listWeek,listYear',
+          right: '',
         }}
         events={events}
         editable={true}

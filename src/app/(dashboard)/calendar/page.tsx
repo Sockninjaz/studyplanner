@@ -4,8 +4,12 @@ import { useState, useEffect } from 'react';
 import Calendar from '@/components/calendar/calendar';
 import CalendarListView from '@/components/calendar/calendar-list-view';
 import SessionSidebar from '@/components/calendar/session-sidebar';
+import TaskSidebar from '@/components/calendar/task-sidebar';
 import CreateExamModal from '@/components/exams/create-exam-modal';
+import ExamModal from '@/components/exams/exam-modal';
+import EditExamModal from '@/components/exams/edit-exam-modal';
 import AddItemModal from '@/components/calendar/add-item-modal';
+import CreateTaskModal from '@/components/calendar/create-task-modal';
 import { useSidebar } from '@/app/(dashboard)/layout';
 
 interface UserPreferences {
@@ -17,10 +21,15 @@ interface UserPreferences {
 export default function CalendarPage() {
   const { isSidebarCollapsed } = useSidebar();
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
+  const [isEditExamModalOpen, setIsEditExamModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
+  const [selectedExamId, setSelectedExamId] = useState<string | undefined>(undefined);
+  const [selectedExam, setSelectedExam] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [userPreferences, setUserPreferences] = useState<UserPreferences>({
     daily_study_limit: 4,
@@ -70,12 +79,20 @@ export default function CalendarPage() {
 
   const handleSessionClick = (sessionId: string) => {
     setSelectedSessionId(sessionId);
+    setSelectedTaskId(null);
+    setIsSidebarOpen(true);
+  };
+
+  const handleTaskClick = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setSelectedSessionId(null);
     setIsSidebarOpen(true);
   };
 
   const handleCloseSidebar = () => {
     setIsSidebarOpen(false);
     setSelectedSessionId(null);
+    setSelectedTaskId(null);
   };
 
   
@@ -87,6 +104,8 @@ export default function CalendarPage() {
   const handleCloseExamModal = () => {
     setIsExamModalOpen(false);
     setSelectedDate(undefined);
+    setSelectedExamId(undefined);
+    setSelectedExam(null);
   };
 
   const handleCloseAddItemModal = () => {
@@ -99,10 +118,55 @@ export default function CalendarPage() {
     setIsExamModalOpen(true);
   };
 
-  const handleAddEvent = () => {
-    // TODO: Implement event creation
+  const handleExamView = async (examId: string) => {
+    try {
+      // Extract the actual MongoDB ID from the calendar event ID (format: exam-{mongoId})
+      const mongoId = examId.replace('exam-', '');
+      console.log('Fetching exam with ID:', mongoId);
+      
+      const response = await fetch(`/api/exams/${mongoId}`);
+      if (response.ok) {
+        const examData = await response.json();
+        setSelectedExam(examData.data);
+        setSelectedExamId(examId);
+        setIsExamModalOpen(true);
+      } else {
+        console.error('Failed to fetch exam:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Failed to fetch exam:', error);
+    }
+  };
+
+  const handleExamEdit = async (examId: string) => {
+    try {
+      // Extract the actual MongoDB ID from the calendar event ID (format: exam-{mongoId})
+      const mongoId = examId.replace('exam-', '');
+      console.log('Opening edit modal for exam ID:', mongoId);
+      
+      const response = await fetch(`/api/exams/${mongoId}`);
+      if (response.ok) {
+        const examData = await response.json();
+        setSelectedExam(examData.data);
+        setSelectedExamId(examId);
+        setIsEditExamModalOpen(true);
+      } else {
+        console.error('Failed to fetch exam:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Failed to fetch exam:', error);
+    }
+  };
+
+  const handleCloseEditExamModal = () => {
+    setIsEditExamModalOpen(false);
+    setSelectedExam(null);
+    setSelectedExamId(undefined);
+  };
+
+  const handleAddTask = () => {
     setIsAddItemModalOpen(false);
-    alert('Event creation coming soon! For now, use the exam option.');
+    setIsTaskModalOpen(true);
   };
 
   return (
@@ -159,7 +223,10 @@ export default function CalendarPage() {
             {viewMode === 'list' ? (
               <CalendarListView 
                 onSessionClick={handleSessionClick}
+                onTaskClick={handleTaskClick}
                 onAddItemClick={handleAddItemClick}
+                onExamView={handleExamView}
+                onExamEdit={handleExamEdit}
                 sidebarOpen={isSidebarOpen}
                 sidebarCollapsed={isSidebarCollapsed}
               />
@@ -176,14 +243,21 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Session Sidebar */}
+        {/* Sidebar - Session or Task */}
         {isSidebarOpen && (
           <div className="w-[40%] transition-all duration-300">
             <div className="h-full rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden">
-              <SessionSidebar 
-                sessionId={selectedSessionId} 
-                onClose={handleCloseSidebar}
-              />
+              {selectedSessionId ? (
+                <SessionSidebar 
+                  sessionId={selectedSessionId} 
+                  onClose={handleCloseSidebar}
+                />
+              ) : selectedTaskId ? (
+                <TaskSidebar 
+                  taskId={selectedTaskId} 
+                  onClose={handleCloseSidebar}
+                />
+              ) : null}
             </div>
           </div>
         )}
@@ -194,18 +268,48 @@ export default function CalendarPage() {
         isOpen={isAddItemModalOpen}
         onClose={handleCloseAddItemModal}
         onAddExam={handleAddExam}
-        onAddEvent={handleAddEvent}
+        onAddTask={handleAddTask}
       />
 
-      {/* Exam Creation Modal */}
-      <CreateExamModal 
-        isOpen={isExamModalOpen}
-        onClose={handleCloseExamModal}
-        dailyMaxHours={userPreferences.daily_study_limit}
-        adjustmentPercentage={userPreferences.adjustment_percentage}
-        sessionDuration={userPreferences.session_duration}
-        initialDate={selectedDate}
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => {
+          setIsTaskModalOpen(false);
+          setSelectedDate(undefined);
+        }}
+        selectedDate={selectedDate}
       />
+
+      {/* Exam Modal - View */}
+      {selectedExam && isExamModalOpen && (
+        <ExamModal 
+          exam={selectedExam}
+          isOpen={isExamModalOpen}
+          onClose={handleCloseExamModal}
+        />
+      )}
+
+      {/* Edit Exam Modal */}
+      {selectedExam && isEditExamModalOpen && (
+        <EditExamModal 
+          exam={selectedExam}
+          isOpen={isEditExamModalOpen}
+          onClose={handleCloseEditExamModal}
+        />
+      )}
+
+      {/* Create Exam Modal */}
+      {!selectedExam && (
+        <CreateExamModal 
+          isOpen={isExamModalOpen}
+          onClose={handleCloseExamModal}
+          dailyMaxHours={userPreferences.daily_study_limit}
+          adjustmentPercentage={userPreferences.adjustment_percentage}
+          sessionDuration={userPreferences.session_duration}
+          initialDate={selectedDate}
+        />
+      )}
     </>
   );
 }

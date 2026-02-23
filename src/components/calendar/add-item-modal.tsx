@@ -4,10 +4,10 @@ interface AddItemModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddExam: () => void;
-  onAddEvent: () => void;
+  onAddTask: () => void;
 }
 
-export default function AddItemModal({ isOpen, onClose, onAddExam, onAddEvent }: AddItemModalProps) {
+export default function AddItemModal({ isOpen, onClose, onAddExam, onAddTask }: AddItemModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -48,21 +48,21 @@ export default function AddItemModal({ isOpen, onClose, onAddExam, onAddEvent }:
           </button>
 
           <button
-            onClick={onAddEvent}
-            className="w-full flex items-center justify-between p-4 text-left rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 transition-colors group"
+            onClick={onAddTask}
+            className="w-full flex items-center justify-between p-4 text-left rounded-lg border border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center group-hover:bg-amber-200 transition-colors">
+                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <div className="font-medium text-gray-900">Add Event</div>
-                <div className="text-sm text-gray-500">Create custom event or reminder</div>
+                <div className="font-medium text-gray-900">Add Task</div>
+                <div className="text-sm text-gray-500">Create a task with description</div>
               </div>
             </div>
-            <svg className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-400 group-hover:text-amber-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
