@@ -177,20 +177,19 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
           <nav className={`mt-5 py-4 ${isCollapsed ? 'px-1' : 'px-4'} lg:mt-9 lg:px-6`}>
             {!isCollapsed && (
               <div>
-                <h3 className="mb-4 ml-4 text-sm font-semibold text-gray-400">MENU</h3>
-                <ul className="mb-6 flex flex-col gap-1.5">
+                <ul className="mb-6 flex flex-col gap-0.5">
                   <li>
-                    <Link href="/calendar" className="group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                    <Link href="/calendar" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-3 font-medium text-sm text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
                       Schedule
                     </Link>
                   </li>
                   <li>
-                    <Link href="/today" className="group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                    <Link href="/today" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-3 font-medium text-sm text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
                       Today
                     </Link>
                   </li>
                   <li>
-                    <Link href="/exams" className="group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                    <Link href="/exams" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-3 font-medium text-sm text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
                       Exams
                     </Link>
                   </li>
@@ -219,17 +218,20 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
             )}
 
             {!isCollapsed && (
-              <div>
-                <div className="flex items-center justify-between mb-6 px-4">
-                  <h3 className="mb-4 ml-4 text-lg font-semibold text-white opacity-70">MY EXAMS</h3>
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-2 px-3 group/header cursor-pointer">
+                  <h3 className="text-xs font-semibold text-gray-400">My Exams</h3>
                   <button
                     onClick={openCreateModal}
-                    className="bg-[rgb(40,57,135)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition-colors"
+                    className="text-gray-400 hover:text-white p-1 rounded-md transition-colors opacity-0 group-hover/header:opacity-100 flex items-center justify-center"
+                    title="Add Exam"
                   >
-                    + Add
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
                   </button>
                 </div>
-                <ul className="mb-6 flex flex-col gap-2">
+                <ul className="mb-6 flex flex-col gap-0.5">
                   {loading ? (
                     <li className="px-4 py-3 text-base text-white opacity-60">Loading exams...</li>
                   ) : exams.length === 0 ? (
@@ -266,16 +268,16 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
 
                       return (
                         <li key={exam._id}>
-                          <div className="w-full group relative flex items-center gap-3 rounded-lg font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                          <div className="w-full group relative flex items-center rounded-md font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
                             <button
                               onClick={() => openExamModal(exam)}
-                              className="flex-1 flex items-center gap-3 py-3 px-4 text-left min-w-0 overflow-hidden"
+                              className="flex-1 flex items-center gap-2.5 py-1.5 px-3 text-left min-w-0 overflow-hidden"
                             >
                               <div
-                                className="w-4 h-4 rounded-full flex-shrink-0"
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: examColor }}
                               />
-                              <span className="text-base truncate min-w-0" title={exam.subject}>
+                              <span className="text-sm truncate min-w-0" title={exam.subject}>
                                 {exam.subject}
                               </span>
                             </button>
@@ -284,10 +286,10 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                                 e.stopPropagation(); // Prevent opening the modal
                                 handleDeleteExam(exam._id);
                               }}
-                              className="px-3 py-3 text-red-400 hover:text-red-300 flex-shrink-0"
+                              className="px-2 py-1.5 text-gray-400 hover:text-red-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                               aria-label={`Delete ${exam.subject}`}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                             </button>
                           </div>
                         </li>
