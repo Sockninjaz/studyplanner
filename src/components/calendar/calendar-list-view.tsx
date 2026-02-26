@@ -406,7 +406,7 @@ export default function CalendarListView({
                           onAddItemClick(`${year}-${month}-${day}`);
                         }
                       }}
-                      className="text-xs font-medium text-[rgb(40,57,135)] hover:bg-[rgb(40,57,135)] hover:bg-opacity-10 px-3 py-1.5 rounded-md border border-[rgb(40,57,135)] border-opacity-30 transition-colors"
+                      className="text-xs font-medium text-[rgb(40,57,135)] hover:bg-[rgb(40,57,135)] hover:bg-opacity-10 px-2.5 py-1 rounded-md border border-[rgb(40,57,135)] border-opacity-30 transition-colors"
                     >
                       + Add Exam
                     </button>
@@ -420,7 +420,7 @@ export default function CalendarListView({
                         setSelectedTaskDate(`${year}-${month}-${day}`);
                         setIsTaskModalOpen(true);
                       }}
-                      className="text-xs font-medium text-amber-600 hover:bg-amber-600 hover:bg-opacity-10 px-3 py-1.5 rounded-md border border-amber-600 border-opacity-30 transition-colors"
+                      className="text-xs font-medium text-amber-600 hover:bg-amber-600 hover:bg-opacity-10 px-2.5 py-1 rounded-md border border-amber-600 border-opacity-30 transition-colors"
                     >
                       + Add Task
                     </button>
@@ -446,7 +446,7 @@ export default function CalendarListView({
                         }
                       }}
                       disabled={togglingBlock}
-                      className={`text-xs font-medium px-3 py-1.5 rounded-md border transition-colors ${blockedDays.has(date)
+                      className={`text-xs font-medium px-2.5 py-1 rounded-md border transition-colors ${blockedDays.has(date)
                         ? 'text-[#4a4a4a] border-[#4a4a4a] border-opacity-30 hover:bg-[#4a4a4a] hover:bg-opacity-10'
                         : 'text-red-600 border-red-300 hover:bg-red-50'
                         } ${togglingBlock ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -475,7 +475,7 @@ export default function CalendarListView({
                           onDragStart={(e) => handleDragStart(e, event)}
                           onDragEnd={handleDragEnd}
                           onClick={() => handleEventClick(event)}
-                          className={`group flex items-center gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:cursor-pointer ${event.type === 'session' && !!event.sessionId
+                          className={`group flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:cursor-pointer ${event.type === 'session' && !!event.sessionId
                             ? 'hover:cursor-grab active:cursor-grabbing'
                             : ''
                             } ${event.type === 'exam'
@@ -495,19 +495,19 @@ export default function CalendarListView({
                         >
                           {/* Event Type Icon */}
                           <div
-                            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white"
+                            className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 text-white"
                             style={{ backgroundColor: event.isCompleted && event.type === 'task' ? '#10b981' : eventColor }}
                           >
                             {event.type === 'exam' ? (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                               </svg>
                             ) : event.type === 'task' ? (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                             ) : (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                             )}
@@ -515,9 +515,9 @@ export default function CalendarListView({
 
                           {/* Event Details */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-0.5">
                               <h4
-                                className={`font-medium truncate ${event.isCompleted ? 'line-through' : ''
+                                className={`text-sm font-medium truncate ${event.isCompleted ? 'line-through' : ''
                                   }`}
                                 style={{
                                   color: event.type === 'exam' ? eventColor : '#4a4a4a'
@@ -532,10 +532,10 @@ export default function CalendarListView({
                               )}
                             </div>
 
-                            <div className="flex items-center gap-4 text-sm text-[#4a4a4a] opacity-70">
+                            <div className="flex items-center gap-3 text-xs text-[#4a4a4a] opacity-70">
                               {event.subject && (
                                 <span className="flex items-center gap-1">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                   </svg>
                                   {event.subject}
@@ -556,7 +556,7 @@ export default function CalendarListView({
                               className="text-[#4a4a4a] opacity-40 hover:opacity-70 transition-opacity p-1 rounded hover:bg-[#4a4a4a] hover:bg-opacity-10"
                               title="Edit exam"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </button>
@@ -571,7 +571,7 @@ export default function CalendarListView({
                                 className="text-[#4a4a4a] opacity-40 hover:opacity-70 transition-opacity p-1 rounded hover:bg-[#4a4a4a] hover:bg-opacity-10"
                                 title="Task options"
                               >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                 </svg>
                               </button>
@@ -603,7 +603,7 @@ export default function CalendarListView({
                           ) : (
                             /* Click indicator for sessions */
                             <div className="text-[#4a4a4a] opacity-40 group-hover:opacity-70 transition-opacity">
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
                             </div>
