@@ -219,23 +219,21 @@ export default function CalendarPage() {
                 </h1>
               </div>
               <div className="flex items-center gap-4">
-                {viewMode === 'calendar' && (
-                  <div className="flex items-center gap-1 mr-2">
-                    <button onClick={handlePrev} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <button onClick={handleNext} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                    <button onClick={handleToday} className="ml-2 px-3 py-1 text-sm font-medium border border-[#4a4a4a] border-opacity-20 rounded hover:bg-gray-50 transition-colors text-[#4a4a4a]">
-                      Today
-                    </button>
-                  </div>
-                )}
+                <div className={`flex items-center gap-1 mr-2 transition-opacity duration-200 ${viewMode === 'calendar' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                  <button onClick={handlePrev} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button onClick={handleNext} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                  <button onClick={handleToday} className="ml-2 px-3 py-1.5 text-sm font-medium border border-[#4a4a4a] border-opacity-20 rounded hover:bg-gray-50 transition-colors text-[#4a4a4a]">
+                    Today
+                  </button>
+                </div>
                 <div className="flex items-center bg-white rounded-lg p-1 border border-[#4a4a4a] border-opacity-20 shadow-sm">
                   <button
                     onClick={() => setViewMode('list')}
@@ -260,18 +258,18 @@ export default function CalendarPage() {
                   onClick={handleRegenerateSchedule}
                   disabled={isRegenerating}
                   title="Regenerate planner based on current preferences"
-                  className="bg-white border border-[#4a4a4a] border-opacity-20 text-[#4a4a4a] px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-white border border-[#4a4a4a] border-opacity-20 text-[#4a4a4a] px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className={`w-5 h-5 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   {isRegenerating ? 'Regenerating...' : 'Regenerate'}
                 </button>
                 <button
                   onClick={() => setIsAddItemModalOpen(true)}
-                  className="bg-[rgb(54,65,86)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2 shadow-sm font-medium"
+                  className="bg-[rgb(54,65,86)] text-white px-4 py-1.5 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2 shadow-sm text-sm font-medium"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   {viewMode === 'calendar' ? 'New' : 'Add Exam'}
