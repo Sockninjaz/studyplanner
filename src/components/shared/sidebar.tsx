@@ -146,7 +146,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   return (
     <>
       <aside
-        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-white duration-300 ease-linear lg:static lg:translate-x-0 ${isCollapsed ? 'w-16' : 'w-72'
+        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-white duration-300 ease-linear lg:static lg:translate-x-0 ${isCollapsed ? 'w-16' : 'w-56'
           } flex-col`}
         style={{ backgroundColor: 'rgb(54, 65, 86)' }}
       >

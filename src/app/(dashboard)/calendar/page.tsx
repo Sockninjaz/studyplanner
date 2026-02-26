@@ -210,7 +210,7 @@ export default function CalendarPage() {
       <div className="flex h-full flex-col overflow-hidden bg-white">
         {/* Main Content Area */}
         <div className="flex-1 flex flex-row overflow-hidden">
-          <div className={`transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-[60%]' : 'w-full'}`}>
+          <div className={`transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-[calc(100%-320px)]' : 'w-full'}`}>
             {/* View Toggle and Header - Clean, no borders */}
             <div className="bg-[#ffff] px-4 py-3 flex items-center justify-between h-16 flex-shrink-0">
               <div className="flex items-center gap-4">
@@ -308,7 +308,7 @@ export default function CalendarPage() {
 
           {/* Sidebar - Session or Task */}
           {isSidebarOpen && (
-            <div className="w-[40%] transition-all duration-300 flex flex-col border-l border-gray-200 bg-white">
+            <div className="w-[320px] flex-shrink-0 transition-all duration-300 flex flex-col border-l border-gray-200 bg-white">
               <div className="flex-1 overflow-hidden">
                 {selectedSessionId ? (
                   <SessionSidebar
