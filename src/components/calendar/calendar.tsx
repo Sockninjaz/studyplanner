@@ -121,6 +121,7 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
           const event = info.event;
           if (event.extendedProps?.type === 'exam') {
             info.el.style.cursor = 'pointer';
+            info.el.style.textDecoration = 'underline';
           } else if (event.extendedProps?.type === 'session') {
             info.el.style.cursor = 'pointer';
             if (event.extendedProps?.isCompleted) {
