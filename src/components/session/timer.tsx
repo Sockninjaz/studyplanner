@@ -58,11 +58,11 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tasks }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to save tasks');
       }
-      
+
       const result = await response.json();
       console.log('Save response:', result);
       mutate(`/api/sessions/${sessionId}`);
@@ -78,8 +78,8 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
       if (mode === 'session') {
         // Session completed - update task sessions and start break
         if (currentTaskId) {
-          const updatedTasks = tasks.map(task => 
-            task.id === currentTaskId 
+          const updatedTasks = tasks.map(task =>
+            task.id === currentTaskId
               ? { ...task, sessionsCompleted: task.sessionsCompleted + 1 }
               : task
           );
@@ -148,7 +148,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
   };
 
   const toggleTaskComplete = (taskId: string) => {
-    setTasks(tasks.map(task => 
+    setTasks(tasks.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     ));
   };
@@ -189,107 +189,103 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Timer Display */}
       <div className="text-center">
-        <div className={`my-8 text-6xl font-bold ${
-          mode === 'break' ? 'text-green-500' : 
-          mode === 'session' ? 'text-blue-500' : 
-          'text-gray-500'
-        }`}>
+        <div className={`my-6 text-5xl font-bold ${mode === 'break' ? 'text-green-500' :
+          mode === 'session' ? 'text-blue-500' :
+            'text-gray-500'
+          }`}>
           {formatTime(timeLeft)}
         </div>
-        
+
         {/* Progress Bar */}
         {(mode === 'session' || mode === 'break') && (
           <div className="w-full bg-gray-200 rounded-full h-2 mb-4 max-w-md mx-auto">
-            <div 
-              className={`h-2 rounded-full transition-all duration-1000 ease-linear ${
-                mode === 'break' ? 'bg-green-500' : 'bg-blue-500'
-              }`}
+            <div
+              className={`h-2 rounded-full transition-all duration-1000 ease-linear ${mode === 'break' ? 'bg-green-500' : 'bg-blue-500'
+                }`}
               style={{ width: `${getProgressPercentage()}%` }}
             />
           </div>
         )}
-        
-        <div className="mb-4 text-xl font-semibold capitalize">
-          {mode === 'idle' ? 'Ready to start?' : 
-           mode === 'session' ? `Study Session ${sessionCount + 1}/${Math.ceil(duration / 25)}` : 
-           'Break Time'}
+
+        <div className="mb-3 text-lg font-semibold capitalize">
+          {mode === 'idle' ? 'Ready to start?' :
+            mode === 'session' ? `Study Session ${sessionCount + 1}/${Math.ceil(duration / 25)}` :
+              'Break Time'}
         </div>
-        
+
         {/* Mode Selection */}
         <div className="flex gap-2 justify-center mb-4">
           <button
             onClick={() => mode === 'idle' ? null : switchToSession()}
-            className={`px-8 py-3 rounded font-bold transition-colors text-lg ${
-              mode === 'idle' 
-                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-not-allowed opacity-50'
-                : mode === 'session' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            className={`px-6 py-2.5 rounded font-bold transition-colors text-base ${mode === 'idle'
+              ? 'bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-not-allowed opacity-50'
+              : mode === 'session'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
             disabled={mode === 'idle'}
           >
             Session
           </button>
           <button
             onClick={() => mode === 'idle' ? null : switchToBreak()}
-            className={`px-8 py-3 rounded font-bold transition-colors text-lg ${
-              mode === 'idle' 
-                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-not-allowed opacity-50'
-                : mode === 'break' 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            className={`px-6 py-2.5 rounded font-bold transition-colors text-base ${mode === 'idle'
+              ? 'bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-not-allowed opacity-50'
+              : mode === 'break'
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
             disabled={mode === 'idle'}
           >
             Break
           </button>
         </div>
-        
+
         {/* Single Start/Pause Button with Reset - Fixed Position */}
         <div className="flex gap-3 justify-center items-center">
           {/* Refresh button - always first position */}
           <button
             onClick={resetTimer}
-            className="rounded bg-gray-500 py-3 px-3 font-bold text-white hover:bg-gray-600 transition-colors"
+            className="rounded bg-gray-500 py-2.5 px-3 font-bold text-white hover:bg-gray-600 transition-colors"
             title="Reset Timer"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
-          
+
           {/* Main action button - always second position */}
           {mode === 'idle' && (
             <button
               onClick={() => startTimer('session')}
-              className="rounded bg-blue-500 py-3 px-8 font-bold text-white hover:bg-blue-700 transition-colors text-lg"
+              className="rounded bg-blue-500 py-2.5 px-6 font-bold text-white hover:bg-blue-700 transition-colors text-base"
             >
               Start
             </button>
           )}
-          
+
           {(mode === 'session' || mode === 'break') && (
             !isPaused ? (
               <button
                 onClick={pauseTimer}
-                className="rounded bg-yellow-500 py-3 px-8 font-bold text-white hover:bg-yellow-600 transition-colors text-lg"
+                className="rounded bg-yellow-500 py-2.5 px-6 font-bold text-white hover:bg-yellow-600 transition-colors text-base"
               >
                 Pause
               </button>
             ) : (
               <button
                 onClick={continueTimer}
-                className="rounded bg-green-500 py-3 px-8 font-bold text-white hover:bg-green-600 transition-colors text-lg"
+                className="rounded bg-green-500 py-2.5 px-6 font-bold text-white hover:bg-green-600 transition-colors text-base"
               >
                 Start
               </button>
             )
           )}
         </div>
-        
+
         {/* Session Counter */}
         {mode !== 'idle' && (
           <div className="mt-4 text-sm text-gray-600">
@@ -299,9 +295,9 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
       </div>
 
       {/* Task Management */}
-      <div className="border-t pt-6">
-        <h3 className="text-lg font-semibold mb-4">Tasks</h3>
-        
+      <div className="border-t pt-5">
+        <h3 className="text-base font-semibold mb-3">Tasks</h3>
+
         {/* Add Task */}
         <div className="flex gap-2 mb-4">
           <input
@@ -310,27 +306,26 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
             onChange={(e) => setNewTaskText(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && addTask()}
             placeholder="Add a task..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             onClick={addTask}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
             Add
           </button>
         </div>
-        
+
         {/* Task List */}
         <div className="space-y-2 max-h-48 overflow-y-auto">
           {tasks.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No tasks yet. Add one above!</p>
+            <p className="text-gray-500 text-sm text-center py-3">No tasks yet. Add one above!</p>
           ) : (
             tasks.map(task => (
-              <div 
+              <div
                 key={task.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border ${
-                  currentTaskId === task.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                }`}
+                className={`flex items-center gap-3 p-3 rounded-lg border ${currentTaskId === task.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                  }`}
               >
                 <input
                   type="checkbox"
@@ -338,10 +333,9 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
                   onChange={() => toggleTaskComplete(task.id)}
                   className="w-4 h-4"
                 />
-                <span 
-                  className={`flex-1 cursor-pointer ${
-                    task.completed ? 'line-through text-gray-500' : ''
-                  }`}
+                <span
+                  className={`flex-1 cursor-pointer text-sm ${task.completed ? 'line-through text-gray-500' : ''
+                    }`}
                   onClick={() => selectTask(task.id)}
                 >
                   {task.text}
