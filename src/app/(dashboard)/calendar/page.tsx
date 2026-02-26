@@ -43,6 +43,7 @@ export default function CalendarPage() {
     session_duration: 30,
     enable_daily_limits: true,
   });
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   useEffect(() => {
     fetchUserPreferences();
@@ -181,6 +182,29 @@ export default function CalendarPage() {
     setIsTaskModalOpen(true);
   };
 
+  const handleRegenerateSchedule = async () => {
+    try {
+      setIsRegenerating(true);
+      const res = await fetch('/api/calendar/regenerate', {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Failed to regenerate');
+
+      const data = await res.json();
+      if (data.overloadWarning) {
+        alert("Schedule regenerated, but " + data.overloadWarning);
+      }
+
+      // Refresh the page to show the new schedule
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert('Error regenerating schedule');
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   return (
     <>
       <div className="flex h-full flex-col overflow-hidden bg-white">
@@ -232,6 +256,17 @@ export default function CalendarPage() {
                     Calendar
                   </button>
                 </div>
+                <button
+                  onClick={handleRegenerateSchedule}
+                  disabled={isRegenerating}
+                  title="Regenerate planner based on current preferences"
+                  className="bg-white border border-[#4a4a4a] border-opacity-20 text-[#4a4a4a] px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className={`w-5 h-5 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {isRegenerating ? 'Regenerating...' : 'Regenerate'}
+                </button>
                 <button
                   onClick={() => setIsAddItemModalOpen(true)}
                   className="bg-[rgb(54,65,86)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2 shadow-sm font-medium"
