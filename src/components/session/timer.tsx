@@ -192,7 +192,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
     <div className="space-y-4">
       {/* Timer Display */}
       <div className="text-center">
-        <div className={`my-6 text-5xl font-bold ${mode === 'break' ? 'text-green-500' :
+        <div className={`my-4 text-4xl font-bold ${mode === 'break' ? 'text-green-500' :
           mode === 'session' ? 'text-blue-500' :
             'text-gray-500'
           }`}>
@@ -210,7 +210,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
           </div>
         )}
 
-        <div className="mb-3 text-lg font-semibold capitalize">
+        <div className="mb-3 text-base font-semibold capitalize">
           {mode === 'idle' ? 'Ready to start?' :
             mode === 'session' ? `Study Session ${sessionCount + 1}/${Math.ceil(duration / 25)}` :
               'Break Time'}
@@ -220,7 +220,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
         <div className="flex gap-2 justify-center mb-4">
           <button
             onClick={() => mode === 'idle' ? null : switchToSession()}
-            className={`px-6 py-2.5 rounded font-bold transition-colors text-base ${mode === 'idle'
+            className={`px-4 py-2 rounded-md font-semibold transition-colors text-sm ${mode === 'idle'
               ? 'bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-not-allowed opacity-50'
               : mode === 'session'
                 ? 'bg-blue-500 text-white'
@@ -232,7 +232,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
           </button>
           <button
             onClick={() => mode === 'idle' ? null : switchToBreak()}
-            className={`px-6 py-2.5 rounded font-bold transition-colors text-base ${mode === 'idle'
+            className={`px-4 py-2 rounded-md font-semibold transition-colors text-sm ${mode === 'idle'
               ? 'bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-not-allowed opacity-50'
               : mode === 'break'
                 ? 'bg-green-500 text-white'
@@ -245,11 +245,11 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
         </div>
 
         {/* Single Start/Pause Button with Reset - Fixed Position */}
-        <div className="flex gap-3 justify-center items-center">
+        <div className="flex gap-2 justify-center items-center">
           {/* Refresh button - always first position */}
           <button
             onClick={resetTimer}
-            className="rounded bg-gray-500 py-2.5 px-3 font-bold text-white hover:bg-gray-600 transition-colors"
+            className="rounded-md bg-gray-500 py-2 px-2.5 font-semibold text-white hover:bg-gray-600 transition-colors"
             title="Reset Timer"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -261,7 +261,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
           {mode === 'idle' && (
             <button
               onClick={() => startTimer('session')}
-              className="rounded bg-blue-500 py-2.5 px-6 font-bold text-white hover:bg-blue-700 transition-colors text-base"
+              className="rounded-md bg-blue-500 py-2 px-5 font-semibold text-white hover:bg-blue-700 transition-colors text-sm"
             >
               Start
             </button>
@@ -271,14 +271,14 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
             !isPaused ? (
               <button
                 onClick={pauseTimer}
-                className="rounded bg-yellow-500 py-2.5 px-6 font-bold text-white hover:bg-yellow-600 transition-colors text-base"
+                className="rounded-md bg-yellow-500 py-2 px-5 font-semibold text-white hover:bg-yellow-600 transition-colors text-sm"
               >
                 Pause
               </button>
             ) : (
               <button
                 onClick={continueTimer}
-                className="rounded bg-green-500 py-2.5 px-6 font-bold text-white hover:bg-green-600 transition-colors text-base"
+                className="rounded-md bg-green-500 py-2 px-5 font-semibold text-white hover:bg-green-600 transition-colors text-sm"
               >
                 Start
               </button>
