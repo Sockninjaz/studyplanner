@@ -146,11 +146,11 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   return (
     <>
       <aside
-        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-white duration-300 ease-linear lg:static lg:translate-x-0 ${isCollapsed ? 'w-16' : 'w-60'
+        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-white duration-300 ease-linear lg:static lg:translate-x-0 ${isCollapsed ? 'w-16' : 'w-56'
           } flex-col`}
         style={{ backgroundColor: 'rgb(54, 65, 86)' }}
       >
-        <div className={`flex items-center justify-between gap-2 ${isCollapsed ? 'px-2 py-4' : 'px-6 py-5 lg:py-6'
+        <div className={`flex items-center justify-between gap-2 ${isCollapsed ? 'px-2 py-4' : 'px-4 py-4 lg:py-5'
           }`}>
           {!isCollapsed && (
             <Link href="/">
@@ -174,29 +174,29 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
         </div>
 
         <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
-          <nav className={`mt-5 py-4 ${isCollapsed ? 'px-1' : 'px-4'} lg:mt-9 lg:px-6`}>
+          <nav className={`mt-3 py-3 ${isCollapsed ? 'px-1' : 'px-3'} lg:mt-6 lg:px-4`}>
             {!isCollapsed && (
               <div>
                 <ul className="mb-6 flex flex-col gap-0.5">
                   <li>
-                    <Link href="/calendar" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-3 font-medium text-sm text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
-                      <svg className="w-[16px] h-[16px] opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <Link href="/calendar" className="group relative flex items-center gap-2 rounded-md py-1 px-2.5 font-medium text-[13px] text-gray-200 duration-300 ease-in-out hover:bg-white hover:bg-opacity-10 hover:text-white">
+                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
                       Schedule
                     </Link>
                   </li>
                   <li>
-                    <Link href="/today" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-3 font-medium text-sm text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
-                      <svg className="w-[16px] h-[16px] opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <Link href="/today" className="group relative flex items-center gap-2 rounded-md py-1 px-2.5 font-medium text-[13px] text-gray-200 duration-300 ease-in-out hover:bg-white hover:bg-opacity-10 hover:text-white">
+                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                       </svg>
                       Today
                     </Link>
                   </li>
                   <li>
-                    <Link href="/exams" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-3 font-medium text-sm text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
-                      <svg className="w-[16px] h-[16px] opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <Link href="/exams" className="group relative flex items-center gap-2 rounded-md py-1 px-2.5 font-medium text-[13px] text-gray-200 duration-300 ease-in-out hover:bg-white hover:bg-opacity-10 hover:text-white">
+                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
                       </svg>
                       Exams
@@ -227,8 +227,8 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
             )}
 
             {!isCollapsed && (
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-2 px-3 group/header cursor-pointer">
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-1 px-2 group/header cursor-pointer">
                   <h3 className="text-xs font-semibold text-gray-400">My Exams</h3>
                   <button
                     onClick={openCreateModal}
@@ -277,16 +277,16 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
 
                       return (
                         <li key={exam._id}>
-                          <div className="w-full group relative flex items-center rounded-md font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                          <div className="w-full group relative flex items-center rounded-md font-medium text-gray-200 duration-300 ease-in-out hover:bg-white hover:bg-opacity-10 hover:text-white">
                             <button
                               onClick={() => openExamModal(exam)}
-                              className="flex-1 flex items-center gap-2.5 py-1.5 px-3 text-left min-w-0 overflow-hidden"
+                              className="flex-1 flex items-center gap-2 py-1 px-2.5 text-left min-w-0 overflow-hidden"
                             >
                               <div
-                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                className="w-2 h-2 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: examColor }}
                               />
-                              <span className="text-sm truncate min-w-0" title={exam.subject}>
+                              <span className="text-[13px] truncate min-w-0" title={exam.subject}>
                                 {exam.subject}
                               </span>
                             </button>
