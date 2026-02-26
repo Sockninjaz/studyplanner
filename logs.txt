@@ -1,0 +1,1855 @@
+=== SCHEDULER FILE LOADED ===
+=== SCHEDULER CONSTRUCTOR CALLED ===
+Number of exams: 6
+Number of existing sessions: 0
+Existing sessions: []
+Completed hours: {}
+=== SCHEDULER generatePlan CALLED ===
+📐 Optimal start: totalHours=30, softLimit=4, daysNeeded=8, start=2026-02-26
+Overriding start date: input was Wed Feb 25 2026 01:00:00 GMT+0100 (Central European Standard Time), optimal is Thu Feb 26 2026 01:00:00 GMT+0100 (Central European Standard Time)
+Exam scheduling order: [
+  { subject: 'math123', sessions: 5 },
+  { subject: '2122lllVXZY', sessions: 5 },
+  { subject: 'math', sessions: 5 },
+  { subject: 'bio12', sessions: 5 },
+  { subject: 'math2', sessions: 5 },
+  { subject: 'f', sessions: 5 }
+]
+
+📅 Generating valid slots for math123 (exam date: 2026-03-01)
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math123: 2026-02-27
+  Input start: 2026-02-26, Initial start date: 2026-02-27
+  Days until exam: 4, Sessions needed: 5
+  Final start date: 2026-02-27
+  Generated 2 valid slots: [ '2026-02-27', '2026-02-28' ]
+📅 Valid slots for math123: 2026-02-27, 2026-02-28
+
+*** assignSessionsEvenly called for math123 ***
+=== ASSIGNING SESSIONS FOR math123 ===
+Calculated hours: 5, Completed: 0, Remaining: 5, Sessions: 5
+Session duration: 60 minutes = 1 hours
+Valid slots: 2 days: [ '2026-02-27', '2026-02-28' ]
+Day before exam available: true, Total slots: 2
+Final review placed: true, Remaining sessions to place: 2, Available days: 1
+  Available days: [ '2026-02-27' ]
+  Need to place 2 sessions with max 2-day interval
+  🏝️ math123 is ISOLATED (first exam, only later exams) - using single-exam distribution
+  Existing session dates for math123: []
+  Need to place 2 sessions (remaining: 2, already placed: 0)
+  Total sessions should be: 5 (including final review: true)
+  Available days count: 1, Sessions to place: 2
+  Distributing 2 sessions with diversification (max 2-day interval)
+  Available unassigned days: [ '2026-02-27' ]
+  Days used by other exams: []
+  Using simple consecutive distribution for isolated exam
+  Selected 2026-02-27 (first session)
+  Only selected 1/2 sessions, filling gaps...
+  Placing 1 selected days, need 2 sessions
+  ⚠️  Not enough days (1) for sessions (2)
+  Will place multiple sessions per day - IGNORING daily limit to ensure all sessions are created
+  Selected days: [ '2026-02-27' ]
+  Current sessionMap before placement: { '2026-02-28': 3 }
+  Current sessionCount: 0
+  [Loop 0] Processing day 2026-02-27, remainingToPlace: 2
+    daysLeft: 1, sessionsForThisDay: 2
+    currentSessions: 0, sessionsToAdd: 2
+  ✓ Placed 2 session(s) on 2026-02-27 (total: 2, remaining: 0)
+  After multi-session placement, sessionMap: { '2026-02-28': 3, '2026-02-27': 2 }
+  After multi-session placement, sessionCount: 2
+  After gap enforcement: sessions on [ '2026-02-27', '2026-02-28' ]
+  Final: 5 sessions total (target was 5, gap-enforcement may have added extras)
+Final session assignment for math123: { '2026-02-28': 3, '2026-02-27': 2 }
+
+📅 Generating valid slots for 2122lllVXZY (exam date: 2026-03-11)
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+📅 Valid slots for 2122lllVXZY: 2026-03-06, 2026-03-07, 2026-03-08, 2026-03-09, 2026-03-10
+
+*** assignSessionsEvenly called for 2122lllVXZY ***
+=== ASSIGNING SESSIONS FOR 2122lllVXZY ===
+Calculated hours: 5, Completed: 0, Remaining: 5, Sessions: 5
+Session duration: 60 minutes = 1 hours
+Valid slots: 5 days: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+Day before exam available: true, Total slots: 5
+Final review placed: true, Remaining sessions to place: 4, Available days: 4
+  Available days: [ '2026-03-06', '2026-03-07', '2026-03-08', '2026-03-09' ]
+  Need to place 4 sessions with max 2-day interval
+  2122lllVXZY has 4 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 4 sessions (remaining: 4, already placed: 0)
+  Total sessions should be: 5 (including final review: true)
+  Available days count: 4, Sessions to place: 4
+  Distributing 4 sessions with diversification (max 2-day interval)
+  Available unassigned days: [ '2026-03-06', '2026-03-07', '2026-03-08', '2026-03-09' ]
+  Days used by other exams: [ '2026-02-28', '2026-02-27' ]
+  Selected 2026-03-09 (first session, used by other: false)
+  Selected 2026-03-08 (1 days from last, consec: 2, used by other: false)
+  Selected 2026-03-07 (1 days from last, consec: 3, used by other: false)
+  Selected 2026-03-06 (1 days from last, consec: 4, used by other: false)
+  Placing 4 selected days, need 4 sessions
+  ✓ Placed session 1/4 on 2026-03-06
+  ✓ Placed session 2/4 on 2026-03-07
+  ✓ Placed session 3/4 on 2026-03-08
+  ✓ Placed session 4/4 on 2026-03-09
+  After gap enforcement: sessions on [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Final: 5 sessions total (target was 5, gap-enforcement may have added extras)
+Final session assignment for 2122lllVXZY: {
+  '2026-03-10': 1,
+  '2026-03-06': 1,
+  '2026-03-07': 1,
+  '2026-03-08': 1,
+  '2026-03-09': 1
+}
+
+📅 Generating valid slots for math (exam date: 2026-03-11)
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+📅 Valid slots for math: 2026-03-06, 2026-03-07, 2026-03-08, 2026-03-09, 2026-03-10
+
+*** assignSessionsEvenly called for math ***
+=== ASSIGNING SESSIONS FOR math ===
+Calculated hours: 5, Completed: 0, Remaining: 5, Sessions: 5
+Session duration: 60 minutes = 1 hours
+Valid slots: 5 days: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+Day before exam available: true, Total slots: 5
+Final review placed: true, Remaining sessions to place: 4, Available days: 4
+  Available days: [ '2026-03-06', '2026-03-07', '2026-03-08', '2026-03-09' ]
+  Need to place 4 sessions with max 2-day interval
+  math has 4 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 4 sessions (remaining: 4, already placed: 0)
+  Total sessions should be: 5 (including final review: true)
+  Available days count: 4, Sessions to place: 4
+  Distributing 4 sessions with diversification (max 2-day interval)
+  Available unassigned days: [ '2026-03-06', '2026-03-07', '2026-03-08', '2026-03-09' ]
+  Days used by other exams: [
+  '2026-02-28',
+  '2026-02-27',
+  '2026-03-10',
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09'
+]
+  Selected 2026-03-09 (first session, used by other: true)
+  Selected 2026-03-08 (1 days from last, consec: 2, used by other: true)
+  Selected 2026-03-07 (1 days from last, consec: 3, used by other: true)
+  Selected 2026-03-06 (1 days from last, consec: 4, used by other: true)
+  Placing 4 selected days, need 4 sessions
+  ✓ Placed session 1/4 on 2026-03-06
+  ✓ Placed session 2/4 on 2026-03-07
+  ✓ Placed session 3/4 on 2026-03-08
+  ✓ Placed session 4/4 on 2026-03-09
+  After gap enforcement: sessions on [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Final: 5 sessions total (target was 5, gap-enforcement may have added extras)
+Final session assignment for math: {
+  '2026-03-10': 1,
+  '2026-03-06': 1,
+  '2026-03-07': 1,
+  '2026-03-08': 1,
+  '2026-03-09': 1
+}
+
+📅 Generating valid slots for bio12 (exam date: 2026-03-12)
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+📅 Valid slots for bio12: 2026-03-07, 2026-03-08, 2026-03-09, 2026-03-10, 2026-03-11
+
+*** assignSessionsEvenly called for bio12 ***
+=== ASSIGNING SESSIONS FOR bio12 ===
+Calculated hours: 5, Completed: 0, Remaining: 5, Sessions: 5
+Session duration: 60 minutes = 1 hours
+Valid slots: 5 days: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+Day before exam available: true, Total slots: 5
+Final review placed: true, Remaining sessions to place: 4, Available days: 4
+  Available days: [ '2026-03-07', '2026-03-08', '2026-03-09', '2026-03-10' ]
+  Need to place 4 sessions with max 2-day interval
+  bio12 has 4 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 4 sessions (remaining: 4, already placed: 0)
+  Total sessions should be: 5 (including final review: true)
+  Available days count: 4, Sessions to place: 4
+  Distributing 4 sessions with diversification (max 2-day interval)
+  Available unassigned days: [ '2026-03-07', '2026-03-08', '2026-03-09', '2026-03-10' ]
+  Days used by other exams: [
+  '2026-02-28',
+  '2026-02-27',
+  '2026-03-10',
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09'
+]
+  Selected 2026-03-10 (first session, used by other: true)
+  Selected 2026-03-09 (1 days from last, consec: 2, used by other: true)
+  Selected 2026-03-08 (1 days from last, consec: 3, used by other: true)
+  Selected 2026-03-07 (1 days from last, consec: 4, used by other: true)
+  Placing 4 selected days, need 4 sessions
+  ✓ Placed session 1/4 on 2026-03-07
+  ✓ Placed session 2/4 on 2026-03-08
+  ✓ Placed session 3/4 on 2026-03-09
+  ✓ Placed session 4/4 on 2026-03-10
+  After gap enforcement: sessions on [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Final: 5 sessions total (target was 5, gap-enforcement may have added extras)
+Final session assignment for bio12: {
+  '2026-03-11': 1,
+  '2026-03-07': 1,
+  '2026-03-08': 1,
+  '2026-03-09': 1,
+  '2026-03-10': 1
+}
+
+📅 Generating valid slots for math2 (exam date: 2026-03-12)
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+📅 Valid slots for math2: 2026-03-07, 2026-03-08, 2026-03-09, 2026-03-10, 2026-03-11
+
+*** assignSessionsEvenly called for math2 ***
+=== ASSIGNING SESSIONS FOR math2 ===
+Calculated hours: 5, Completed: 0, Remaining: 5, Sessions: 5
+Session duration: 60 minutes = 1 hours
+Valid slots: 5 days: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+Day before exam available: true, Total slots: 5
+Final review placed: true, Remaining sessions to place: 4, Available days: 4
+  Available days: [ '2026-03-07', '2026-03-08', '2026-03-09', '2026-03-10' ]
+  Need to place 4 sessions with max 2-day interval
+  math2 has 4 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 4 sessions (remaining: 4, already placed: 0)
+  Total sessions should be: 5 (including final review: true)
+  Available days count: 4, Sessions to place: 4
+  Distributing 4 sessions with diversification (max 2-day interval)
+  Available unassigned days: [ '2026-03-07', '2026-03-08', '2026-03-09', '2026-03-10' ]
+  Days used by other exams: [
+  '2026-02-28',
+  '2026-02-27',
+  '2026-03-10',
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-11'
+]
+  Selected 2026-03-10 (first session, used by other: true)
+  Selected 2026-03-09 (1 days from last, consec: 2, used by other: true)
+  Selected 2026-03-08 (1 days from last, consec: 3, used by other: true)
+  Selected 2026-03-07 (1 days from last, consec: 4, used by other: true)
+  Placing 4 selected days, need 4 sessions
+  ✓ Placed session 1/4 on 2026-03-07
+  ✓ Placed session 2/4 on 2026-03-08
+  ✓ Placed session 3/4 on 2026-03-09
+  ✓ Placed session 4/4 on 2026-03-10
+  After gap enforcement: sessions on [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Final: 5 sessions total (target was 5, gap-enforcement may have added extras)
+Final session assignment for math2: {
+  '2026-03-11': 1,
+  '2026-03-07': 1,
+  '2026-03-08': 1,
+  '2026-03-09': 1,
+  '2026-03-10': 1
+}
+
+📅 Generating valid slots for f (exam date: 2026-03-13)
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+📅 Valid slots for f: 2026-03-11, 2026-03-12
+
+*** assignSessionsEvenly called for f ***
+=== ASSIGNING SESSIONS FOR f ===
+Calculated hours: 5, Completed: 0, Remaining: 5, Sessions: 5
+Session duration: 60 minutes = 1 hours
+Valid slots: 2 days: [ '2026-03-11', '2026-03-12' ]
+Day before exam available: true, Total slots: 2
+Final review placed: true, Remaining sessions to place: 2, Available days: 1
+  Available days: [ '2026-03-11' ]
+  Need to place 2 sessions with max 2-day interval
+  f has 4 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 2 sessions (remaining: 2, already placed: 0)
+  Total sessions should be: 5 (including final review: true)
+  Available days count: 1, Sessions to place: 2
+  Distributing 2 sessions with diversification (max 2-day interval)
+  Available unassigned days: [ '2026-03-11' ]
+  Days used by other exams: [
+  '2026-02-28',
+  '2026-02-27',
+  '2026-03-10',
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-11'
+]
+  Selected 2026-03-11 (first session, used by other: true)
+  Only selected 1/2 sessions, filling gaps...
+  Placing 1 selected days, need 2 sessions
+  ⚠️  Not enough days (1) for sessions (2)
+  Will place multiple sessions per day - IGNORING daily limit to ensure all sessions are created
+  Selected days: [ '2026-03-11' ]
+  Current sessionMap before placement: { '2026-03-12': 3 }
+  Current sessionCount: 0
+  [Loop 0] Processing day 2026-03-11, remainingToPlace: 2
+    daysLeft: 1, sessionsForThisDay: 2
+    currentSessions: 0, sessionsToAdd: 2
+  ✓ Placed 2 session(s) on 2026-03-11 (total: 2, remaining: 0)
+  After multi-session placement, sessionMap: { '2026-03-12': 3, '2026-03-11': 2 }
+  After multi-session placement, sessionCount: 2
+  After gap enforcement: sessions on [ '2026-03-11', '2026-03-12' ]
+  Final: 5 sessions total (target was 5, gap-enforcement may have added extras)
+Final session assignment for f: { '2026-03-12': 3, '2026-03-11': 2 }
+Exam math123: rawHours=5, completed=0, totalHours=5, totalSessions=5
+Exam schedule has 2 entries: [ '2026-02-28', '2026-02-27' ]
+Exam 2122lllVXZY: rawHours=5, completed=0, totalHours=5, totalSessions=5
+Exam schedule has 5 entries: [
+  '2026-03-10',
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09'
+]
+Exam math: rawHours=5, completed=0, totalHours=5, totalSessions=5
+Exam schedule has 5 entries: [
+  '2026-03-10',
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09'
+]
+Exam bio12: rawHours=5, completed=0, totalHours=5, totalSessions=5
+Exam schedule has 5 entries: [
+  '2026-03-11',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+Exam math2: rawHours=5, completed=0, totalHours=5, totalSessions=5
+Exam schedule has 5 entries: [
+  '2026-03-11',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+Exam f: rawHours=5, completed=0, totalHours=5, totalSessions=5
+Exam schedule has 2 entries: [ '2026-03-12', '2026-03-11' ]
+=== PROCESSING ASSIGNMENTS ===
+Total assignments to process: 24
+  0: math123 on 2026-02-27 (2 sessions)
+  1: math123 on 2026-02-28 (3 sessions)
+  2: 2122lllVXZY on 2026-03-06 (1 sessions)
+  3: math on 2026-03-06 (1 sessions)
+  4: 2122lllVXZY on 2026-03-07 (1 sessions)
+  5: math on 2026-03-07 (1 sessions)
+  6: bio12 on 2026-03-07 (1 sessions)
+  7: math2 on 2026-03-07 (1 sessions)
+  8: 2122lllVXZY on 2026-03-08 (1 sessions)
+  9: math on 2026-03-08 (1 sessions)
+  10: bio12 on 2026-03-08 (1 sessions)
+  11: math2 on 2026-03-08 (1 sessions)
+  12: 2122lllVXZY on 2026-03-09 (1 sessions)
+  13: math on 2026-03-09 (1 sessions)
+  14: bio12 on 2026-03-09 (1 sessions)
+  15: math2 on 2026-03-09 (1 sessions)
+  16: 2122lllVXZY on 2026-03-10 (1 sessions)
+  17: math on 2026-03-10 (1 sessions)
+  18: bio12 on 2026-03-10 (1 sessions)
+  19: math2 on 2026-03-10 (1 sessions)
+  20: bio12 on 2026-03-11 (1 sessions)
+  21: math2 on 2026-03-11 (1 sessions)
+  22: f on 2026-03-11 (2 sessions)
+  23: f on 2026-03-12 (3 sessions)
+
+=== Processing Assignment ===
+Exam: math123
+Date: 2026-02-27
+Sessions to place: 2
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math123
+Date: 2026-02-28
+Sessions to place: 3
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: 2122lllVXZY
+Date: 2026-03-06
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math
+Date: 2026-03-06
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: 2122lllVXZY
+Date: 2026-03-07
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math
+Date: 2026-03-07
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: bio12
+Date: 2026-03-07
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math2
+Date: 2026-03-07
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: 2122lllVXZY
+Date: 2026-03-08
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math
+Date: 2026-03-08
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: bio12
+Date: 2026-03-08
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math2
+Date: 2026-03-08
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: 2122lllVXZY
+Date: 2026-03-09
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math
+Date: 2026-03-09
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: bio12
+Date: 2026-03-09
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math2
+Date: 2026-03-09
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: 2122lllVXZY
+Date: 2026-03-10
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math
+Date: 2026-03-10
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: bio12
+Date: 2026-03-10
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math2
+Date: 2026-03-10
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: bio12
+Date: 2026-03-11
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: math2
+Date: 2026-03-11
+Sessions to place: 1
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: f
+Date: 2026-03-11
+Sessions to place: 2
+Total sessions needed for exam: 5
+
+=== Processing Assignment ===
+Exam: f
+Date: 2026-03-12
+Sessions to place: 3
+Total sessions needed for exam: 5
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math123: 2026-02-27
+  Input start: 2026-02-26, Initial start date: 2026-02-27
+  Days until exam: 4, Sessions needed: 5
+  Final start date: 2026-02-27
+  Generated 2 valid slots: [ '2026-02-27', '2026-02-28' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math123: 2026-02-27
+  Input start: 2026-02-26, Initial start date: 2026-02-27
+  Days until exam: 4, Sessions needed: 5
+  Final start date: 2026-02-27
+  Generated 2 valid slots: [ '2026-02-27', '2026-02-28' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math123: 2026-02-27
+  Input start: 2026-02-26, Initial start date: 2026-02-27
+  Days until exam: 4, Sessions needed: 5
+  Final start date: 2026-02-27
+  Generated 2 valid slots: [ '2026-02-27', '2026-02-28' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math123: 2026-02-27
+  Input start: 2026-02-26, Initial start date: 2026-02-27
+  Days until exam: 4, Sessions needed: 5
+  Final start date: 2026-02-27
+  Generated 2 valid slots: [ '2026-02-27', '2026-02-28' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math123: 2026-02-27
+  Input start: 2026-02-26, Initial start date: 2026-02-27
+  Days until exam: 4, Sessions needed: 5
+  Final start date: 2026-02-27
+  Generated 2 valid slots: [ '2026-02-27', '2026-02-28' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math123: 2026-02-27
+  Input start: 2026-02-26, Initial start date: 2026-02-27
+  Days until exam: 4, Sessions needed: 5
+  Final start date: 2026-02-27
+  Generated 2 valid slots: [ '2026-02-27', '2026-02-28' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math123: 2026-02-27
+  Input start: 2026-02-26, Initial start date: 2026-02-27
+  Days until exam: 4, Sessions needed: 5
+  Final start date: 2026-02-27
+  Generated 2 valid slots: [ '2026-02-27', '2026-02-28' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+=== BALANCING WORKLOAD ===
+Max sessions per day: 4
+Day 2026-02-27: 2 sessions { math123: 2 }
+  -> UNDERLOADED with 2 capacity
+Day 2026-02-28: 3 sessions { math123: 3 }
+  -> UNDERLOADED with 1 capacity
+Day 2026-03-06: 2 sessions { '699c9f': 1, '699d92': 1 }
+  -> UNDERLOADED with 2 capacity
+Day 2026-03-07: 4 sessions { '699c9f': 1, '699d92': 1, '699cd2': 1, '699e27': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-08: 4 sessions { '699c9f': 1, '699d92': 1, '699cd2': 1, '699e27': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-09: 4 sessions { '699c9f': 1, '699d92': 1, '699cd2': 1, '699e27': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-10: 4 sessions { '699c9f': 1, '699d92': 1, '699cd2': 1, '699e27': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-11: 4 sessions { '699cd2': 1, '699e27': 1, '699ee6': 2 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-12: 3 sessions { '699ee6': 3 }
+  -> UNDERLOADED with 1 capacity
+Found 0 overloaded days, 5 busy days, 4 underloaded days
+=== BALANCING BUSY DAYS ===
+=== EVENING OUT WORKLOAD ===
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for 2122lllVXZY: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for 2122lllVXZY:
+    Earlier exam: math123 on 2026-03-01
+    This exam: 2122lllVXZY on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math: 2026-03-06
+  Input start: 2026-02-26, Initial start date: 2026-03-06
+  Days until exam: 14, Sessions needed: 5
+  🔍 Gap check for math:
+    Earlier exam: math123 on 2026-03-01
+    This exam: math on 2026-03-11
+    Gap: 10 days, Sessions needed: 5
+    Threshold: 7 days
+    newStartDate: 2026-03-02, current startDateUTC: 2026-03-06
+    ✗ newStartDate not greater than startDateUTC, not applying isolation
+  Final start date: 2026-03-06
+  Generated 5 valid slots: [
+  '2026-03-06',
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for bio12: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for bio12:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: bio12 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for math2: 2026-03-07
+  Input start: 2026-02-26, Initial start date: 2026-03-07
+  Days until exam: 15, Sessions needed: 5
+  🔍 Gap check for math2:
+    Earlier exam: 2122lllVXZY on 2026-03-11
+    This exam: math2 on 2026-03-12
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+  Current date: 2026-02-25, nowUTC: 2026-02-25T00:00:00.000Z
+  📐 Simulated Exact Per-Exam Start for f: 2026-03-11
+  Input start: 2026-02-26, Initial start date: 2026-03-11
+  Days until exam: 16, Sessions needed: 5
+  🔍 Gap check for f:
+    Earlier exam: bio12 on 2026-03-12
+    This exam: f on 2026-03-13
+    Gap: 1 days, Sessions needed: 5
+    Threshold: 7 days
+    ✗ Gap (1) < threshold (7), not applying isolation
+  Final start date: 2026-03-11
+  Generated 2 valid slots: [ '2026-03-11', '2026-03-12' ]
+=== FINAL BALANCED SCHEDULE ===
+Day 2026-02-27: 2 sessions { math123: 2 }
+Day 2026-02-28: 3 sessions { math123: 3 }
+Day 2026-03-06: 2 sessions { '699c9f': 1, '699d92': 1 }
+Day 2026-03-07: 4 sessions { '699c9f': 1, '699d92': 1, '699cd2': 1, '699e27': 1 }
+Day 2026-03-08: 4 sessions { '699c9f': 1, '699d92': 1, '699cd2': 1, '699e27': 1 }
+Day 2026-03-09: 4 sessions { '699c9f': 1, '699d92': 1, '699cd2': 1, '699e27': 1 }
+Day 2026-03-10: 4 sessions { '699c9f': 1, '699d92': 1, '699cd2': 1, '699e27': 1 }
+Day 2026-03-11: 4 sessions { '699cd2': 1, '699e27': 1, '699ee6': 2 }
+Day 2026-03-12: 3 sessions { '699ee6': 3 }
+=== FIXING MAX INTERVAL VIOLATIONS ===
+Checking math123: 2026-02-27, 2026-02-28
+Checking 2122lllVXZY: 2026-03-06, 2026-03-07, 2026-03-08, 2026-03-09, 2026-03-10
+Checking math: 2026-03-06, 2026-03-07, 2026-03-08, 2026-03-09, 2026-03-10
+Checking bio12: 2026-03-07, 2026-03-08, 2026-03-09, 2026-03-10, 2026-03-11
+Checking math2: 2026-03-07, 2026-03-08, 2026-03-09, 2026-03-10, 2026-03-11
+Checking f: 2026-03-11, 2026-03-12
+TOTAL HOURS: 30

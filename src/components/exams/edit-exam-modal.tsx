@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { mutate } from 'swr';
+import { isValidCalendarDate } from '@/lib/dateUtils';
 
 interface StudyMaterial {
   chapter: string;
@@ -82,6 +83,12 @@ export default function EditExamModal({ exam, isOpen, onClose }: EditExamModalPr
       alert('Please fill out all fields.');
       return;
     }
+
+    if (!isValidCalendarDate(date)) {
+      alert('The selected date is invalid for this year (e.g. Feb 29th on a non-leap year). Please select a valid date.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -172,7 +179,7 @@ export default function EditExamModal({ exam, isOpen, onClose }: EditExamModalPr
               <input
                 type="text"
                 value={studyMaterial.chapter}
-                onChange={(e) => setStudyMaterial({...studyMaterial, chapter: e.target.value})}
+                onChange={(e) => setStudyMaterial({ ...studyMaterial, chapter: e.target.value })}
                 className="block w-full px-4 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
                 placeholder="What do you need to study?"
                 required
@@ -184,7 +191,7 @@ export default function EditExamModal({ exam, isOpen, onClose }: EditExamModalPr
                 <input
                   type="number"
                   value={studyMaterial.user_estimated_total_hours}
-                  onChange={(e) => setStudyMaterial({...studyMaterial, user_estimated_total_hours: parseInt(e.target.value) || 1})}
+                  onChange={(e) => setStudyMaterial({ ...studyMaterial, user_estimated_total_hours: parseInt(e.target.value) || 1 })}
                   className="block w-full px-3 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
                   min="1"
                   required
@@ -194,20 +201,20 @@ export default function EditExamModal({ exam, isOpen, onClose }: EditExamModalPr
                 <label className="block text-sm font-semibold text-neutral-dark mb-3">Difficulty</label>
                 <select
                   value={studyMaterial.difficulty}
-                  onChange={(e) => setStudyMaterial({...studyMaterial, difficulty: parseInt(e.target.value)})}
+                  onChange={(e) => setStudyMaterial({ ...studyMaterial, difficulty: parseInt(e.target.value) })}
                   className="block w-full px-3 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
                 >
-                  {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                  {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-neutral-dark mb-3">Confidence</label>
                 <select
                   value={studyMaterial.confidence}
-                  onChange={(e) => setStudyMaterial({...studyMaterial, confidence: parseInt(e.target.value)})}
+                  onChange={(e) => setStudyMaterial({ ...studyMaterial, confidence: parseInt(e.target.value) })}
                   className="block w-full px-3 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
                 >
-                  {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                  {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
             </div>

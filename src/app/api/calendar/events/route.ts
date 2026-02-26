@@ -31,14 +31,14 @@ export async function GET(request: Request) {
 
     // Colors for exams
     const EXAM_COLORS = [
-      'rgb(253, 231, 76)', // Yellow
-      'rgb(72, 86, 150)',  // Blue  
-      'rgb(250, 175, 205)', // Pink
-      'rgb(66, 191, 221)',  // Cyan
-      'rgb(167, 139, 250)', // Lavender
-      'rgb(52, 211, 153)',  // Mint
-      'rgb(251, 146, 60)',  // Orange/Peach
-      'rgb(45, 212, 191)',  // Teal
+      '#fde74c', // Yellow
+      '#485696', // Blue  
+      '#faafcd', // Pink
+      '#42bfdd', // Cyan
+      '#a78bfa', // Lavender
+      '#34d399', // Mint
+      '#fb923c', // Orange/Peach
+      '#2dd4bf', // Teal
     ];
 
     // Helper to get color for an exam (stored or stable fallback)
@@ -62,16 +62,31 @@ export async function GET(request: Request) {
       examColorMap.set(exam._id.toString(), getExamColor(exam));
     });
 
+    // Helper to apply opacity to any color string (hex or rgb)
+    const applyOpacity = (color: string, opacity: number) => {
+      if (color.startsWith('#')) {
+        // Convert hex to rgba
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      } else if (color.startsWith('rgb')) {
+        // Handle rgb(r, g, b) or rgba(r, g, b, a)
+        return color.replace('rgb(', 'rgba(').replace(')', `, ${opacity})`);
+      }
+      return color;
+    };
+
     // Format exams as calendar events
     const examEvents = exams.map(exam => {
       const color = examColorMap.get(exam._id.toString());
       return {
         id: `exam-${exam._id}`,
-        title: `📚 Exam: ${exam.subject}`,
+        title: `Exam: ${exam.subject}`,
         start: exam.date,
         end: new Date(new Date(exam.date).getTime() + 2 * 60 * 60 * 1000), // 2 hours duration
         allDay: false,
-        backgroundColor: `${color}40`, // 25% opacity for background
+        backgroundColor: applyOpacity(color, 0.4),
         borderColor: color,
         textColor: '#ffffff', // Keep text white/readable or dark depending on background
         url: `/exams`,
@@ -91,11 +106,11 @@ export async function GET(request: Request) {
 
       return {
         id: `session-${session._id}`,
-        title: `📖 ${session.title}`,
+        title: session.title,
         start: session.startTime,
         end: session.endTime,
         allDay: false,
-        backgroundColor: taskCompleted ? '#10b981' : `${examColor}20`, // Green if completed, else light exam color
+        backgroundColor: taskCompleted ? '#10b981' : applyOpacity(examColor, 0.4), // Green if completed, else light exam color (0.4 opacity)
         borderColor: taskCompleted ? '#059669' : examColor,
         textColor: '#ffffff', // This might need adjustment based on background
         url: `/session/${session._id}`,
@@ -112,7 +127,7 @@ export async function GET(request: Request) {
     // Format tasks as calendar events
     const taskEvents = tasks.map(task => ({
       id: `task-${task._id}`,
-      title: `✓ ${task.name}`,
+      title: task.name,
       start: task.date,
       end: task.date,
       allDay: true,

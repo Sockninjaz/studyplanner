@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { mutate } from 'swr';
+import { isValidCalendarDate } from '@/lib/dateUtils';
 
 interface StudyMaterial {
   chapter: string;
@@ -28,12 +29,13 @@ interface CreateExamModalProps {
   dailyMaxHours: number;
   adjustmentPercentage: number;
   sessionDuration: number;
+  enableDailyLimits: boolean;
   initialDate?: string;
 }
 
-export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjustmentPercentage, sessionDuration, initialDate }: CreateExamModalProps) {
+export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjustmentPercentage, sessionDuration, enableDailyLimits, initialDate }: CreateExamModalProps) {
   const [subject, setSubject] = useState('');
-  
+
   // Calculate default date (1 week from now)
   const getDefaultDate = () => {
     if (initialDate) return initialDate;
@@ -41,7 +43,7 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
     date.setDate(date.getDate() + 7);
     return date.toISOString().split('T')[0];
   };
-  
+
   const [date, setDate] = useState(getDefaultDate());
   const [studyMaterial, setStudyMaterial] = useState<StudyMaterial>({
     chapter: 'Chapters 1-5',
@@ -79,17 +81,17 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
 
   const handleDeleteExam = async () => {
     if (!overloadWarning?.examId) return;
-    
+
     setIsDeletingExam(true);
     try {
       const res = await fetch(`/api/exams/${overloadWarning.examId}`, {
         method: 'DELETE',
       });
-      
+
       if (!res.ok) {
         throw new Error('Failed to delete exam');
       }
-      
+
       mutate('/api/exams');
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('calendarUpdated'));
@@ -113,6 +115,12 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
       alert('Please fill out all fields.');
       return;
     }
+
+    if (!isValidCalendarDate(date)) {
+      alert('The selected date is invalid for this year (e.g. Feb 29th on a non-leap year). Please select a valid date.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -122,7 +130,7 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
         sessionDuration,
         studyMaterial
       });
-      
+
       const res = await fetch('/api/exams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,12 +140,13 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
           daily_max_hours: dailyMaxHours,
           adjustment_percentage: adjustmentPercentage,
           session_duration: sessionDuration,
+          enable_daily_limits: enableDailyLimits,
           studyMaterials: [studyMaterial], // API expects an array
         }),
       });
 
       const responseData = await res.json();
-      
+
       if (!res.ok) {
         throw new Error(responseData.error || 'Failed to create exam');
       }
@@ -174,70 +183,70 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
         <form id="exam-form" onSubmit={handleSubmit} className="space-y-6 px-6 py-6">
           <div>
             <label htmlFor="subject" className="block text-sm font-semibold text-neutral-dark mb-3">Subject</label>
-            <input 
-              type="text" 
-              id="subject" 
-              value={subject} 
-              onChange={(e) => setSubject(e.target.value)} 
-              className="block w-full px-4 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all" 
+            <input
+              type="text"
+              id="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="block w-full px-4 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
               placeholder="Enter subject name..."
-              required 
+              required
             />
           </div>
           <div>
             <label htmlFor="date" className="block text-sm font-semibold text-neutral-dark mb-3">Exam Date</label>
-            <input 
-              type="date" 
-              id="date" 
-              value={date} 
-              onChange={(e) => setDate(e.target.value)} 
-              className="block w-full px-4 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all" 
-              required 
+            <input
+              type="date"
+              id="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="block w-full px-4 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
+              required
             />
           </div>
           <div className="p-6 border-2 border-neutral-dark border-opacity-20 rounded-xl bg-neutral-light space-y-5">
             <h3 className="font-semibold text-neutral-dark text-lg">Study Parameters</h3>
             <div>
               <label className="block text-sm font-semibold text-neutral-dark mb-3">Content</label>
-              <input 
-                type="text" 
-                value={studyMaterial.chapter} 
-                onChange={(e) => setStudyMaterial({...studyMaterial, chapter: e.target.value})} 
-                className="block w-full px-4 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all" 
+              <input
+                type="text"
+                value={studyMaterial.chapter}
+                onChange={(e) => setStudyMaterial({ ...studyMaterial, chapter: e.target.value })}
+                className="block w-full px-4 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
                 placeholder="What do you need to study?"
-                required 
+                required
               />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-neutral-dark mb-3">My Est. Hours</label>
-                <input 
-                  type="number" 
-                  value={studyMaterial.user_estimated_total_hours} 
-                  onChange={(e) => setStudyMaterial({...studyMaterial, user_estimated_total_hours: parseInt(e.target.value) || 1})} 
-                  className="block w-full px-3 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all" 
+                <input
+                  type="number"
+                  value={studyMaterial.user_estimated_total_hours}
+                  onChange={(e) => setStudyMaterial({ ...studyMaterial, user_estimated_total_hours: parseInt(e.target.value) || 1 })}
+                  className="block w-full px-3 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
                   min="1"
-                  required 
+                  required
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-neutral-dark mb-3">Difficulty</label>
-                <select 
-                  value={studyMaterial.difficulty} 
-                  onChange={(e) => setStudyMaterial({...studyMaterial, difficulty: parseInt(e.target.value)})} 
+                <select
+                  value={studyMaterial.difficulty}
+                  onChange={(e) => setStudyMaterial({ ...studyMaterial, difficulty: parseInt(e.target.value) })}
                   className="block w-full px-3 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
                 >
-                  {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                  {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-neutral-dark mb-3">Confidence</label>
-                <select 
-                  value={studyMaterial.confidence} 
-                  onChange={(e) => setStudyMaterial({...studyMaterial, confidence: parseInt(e.target.value)})} 
+                <select
+                  value={studyMaterial.confidence}
+                  onChange={(e) => setStudyMaterial({ ...studyMaterial, confidence: parseInt(e.target.value) })}
                   className="block w-full px-3 py-3 rounded-lg border-2 border-neutral-dark border-opacity-30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all"
                 >
-                  {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                  {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
             </div>
@@ -257,7 +266,10 @@ export default function CreateExamModal({ isOpen, onClose, dailyMaxHours, adjust
           <div className="relative z-[60] w-full max-w-md mx-4 bg-white rounded-3xl shadow-2xl">
             <div className="px-6 py-4 border-b bg-red-50 rounded-t-3xl">
               <h2 className="text-xl font-bold text-red-700 flex items-center gap-2">
-                <span className="text-2xl">⚠️</span> Daily Limit
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Daily Limit
               </h2>
             </div>
             <div className="px-6 py-4 space-y-3">

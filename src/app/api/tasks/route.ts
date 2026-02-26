@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/db';
 import Task from '@/models/Task';
 import User from '@/models/User';
+import { isValidCalendarDate } from '@/lib/dateUtils';
 
 export async function GET(req: NextRequest) {
   try {
@@ -46,6 +47,10 @@ export async function POST(req: NextRequest) {
 
     if (!name || !date) {
       return NextResponse.json({ error: 'Name and date are required' }, { status: 400 });
+    }
+
+    if (!isValidCalendarDate(date)) {
+      return NextResponse.json({ error: 'Invalid task date' }, { status: 400 });
     }
 
     const task = await Task.create({

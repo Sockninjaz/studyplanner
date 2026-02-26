@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Calendar from '@/components/calendar/calendar';
 import CalendarListView from '@/components/calendar/calendar-list-view';
 import SessionSidebar from '@/components/calendar/session-sidebar';
@@ -10,16 +10,21 @@ import ExamModal from '@/components/exams/exam-modal';
 import EditExamModal from '@/components/exams/edit-exam-modal';
 import AddItemModal from '@/components/calendar/add-item-modal';
 import CreateTaskModal from '@/components/calendar/create-task-modal';
-import { useSidebar } from '@/app/(dashboard)/layout';
+import { useSidebar } from '@/components/shared/sidebar-context';
+import { isValidCalendarDate } from '@/lib/dateUtils';
 
 interface UserPreferences {
   daily_study_limit: number;
+  soft_daily_limit: number;
   adjustment_percentage: number;
   session_duration: number;
+  enable_daily_limits: boolean;
 }
 
 export default function CalendarPage() {
   const { isSidebarCollapsed } = useSidebar();
+  const calendarRef = useRef<any>(null);
+  const [currentMonthTitle, setCurrentMonthTitle] = useState('');
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -33,19 +38,36 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [userPreferences, setUserPreferences] = useState<UserPreferences>({
     daily_study_limit: 4,
+    soft_daily_limit: 2,
     adjustment_percentage: 25,
     session_duration: 30,
+    enable_daily_limits: true,
   });
 
   useEffect(() => {
     fetchUserPreferences();
   }, []);
 
+  const handleDatesSet = (info: any) => {
+    // Info contains view.title which is the month name (e.g. "February 2026")
+    setCurrentMonthTitle(info.view.title);
+  };
+
+  const handlePrev = () => {
+    calendarRef.current?.getApi().prev();
+  };
+
+  const handleNext = () => {
+    calendarRef.current?.getApi().next();
+  };
+
+  const handleToday = () => {
+    calendarRef.current?.getApi().today();
+  };
+
   const fetchUserPreferences = async () => {
     try {
-      // First check localStorage for immediate response
       const savedPrefs = localStorage.getItem('userPreferences');
-      
       if (savedPrefs) {
         try {
           const prefs = JSON.parse(savedPrefs);
@@ -54,19 +76,16 @@ export default function CalendarPage() {
           console.error('Error parsing localStorage preferences:', error);
         }
       }
-
-      // Then fetch from server for latest data
       const res = await fetch('/api/user/preferences');
-      
       if (res.ok) {
         const data = await res.json();
         const serverPrefs = {
           daily_study_limit: data.daily_study_limit || 4,
+          soft_daily_limit: data.soft_daily_limit || 2,
           adjustment_percentage: data.adjustment_percentage || 25,
           session_duration: data.session_duration || 30,
+          enable_daily_limits: data.enable_daily_limits !== false,
         };
-        
-        // Only use server data if localStorage doesn't exist
         if (!savedPrefs) {
           setUserPreferences(serverPrefs);
           localStorage.setItem('userPreferences', JSON.stringify(serverPrefs));
@@ -95,8 +114,11 @@ export default function CalendarPage() {
     setSelectedTaskId(null);
   };
 
-  
   const handleAddItemClick = (date: string) => {
+    if (!isValidCalendarDate(date)) {
+      alert('The selected date is invalid for this year (e.g. Feb 29th on a non-leap year). Please select a valid date.');
+      return;
+    }
     setSelectedDate(date);
     setIsAddItemModalOpen(true);
   };
@@ -120,18 +142,13 @@ export default function CalendarPage() {
 
   const handleExamView = async (examId: string) => {
     try {
-      // Extract the actual MongoDB ID from the calendar event ID (format: exam-{mongoId})
       const mongoId = examId.replace('exam-', '');
-      console.log('Fetching exam with ID:', mongoId);
-      
       const response = await fetch(`/api/exams/${mongoId}`);
       if (response.ok) {
         const examData = await response.json();
         setSelectedExam(examData.data);
         setSelectedExamId(examId);
         setIsExamModalOpen(true);
-      } else {
-        console.error('Failed to fetch exam:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch exam:', error);
@@ -140,18 +157,13 @@ export default function CalendarPage() {
 
   const handleExamEdit = async (examId: string) => {
     try {
-      // Extract the actual MongoDB ID from the calendar event ID (format: exam-{mongoId})
       const mongoId = examId.replace('exam-', '');
-      console.log('Opening edit modal for exam ID:', mongoId);
-      
       const response = await fetch(`/api/exams/${mongoId}`);
       if (response.ok) {
         const examData = await response.json();
         setSelectedExam(examData.data);
         setSelectedExamId(examId);
         setIsEditExamModalOpen(true);
-      } else {
-        console.error('Failed to fetch exam:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch exam:', error);
@@ -171,100 +183,119 @@ export default function CalendarPage() {
 
   return (
     <>
-      <div className="flex h-[calc(100vh-4rem)] gap-4">
+      <div className="flex h-full flex-col overflow-hidden bg-white">
         {/* Main Content Area */}
-        <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-[60%]' : 'w-full'}`}>
-          {/* View Toggle */}
-          <div className="bg-[#ffff] border-b border-[#4a4a4a] border-opacity-20 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-[#4a4a4a]">
-                {viewMode === 'list' ? 'Schedule' : 'Calendar'}
-              </h1>
-              <div className="flex items-center gap-3">
-                {viewMode === 'list' && (
-                  <button
-                    onClick={() => setIsAddItemModalOpen(true)}
-                    className="bg-[rgb(54,65,86)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Exam
-                  </button>
+        <div className="flex-1 flex flex-row overflow-hidden">
+          <div className={`transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-[60%]' : 'w-full'}`}>
+            {/* View Toggle and Header - Clean, no borders */}
+            <div className="bg-[#ffff] px-4 py-3 flex items-center justify-between h-16 flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl font-bold text-[#4a4a4a]">
+                  {viewMode === 'calendar' ? currentMonthTitle : viewMode === 'list' ? 'Schedule' : 'Calendar'}
+                </h1>
+              </div>
+              <div className="flex items-center gap-4">
+                {viewMode === 'calendar' && (
+                  <div className="flex items-center gap-1 mr-2">
+                    <button onClick={handlePrev} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button onClick={handleNext} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    <button onClick={handleToday} className="ml-2 px-3 py-1 text-sm font-medium border border-[#4a4a4a] border-opacity-20 rounded hover:bg-gray-50 transition-colors text-[#4a4a4a]">
+                      Today
+                    </button>
+                  </div>
                 )}
-                <div className="flex items-center bg-white rounded-lg p-1 border border-[#4a4a4a] border-opacity-20">
+                <div className="flex items-center bg-white rounded-lg p-1 border border-[#4a4a4a] border-opacity-20 shadow-sm">
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      viewMode === 'list'
-                        ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
-                        : 'text-[#4a4a4a] hover:text-[#4a4a4a]'
-                    }`}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
+                      ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
+                      : 'text-[#4a4a4a] hover:bg-gray-50 hover:text-[#4a4a4a]'
+                      }`}
                   >
-                    List View
+                    List
                   </button>
                   <button
                     onClick={() => setViewMode('calendar')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      viewMode === 'calendar'
-                        ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
-                        : 'text-[#4a4a4a] hover:text-[#4a4a4a]'
-                    }`}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'calendar'
+                      ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
+                      : 'text-[#4a4a4a] hover:bg-gray-50 hover:text-[#4a4a4a]'
+                      }`}
                   >
-                    Calendar View
+                    Calendar
                   </button>
                 </div>
+                <button
+                  onClick={() => setIsAddItemModalOpen(true)}
+                  className="bg-[rgb(54,65,86)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2 shadow-sm font-medium"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  {viewMode === 'calendar' ? 'New' : 'Add Exam'}
+                </button>
               </div>
+            </div>
+
+            {/* Content - Stretches to fill everything */}
+            <div className="flex-1 overflow-hidden relative">
+              {viewMode === 'list' ? (
+                <div className="h-full overflow-y-auto">
+                  <CalendarListView
+                    onSessionClick={handleSessionClick}
+                    onTaskClick={handleTaskClick}
+                    onAddItemClick={handleAddItemClick}
+                    onExamView={handleExamView}
+                    onExamEdit={handleExamEdit}
+                    sidebarOpen={isSidebarOpen}
+                    sidebarCollapsed={isSidebarCollapsed}
+                  />
+                </div>
+              ) : (
+                <div className="h-full absolute inset-0">
+                  <Calendar
+                    ref={calendarRef}
+                    onSessionClick={handleSessionClick}
+                    onAddItemClick={handleAddItemClick}
+                    sidebarOpen={isSidebarOpen}
+                    sidebarCollapsed={isSidebarCollapsed}
+                    onDatesSet={handleDatesSet}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Content */}
-          <div className="h-[calc(100%-4rem)] overflow-hidden">
-            {viewMode === 'list' ? (
-              <CalendarListView 
-                onSessionClick={handleSessionClick}
-                onTaskClick={handleTaskClick}
-                onAddItemClick={handleAddItemClick}
-                onExamView={handleExamView}
-                onExamEdit={handleExamEdit}
-                sidebarOpen={isSidebarOpen}
-                sidebarCollapsed={isSidebarCollapsed}
-              />
-            ) : (
-              <div className="h-full p-4">
-                <Calendar 
-                  onSessionClick={handleSessionClick} 
-                  onAddItemClick={handleAddItemClick}
-                  sidebarOpen={isSidebarOpen} 
-                  sidebarCollapsed={isSidebarCollapsed}
-                />
+          {/* Sidebar - Session or Task */}
+          {isSidebarOpen && (
+            <div className="w-[40%] transition-all duration-300 flex flex-col border-l border-gray-200 bg-white">
+              <div className="flex-1 overflow-hidden">
+                {selectedSessionId ? (
+                  <SessionSidebar
+                    sessionId={selectedSessionId}
+                    onClose={handleCloseSidebar}
+                  />
+                ) : selectedTaskId ? (
+                  <TaskSidebar
+                    taskId={selectedTaskId}
+                    onClose={handleCloseSidebar}
+                  />
+                ) : null}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-
-        {/* Sidebar - Session or Task */}
-        {isSidebarOpen && (
-          <div className="w-[40%] transition-all duration-300">
-            <div className="h-full rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden">
-              {selectedSessionId ? (
-                <SessionSidebar 
-                  sessionId={selectedSessionId} 
-                  onClose={handleCloseSidebar}
-                />
-              ) : selectedTaskId ? (
-                <TaskSidebar 
-                  taskId={selectedTaskId} 
-                  onClose={handleCloseSidebar}
-                />
-              ) : null}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Add Item Modal */}
-      <AddItemModal 
+      <AddItemModal
         isOpen={isAddItemModalOpen}
         onClose={handleCloseAddItemModal}
         onAddExam={handleAddExam}
@@ -283,7 +314,7 @@ export default function CalendarPage() {
 
       {/* Exam Modal - View */}
       {selectedExam && isExamModalOpen && (
-        <ExamModal 
+        <ExamModal
           exam={selectedExam}
           isOpen={isExamModalOpen}
           onClose={handleCloseExamModal}
@@ -292,7 +323,7 @@ export default function CalendarPage() {
 
       {/* Edit Exam Modal */}
       {selectedExam && isEditExamModalOpen && (
-        <EditExamModal 
+        <EditExamModal
           exam={selectedExam}
           isOpen={isEditExamModalOpen}
           onClose={handleCloseEditExamModal}
@@ -301,12 +332,13 @@ export default function CalendarPage() {
 
       {/* Create Exam Modal */}
       {!selectedExam && (
-        <CreateExamModal 
+        <CreateExamModal
           isOpen={isExamModalOpen}
           onClose={handleCloseExamModal}
           dailyMaxHours={userPreferences.daily_study_limit}
           adjustmentPercentage={userPreferences.adjustment_percentage}
           sessionDuration={userPreferences.session_duration}
+          enableDailyLimits={userPreferences.enable_daily_limits}
           initialDate={selectedDate}
         />
       )}

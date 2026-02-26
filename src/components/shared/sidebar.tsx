@@ -7,8 +7,10 @@ import CreateExamModal from '@/components/exams/create-exam-modal';
 
 interface UserPreferences {
   daily_study_limit: number;
+  soft_daily_limit: number;
   adjustment_percentage: number;
   session_duration: number;
+  enable_daily_limits: boolean;
 }
 
 interface Exam {
@@ -31,8 +33,10 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   const [loading, setLoading] = useState(true);
   const [userPreferences, setUserPreferences] = useState<UserPreferences>({
     daily_study_limit: 4,
+    soft_daily_limit: 2,
     adjustment_percentage: 25,
     session_duration: 30,
+    enable_daily_limits: true,
   });
 
   useEffect(() => {
@@ -265,15 +269,14 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                           <div className="w-full group relative flex items-center gap-3 rounded-lg font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
                             <button
                               onClick={() => openExamModal(exam)}
-                              className="flex-1 flex items-center gap-3 py-3 px-4 text-left"
+                              className="flex-1 flex items-center gap-3 py-3 px-4 text-left min-w-0 overflow-hidden"
                             >
                               <div
                                 className="w-4 h-4 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: examColor }}
                               />
-                              <span className="flex-1 text-base">{exam.subject}</span>
-                              <span className="text-sm text-white opacity-60">
-                                {new Date(exam.date).toLocaleDateString()}
+                              <span className="text-base truncate min-w-0" title={exam.subject}>
+                                {exam.subject}
                               </span>
                             </button>
                             <button
@@ -281,7 +284,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                                 e.stopPropagation(); // Prevent opening the modal
                                 handleDeleteExam(exam._id);
                               }}
-                              className="px-3 py-3 text-red-400 hover:text-red-300"
+                              className="px-3 py-3 text-red-400 hover:text-red-300 flex-shrink-0"
                               aria-label={`Delete ${exam.subject}`}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
@@ -310,6 +313,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
         dailyMaxHours={userPreferences.daily_study_limit}
         adjustmentPercentage={userPreferences.adjustment_percentage}
         sessionDuration={userPreferences.session_duration}
+        enableDailyLimits={userPreferences.enable_daily_limits}
       />
     </>
   );

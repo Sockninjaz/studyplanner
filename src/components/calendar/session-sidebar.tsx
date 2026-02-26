@@ -43,18 +43,18 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
 
   const handleSessionComplete = async () => {
     if (!sessionId) return;
-    
+
     await fetch(`/api/sessions/${sessionId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isCompleted: true }),
     });
-    
+
     // Refresh session data
     const response = await fetch(`/api/sessions/${sessionId}`);
     const data = await response.json();
     setSession(data.data);
-    
+
     // Trigger calendar refresh
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calendarUpdated'));
@@ -63,18 +63,18 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
 
   const handleToggleComplete = async () => {
     if (!sessionId || !session) return;
-    
+
     await fetch(`/api/sessions/${sessionId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isCompleted: !session.isCompleted }),
     });
-    
+
     // Refresh session data
     const response = await fetch(`/api/sessions/${sessionId}`);
     const data = await response.json();
     setSession(data.data);
-    
+
     // Trigger calendar refresh
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calendarUpdated'));
@@ -105,7 +105,7 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
     );
   }
 
-  const duration = session.startTime && session.endTime 
+  const duration = session.startTime && session.endTime
     ? Math.round((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60))
     : 60;
 
@@ -130,7 +130,7 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
           </button>
         </div>
         <p className="text-base text-gray-600 mb-4">{session.subject}</p>
-        
+
         {/* Completion Toggle */}
         <div className="mt-3">
           <label className="flex items-center cursor-pointer bg-gray-50 rounded-lg px-4 py-3 hover:bg-gray-100 transition-colors">
@@ -150,8 +150,13 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {session.isCompleted ? (
-          <div className="text-center text-2xl font-semibold text-green-600 mt-8">
-            Session Completed! ✓
+          <div className="text-center text-green-600 mt-8 flex flex-col items-center gap-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span className="text-2xl font-semibold">Session Completed!</span>
           </div>
         ) : (
           <>

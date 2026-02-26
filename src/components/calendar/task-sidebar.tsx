@@ -56,13 +56,13 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
 
   const handleTaskComplete = async () => {
     if (!taskId) return;
-    
+
     await fetch(`/api/tasks/${taskId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isCompleted: true }),
     });
-    
+
     // Refresh task data
     const response = await fetch(`/api/tasks`);
     const tasks = await response.json();
@@ -70,7 +70,7 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
     if (updatedTask) {
       setTask(updatedTask);
     }
-    
+
     // Trigger calendar refresh
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calendarUpdated'));
@@ -79,13 +79,13 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
 
   const handleToggleComplete = async () => {
     if (!taskId || !task) return;
-    
+
     await fetch(`/api/tasks/${taskId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isCompleted: !task.isCompleted }),
     });
-    
+
     // Refresh task data
     const response = await fetch(`/api/tasks`);
     const tasks = await response.json();
@@ -93,7 +93,7 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
     if (updatedTask) {
       setTask(updatedTask);
     }
-    
+
     // Trigger calendar refresh
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calendarUpdated'));
@@ -147,7 +147,7 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
           </button>
         </div>
         <p className="text-base text-gray-600 mb-4">{task.description || ''}</p>
-        
+
         {/* Completion Toggle */}
         <div className="mt-3">
           <label className="flex items-center cursor-pointer bg-gray-50 rounded-lg px-4 py-3 hover:bg-gray-100 transition-colors">
@@ -167,8 +167,13 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {task.isCompleted ? (
-          <div className="text-center text-2xl font-semibold text-green-600 mt-8">
-            Task Completed! ✓
+          <div className="text-center text-green-600 mt-8 flex flex-col items-center gap-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span className="text-2xl font-semibold">Task Completed!</span>
           </div>
         ) : (
           <>

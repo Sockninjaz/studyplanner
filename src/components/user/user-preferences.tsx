@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 
 interface UserPreferences {
   daily_study_limit: number;
+  soft_daily_limit: number;
   adjustment_percentage: number;
   session_duration: number;
+  enable_daily_limits: boolean;
 }
 
 interface UserPreferencesProps {
@@ -15,8 +17,10 @@ interface UserPreferencesProps {
 export default function UserPreferences({ onPreferencesChange }: UserPreferencesProps) {
   const [preferences, setPreferences] = useState<UserPreferences>({
     daily_study_limit: 4,
+    soft_daily_limit: 2,
     adjustment_percentage: 25,
     session_duration: 30,
+    enable_daily_limits: true,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -66,11 +70,11 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
   const fetchPreferences = async () => {
     try {
       console.log('Fetching preferences...');
-      
+
       // First check localStorage for immediate response
       const savedPrefs = localStorage.getItem('userPreferences');
       console.log('localStorage preferences:', savedPrefs);
-      
+
       let localStoragePrefs = null;
       if (savedPrefs) {
         try {
@@ -87,17 +91,19 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
       // Then fetch from server for latest data
       const res = await fetch('/api/user/preferences');
       console.log('Server response status:', res.status);
-      
+
       if (res.ok) {
         const data = await res.json();
         console.log('Server preferences data:', data);
         const serverPrefs = {
           daily_study_limit: data.daily_study_limit || 4,
+          soft_daily_limit: data.soft_daily_limit || 2,
           adjustment_percentage: data.adjustment_percentage || 25,
           session_duration: data.session_duration || 30,
+          enable_daily_limits: data.enable_daily_limits !== false,
         };
         console.log('Final server preferences:', serverPrefs);
-        
+
         // Only use server data if localStorage doesn't exist or is older
         // For now, let's keep localStorage as the source of truth
         if (!localStoragePrefs) {
@@ -127,7 +133,7 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(preferences),
       });
-      
+
       console.log('Save response status:', res.status);
 
       if (res.ok) {
@@ -136,12 +142,12 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         // Update localStorage with saved preferences
         localStorage.setItem('userPreferences', JSON.stringify(preferences));
         console.log('Updated localStorage with:', preferences);
-        
+
         // Dispatch event to notify other components
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('preferencesUpdated'));
         }
-        
+
         if (showMessage) {
           setMessage('Preferences saved successfully!');
         }
@@ -166,7 +172,7 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
     }
   };
 
-  const handleInputChange = (field: keyof UserPreferences, value: number) => {
+  const handleInputChange = (field: keyof UserPreferences, value: number | boolean) => {
     const newPreferences = { ...preferences, [field]: value };
     setPreferences(newPreferences);
   };
@@ -188,9 +194,33 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
   return (
     <div className="bg-white p-4 rounded-lg shadow">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Study Preferences</h3>
-      
+
       <div className="space-y-4">
-        <div>
+        {/* Toggle limits */}
+        <div className="flex items-center justify-between pb-2 border-b border-gray-100 mb-2">
+          <div>
+            <label htmlFor="enable-limits" className="block text-sm font-semibold text-gray-900">
+              Enable Strict Daily Limits
+            </label>
+            <p className="text-xs text-gray-500 mt-1">
+              If disabled, the algorithm will try to fit study hours even if it exceeds your daily limit (capped at 2 hours/day for exams 2+ weeks away).
+            </p>
+          </div>
+          <button
+            type="button"
+            id="enable-limits"
+            onClick={() => handleInputChange('enable_daily_limits', !preferences.enable_daily_limits)}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${preferences.enable_daily_limits ? 'bg-indigo-600' : 'bg-gray-200'
+              }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${preferences.enable_daily_limits ? 'translate-x-5' : 'translate-x-0'
+                }`}
+            />
+          </button>
+        </div>
+
+        <div className={`transition-opacity duration-200 ${!preferences.enable_daily_limits ? 'opacity-50 pointer-events-none' : ''}`}>
           <label htmlFor="daily-limit" className="block text-sm font-medium text-gray-700 mb-1">
             Daily Study Limit (Hours)
           </label>
@@ -210,6 +240,29 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
           </div>
           <p className="text-xs text-gray-500 mt-1">
             Maximum study hours per day (1-12 hours)
+          </p>
+        </div>
+
+        <div className={`transition-opacity duration-200 ${!preferences.enable_daily_limits ? 'opacity-50 pointer-events-none' : ''}`}>
+          <label htmlFor="soft-limit" className="block text-sm font-medium text-gray-700 mb-1">
+            Preferred Study Time Per Day (Hours)
+          </label>
+          <div className="flex items-center gap-3">
+            <input
+              type="range"
+              id="soft-limit"
+              min="1"
+              max="12"
+              value={preferences.soft_daily_limit}
+              onChange={(e) => handleInputChange('soft_daily_limit', parseInt(e.target.value))}
+              className="flex-1"
+            />
+            <span className="text-lg font-bold text-blue-600 w-8">
+              {preferences.soft_daily_limit}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Target study hours before expanding timeline (1-12 hours)
           </p>
         </div>
 
@@ -262,11 +315,10 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         </div>
 
         {message && (
-          <div className={`text-sm p-2 rounded ${
-            message.includes('Error') 
-              ? 'bg-red-100 text-red-700' 
-              : 'bg-green-100 text-green-700'
-          }`}>
+          <div className={`text-sm p-2 rounded ${message.includes('Error')
+            ? 'bg-red-100 text-red-700'
+            : 'bg-green-100 text-green-700'
+            }`}>
             {message}
           </div>
         )}

@@ -7,6 +7,7 @@ import StudySession from '@/models/StudySession';
 import { StudyPlannerV1 } from '@/lib/scheduling/advancedScheduler';
 import { separateSessions } from '@/lib/scheduling/sessionUtils';
 import BlockedDay from '@/models/BlockedDay';
+import { isValidCalendarDate } from '@/lib/dateUtils';
 
 export async function GET(request: Request) {
   const session = await getServerSession();
@@ -51,6 +52,13 @@ export async function POST(request: Request) {
     if (!subject || !date || !studyMaterialsData || studyMaterialsData.length === 0) {
       return NextResponse.json(
         { error: 'Subject, date, and at least one study material are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidCalendarDate(date)) {
+      return NextResponse.json(
+        { error: 'Invalid exam date' },
         { status: 400 }
       );
     }
@@ -156,10 +164,14 @@ export async function POST(request: Request) {
       exams: { id: string; subject: string; exam_date: Date; difficulty: number; confidence: number; user_estimated_total_hours: number; can_study_after_exam: boolean }[];
       completed_hours: { [examId: string]: number };
       blocked_days?: string[];
+      soft_daily_limit?: number;
+      enable_daily_limits?: boolean;
     } = {
       daily_max_hours: body.daily_max_hours || user.daily_study_limit || 4,
+      soft_daily_limit: body.soft_daily_limit || user.soft_daily_limit || 2,
       adjustment_percentage: body.adjustment_percentage || user.adjustment_percentage || 25,
       session_duration: body.session_duration || user.session_duration || 30,
+      enable_daily_limits: body.enable_daily_limits !== undefined ? body.enable_daily_limits : (user.enable_daily_limits !== false),
       start_date: new Date(),
       existing_sessions: existingSessionsForScheduler,
       completed_hours: {},
@@ -179,16 +191,20 @@ export async function POST(request: Request) {
 
     console.log('🔧 Final scheduler inputs:', {
       daily_max_hours: userInputs.daily_max_hours,
+      soft_daily_limit: userInputs.soft_daily_limit,
       adjustment_percentage: userInputs.adjustment_percentage,
       session_duration: userInputs.session_duration,
+      enable_daily_limits: userInputs.enable_daily_limits,
     });
 
     // Also update the user's saved preferences with these latest values
-    if (body.daily_max_hours || body.adjustment_percentage || body.session_duration) {
+    if (body.daily_max_hours || body.soft_daily_limit || body.adjustment_percentage || body.session_duration || body.enable_daily_limits !== undefined) {
       try {
         if (body.daily_max_hours) user.daily_study_limit = body.daily_max_hours;
+        if (body.soft_daily_limit) user.soft_daily_limit = body.soft_daily_limit;
         if (body.adjustment_percentage) user.adjustment_percentage = body.adjustment_percentage;
         if (body.session_duration) user.session_duration = body.session_duration;
+        if (body.enable_daily_limits !== undefined) user.enable_daily_limits = body.enable_daily_limits;
         await user.save();
         console.log('✅ Updated user preferences with latest values');
       } catch (error) {
@@ -306,6 +322,7 @@ export async function POST(request: Request) {
       })));
 
       for (const day of dailySchedules) {
+        let daySessionCount = 0;
         for (const subjectId in day.subjects) {
           const hours = day.subjects[subjectId];
           const sessionDurationHours = sessionDurationMinutes / 60;
@@ -323,13 +340,6 @@ export async function POST(request: Request) {
               !existing.isCompleted // Exclude completed sessions
             );
 
-            console.log(`API DEBUG: Filtering for subjectId ${subjectId}, day ${day.date.toISOString().split('T')[0]}`);
-            console.log(`API DEBUG: All existing sessions:`, existingSessions.map(s => ({
-              exam: s.exam.toString(),
-              date: s.startTime.toISOString().split('T')[0],
-              subject: s.subject
-            })));
-
             console.log(`API DEBUG: Day ${day.date.toISOString().split('T')[0]}, Subject ${examForSubject.subject}`);
             console.log(`API DEBUG: Hours: ${hours}, numChunks: ${numChunks}, existingSessionsForDay: ${existingSessionsForDay.length}`);
 
@@ -339,33 +349,23 @@ export async function POST(request: Request) {
             console.log(`API DEBUG: sessionsToCreate: ${sessionsToCreate}`);
 
             for (let i = 0; i < sessionsToCreate; i++) {
-              // Stagger sessions throughout the day to avoid overlap
               const sessionStart = new Date(day.date);
-              sessionStart.setHours(9 + ((existingSessionsForDay.length + i) * 2), 0, 0, 0); // 9 AM, 11 AM, 1 PM, etc.
+              // Stagger sessions to avoid overlap (9:00, 9:30, 10:00, etc.)
+              sessionStart.setHours(9, (daySessionCount + existingSessionsForDay.length) * sessionDurationMinutes, 0, 0);
               const sessionEnd = new Date(sessionStart.getTime() + sessionDurationMinutes * 60000);
 
-              // Create a unique identifier for each session
-              const sessionIdentifier = `${subjectId}-${day.date.toISOString().split('T')[0]}-${existingSessionsForDay.length + i}`;
-
-              const existingSession = existingSessions.find(existing =>
-                existing.exam.toString() === subjectId &&
-                existing.startTime.toISOString().split('T')[0] === day.date.toISOString().split('T')[0]
-              );
-
-              // Only add if it doesn't already exist
-              if (!existingSession) {
-                sessionsToSave.push({
-                  user: user._id,
-                  exam: examForSubject._id,
-                  title: `Study: ${examForSubject.subject}${numChunks > 1 ? ` (${existingSessionsForDay.length + i + 1}/${numChunks})` : ''}`,
-                  subject: examForSubject.subject,
-                  startTime: sessionStart,
-                  endTime: sessionEnd,
-                  isCompleted: false,
-                  isOverloaded: day.is_overloaded || false,
-                  overloadAmount: day.overload_amount || 0,
-                });
-              }
+              sessionsToSave.push({
+                user: user._id,
+                exam: examForSubject._id,
+                title: `Study: ${examForSubject.subject}${numChunks > 1 ? ` (${existingSessionsForDay.length + i + 1}/${numChunks})` : ''}`,
+                subject: examForSubject.subject,
+                startTime: sessionStart,
+                endTime: sessionEnd,
+                isCompleted: false,
+                isOverloaded: day.is_overloaded || false,
+                overloadAmount: day.overload_amount || 0,
+              });
+              daySessionCount++;
             }
           }
         }

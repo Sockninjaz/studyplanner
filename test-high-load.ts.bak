@@ -1,0 +1,37 @@
+import { StudyPlannerV1 } from './src/lib/scheduling/advancedScheduler';
+import { UserInputs, ExamData } from './src/lib/scheduling/types';
+
+// Simulate 4 exams, 14 days away, 10 hours each = 40 hours total
+const today = new Date();
+today.setHours(0,0,0,0);
+
+const examDate = new Date(today);
+examDate.setDate(examDate.getDate() + 14); 
+
+const inputs: UserInputs = {
+  daily_max_hours: 10,
+  soft_daily_limit: 3, // Target soft limit
+  session_duration: 60,
+  start_date: today,
+  existing_sessions: [],
+  completed_hours: {},
+  exams: [
+    { id: '1', subject: 'Math', exam_date: examDate, difficulty: 5, confidence: 5, user_estimated_total_hours: 10, can_study_after_exam: false },
+    { id: '2', subject: 'Science', exam_date: examDate, difficulty: 5, confidence: 5, user_estimated_total_hours: 10, can_study_after_exam: false },
+    { id: '3', subject: 'History', exam_date: examDate, difficulty: 5, confidence: 5, user_estimated_total_hours: 10, can_study_after_exam: false },
+    { id: '4', subject: 'English', exam_date: examDate, difficulty: 5, confidence: 5, user_estimated_total_hours: 10, can_study_after_exam: false },
+  ]
+};
+
+const planner = new StudyPlannerV1(inputs);
+const plan = planner.generatePlan();
+
+if (!Array.isArray(plan) && !('schedule' in plan)) {
+  console.log("Error generating plan:", plan.error);
+} else {
+  const schedule = Array.isArray(plan) ? plan : plan.schedule;
+  schedule.forEach(day => {
+    const totalHours = Object.values(day.subjects).reduce((sum, h) => sum + h, 0);
+    console.log(`Day ${day.date.toISOString().split('T')[0]}: ${totalHours} sessions`);
+  });
+}

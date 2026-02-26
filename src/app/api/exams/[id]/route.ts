@@ -7,6 +7,7 @@ import StudySession from '@/models/StudySession';
 import { StudyPlannerV1 } from '@/lib/scheduling/advancedScheduler';
 import { separateSessions } from '@/lib/scheduling/sessionUtils';
 import BlockedDay from '@/models/BlockedDay';
+import { isValidCalendarDate } from '@/lib/dateUtils';
 
 export async function GET(
   request: Request,
@@ -64,6 +65,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
 
+    if (body.date && !isValidCalendarDate(body.date)) {
+      return NextResponse.json(
+        { error: 'Invalid exam date' },
+        { status: 400 }
+      );
+    }
+
     // Update exam fields
     if (body.subject) exam.subject = body.subject;
     if (body.date) exam.date = new Date(body.date);
@@ -119,9 +127,11 @@ export async function PUT(
       existing_sessions: { date: Date; subjectId: string; duration: number }[];
       completed_hours: { [examId: string]: number };
       blocked_days?: string[];
+      soft_daily_limit?: number;
       exams: { id: string; subject: string; exam_date: Date; difficulty: number; confidence: number; user_estimated_total_hours: number; can_study_after_exam: boolean }[];
     } = {
       daily_max_hours: body.daily_max_hours || user.daily_study_limit || 4,
+      soft_daily_limit: user.soft_daily_limit || 2,
       adjustment_percentage: body.adjustment_percentage || user.adjustment_percentage || 25,
       session_duration: body.session_duration || user.session_duration || 30,
       start_date: new Date(),
@@ -165,6 +175,7 @@ export async function PUT(
 
       for (const day of dailySchedules) {
         const dateStr = day.date.toISOString().split('T')[0];
+        let daySessionCount = 0;
         for (const subjectId in day.subjects) {
           const hours = day.subjects[subjectId];
           const sessionDurationHours = sessionDurationMinutes / 60;
@@ -183,7 +194,8 @@ export async function PUT(
 
             for (let i = 0; i < sessionsToCreate; i++) {
               const sessionStart = new Date(day.date);
-              sessionStart.setHours(9 + ((lockedForDay.length + i) * 2), 0, 0, 0);
+              // Stagger sessions to avoid overlap (9:00, 9:30, 10:00, etc.)
+              sessionStart.setHours(9, (daySessionCount + lockedForDay.length) * sessionDurationMinutes, 0, 0);
               const sessionEnd = new Date(sessionStart.getTime() + sessionDurationMinutes * 60000);
 
               sessionsToSave.push({
@@ -195,6 +207,7 @@ export async function PUT(
                 endTime: sessionEnd,
                 isCompleted: false,
               });
+              daySessionCount++;
             }
           }
         }
@@ -242,7 +255,7 @@ export async function DELETE(
 
   try {
     console.log('Attempting to delete exam:', params.id);
-    
+
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
       console.log('User not found for email:', session.user.email);
@@ -282,7 +295,7 @@ export async function DELETE(
       const { completedSessions, missedSessions, reschedulableSessions, completedHours } = separateSessions(remainingSessions);
       console.log(`Completed: ${completedSessions.length}, Missed: ${missedSessions.length}, Reschedulable: ${reschedulableSessions.length}`);
       console.log('Completed hours per exam:', completedHours);
-      
+
       // Delete reschedulable sessions (future/today) and missed sessions (past uncompleted) for remaining exams
       const sessionsToDelete = [...reschedulableSessions, ...missedSessions];
       if (sessionsToDelete.length > 0) {
@@ -302,9 +315,11 @@ export async function DELETE(
         existing_sessions: { date: Date; subjectId: string; duration: number }[];
         completed_hours: { [examId: string]: number };
         blocked_days?: string[];
+        soft_daily_limit?: number;
         exams: { id: string; subject: string; exam_date: Date; difficulty: number; confidence: number; user_estimated_total_hours: number; can_study_after_exam: boolean }[];
       } = {
         daily_max_hours: user.daily_study_limit || 4,
+        soft_daily_limit: user.soft_daily_limit || 2,
         adjustment_percentage: user.adjustment_percentage || 25,
         session_duration: user.session_duration || 30,
         start_date: new Date(),
@@ -340,6 +355,7 @@ export async function DELETE(
         const sessionsToSave: any[] = [];
 
         for (const day of dailySchedules) {
+          let daySessionCount = 0;
           for (const subjectId in day.subjects) {
             const hours = day.subjects[subjectId];
             const sessionDurationHours = sessionDurationMinutes / 60;
@@ -356,7 +372,8 @@ export async function DELETE(
 
               for (let i = 0; i < sessionsToCreate; i++) {
                 const sessionStart = new Date(day.date);
-                sessionStart.setHours(9 + ((lockedForDay.length + i) * 2), 0, 0, 0);
+                // Stagger sessions to avoid overlap (9:00, 9:30, 10:00, etc.)
+                sessionStart.setHours(9, (daySessionCount + lockedForDay.length) * sessionDurationMinutes, 0, 0);
                 const sessionEnd = new Date(sessionStart.getTime() + sessionDurationMinutes * 60000);
 
                 sessionsToSave.push({
@@ -368,6 +385,7 @@ export async function DELETE(
                   endTime: sessionEnd,
                   isCompleted: false,
                 });
+                daySessionCount++;
               }
             }
           }

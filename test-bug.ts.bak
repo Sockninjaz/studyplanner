@@ -1,0 +1,36 @@
+import { StudyPlannerV1 } from './src/lib/scheduling/advancedScheduler';
+
+// "exam come before all others"
+const earlyExam = { id: 'math123', subject: 'math123', exam_date: new Date('2026-03-01'), difficulty: 3, confidence: 3, user_estimated_total_hours: 5, can_study_after_exam: false };
+
+// "the ones after that do that are 2 weeks after today"
+// Today is 2026-02-25. Two weeks later is ~March 11-12
+const e1 = { id: '699c9f', subject: '2122lllVXZY', exam_date: new Date('2026-03-11'), difficulty: 3, confidence: 3, user_estimated_total_hours: 5, can_study_after_exam: false };
+const e2 = { id: '699d92', subject: 'math', exam_date: new Date('2026-03-11'), difficulty: 3, confidence: 3, user_estimated_total_hours: 5, can_study_after_exam: false };
+const e3 = { id: '699cd2', subject: 'bio12', exam_date: new Date('2026-03-12'), difficulty: 3, confidence: 3, user_estimated_total_hours: 5, can_study_after_exam: false };
+const e4 = { id: '699e27', subject: 'math2', exam_date: new Date('2026-03-12'), difficulty: 3, confidence: 3, user_estimated_total_hours: 5, can_study_after_exam: false };
+const e5 = { id: '699ee6', subject: 'f', exam_date: new Date('2026-03-13'), difficulty: 3, confidence: 3, user_estimated_total_hours: 5, can_study_after_exam: false };
+
+const exams = [earlyExam, e1, e2, e3, e4, e5];
+
+// "only problem when choosing you want more than 2 hours prefered daiuly stuudy time. like 3 or 4"
+const scheduler = new StudyPlannerV1({
+    start_date: new Date('2026-02-25T00:00:00.000Z'),
+    session_duration: 60,
+    daily_max_hours: 4,
+    soft_daily_limit: 4, // SET TO 3
+    adjustment_percentage: 25,
+    existing_sessions: [],
+    exams,
+    completed_hours: {},
+    blocked_days: [],
+});
+
+const result = scheduler.generatePlan() as any;
+const sched = result.schedule || result;
+let totalSessions = 0;
+sched.forEach((d: any) => {
+    const h = Object.values(d.subjects).reduce((a: any, b: any) => a + b, 0) as number;
+    totalSessions += h;
+});
+console.log(`TOTAL HOURS: ${totalSessions}`);

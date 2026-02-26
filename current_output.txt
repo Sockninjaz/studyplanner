@@ -1,0 +1,39 @@
+=== SCHEDULER FILE LOADED ===
+=== SCHEDULER CONSTRUCTOR CALLED ===
+Number of exams: 1
+Number of existing sessions: 0
+Existing sessions: []
+Completed hours: {}
+Generating plan...
+=== SCHEDULER generatePlan CALLED ===
+📐 Optimal start: totalHours=10, softLimit=3, daysNeeded=4, start=2026-03-07
+Overriding start date: input was Sun Feb 01 2026 01:00:00 GMT+0100 (Central European Standard Time), optimal is Sat Mar 07 2026 01:00:00 GMT+0100 (Central European Standard Time)
+Single exam plan: 111111, totalCalculated: 10, completedHours: 0, totalRequired: 10, chunks: 10
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-03-07, Initial start date: 2026-03-07
+  Days until exam: 16, Sessions needed: 10
+  Final start date: 2026-03-07
+  Generated 5 valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+Available days (excluding blocked): 5, Sessions needed: 10, Max per day: 4
+Valid slots: [
+  '2026-03-07',
+  '2026-03-08',
+  '2026-03-09',
+  '2026-03-10',
+  '2026-03-11'
+]
+⚠️ Not enough days! Will place multiple sessions per day.
+Day 2026-03-07: 2 sessions (2 hours)
+Day 2026-03-08: 2 sessions (2 hours)
+Day 2026-03-09: 2 sessions (2 hours)
+Day 2026-03-10: 2 sessions (2 hours)
+Day 2026-03-11: 2 sessions (2 hours)
+Created 5 days with total sessions: 10
+Plan generated.
+s13e2 sessions:

@@ -1,0 +1,4755 @@
+=== SCHEDULER FILE LOADED ===
+
+=== Soft limit: 2 ===
+=== SCHEDULER CONSTRUCTOR CALLED ===
+Number of exams: 3
+Number of existing sessions: 0
+Existing sessions: []
+Completed hours: {}
+=== SCHEDULER generatePlan CALLED ===
+📐 Optimal start: totalHours=30, softLimit=2, daysNeeded=15, start=2026-02-24
+Exam scheduling order: [
+  { subject: 'Exam1', sessions: 10 },
+  { subject: 'Exam2', sessions: 10 },
+  { subject: 'Exam3', sessions: 10 }
+]
+
+📅 Generating valid slots for Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+📅 Valid slots for Exam1: 2026-02-24, 2026-02-25, 2026-02-26, 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04
+
+*** assignSessionsEvenly called for Exam1 ***
+=== ASSIGNING SESSIONS FOR Exam1 ===
+Calculated hours: 10, Completed: 0, Remaining: 10, Sessions: 10
+Session duration: 60 minutes = 1 hours
+Valid slots: 9 days: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+Day before exam available: true, Total slots: 9
+Final review placed: true, Remaining sessions to place: 8, Available days: 8
+  Available days: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03'
+]
+  Need to place 8 sessions with max 2-day interval
+  Exam1 has 2 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 8 sessions (remaining: 8, already placed: 0)
+  Total sessions should be: 10 (including final review: true)
+  Available days count: 8, Sessions to place: 8
+  Distributing 8 sessions with diversification (max 2-day interval)
+  Available unassigned days: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03'
+]
+  Days used by other exams: []
+  Selected 2026-03-03 (first session, used by other: false)
+  Selected 2026-03-02 (1 days from last, consec: 2, used by other: false)
+  Selected 2026-03-01 (1 days from last, consec: 3, used by other: false)
+  Selected 2026-02-28 (1 days from last, consec: 4, used by other: false)
+  Selected 2026-02-27 (1 days from last, consec: 5, used by other: false)
+  Selected 2026-02-26 (1 days from last, consec: 6, used by other: false)
+  Selected 2026-02-25 (1 days from last, consec: 7, used by other: false)
+  Selected 2026-02-24 (1 days from last, consec: 8, used by other: false)
+  Placing 8 selected days, need 8 sessions
+  ✓ Placed session 1/8 on 2026-02-24
+  ✓ Placed session 2/8 on 2026-02-25
+  ✓ Placed session 3/8 on 2026-02-26
+  ✓ Placed session 4/8 on 2026-02-27
+  ✓ Placed session 5/8 on 2026-02-28
+  ✓ Placed session 6/8 on 2026-03-01
+  ✓ Placed session 7/8 on 2026-03-02
+  ✓ Placed session 8/8 on 2026-03-03
+  After gap enforcement: sessions on [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Final: 9 sessions total (target was 10, gap-enforcement may have added extras)
+Final session assignment for Exam1: {
+  '2026-03-04': 2,
+  '2026-02-24': 1,
+  '2026-02-25': 1,
+  '2026-02-26': 1,
+  '2026-02-27': 1,
+  '2026-02-28': 1,
+  '2026-03-01': 1,
+  '2026-03-02': 1,
+  '2026-03-03': 1
+}
+
+📅 Generating valid slots for Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+📅 Valid slots for Exam2: 2026-02-24, 2026-02-25, 2026-02-26, 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04, 2026-03-05, 2026-03-06
+
+*** assignSessionsEvenly called for Exam2 ***
+=== ASSIGNING SESSIONS FOR Exam2 ===
+Calculated hours: 10, Completed: 0, Remaining: 10, Sessions: 10
+Session duration: 60 minutes = 1 hours
+Valid slots: 11 days: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+Day before exam available: true, Total slots: 11
+Final review placed: true, Remaining sessions to place: 9, Available days: 10
+  Available days: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05'
+]
+  Need to place 9 sessions with max 2-day interval
+  Exam2 has 2 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 9 sessions (remaining: 9, already placed: 0)
+  Total sessions should be: 10 (including final review: true)
+  Available days count: 10, Sessions to place: 9
+  Distributing 9 sessions with diversification (max 2-day interval)
+  Available unassigned days: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05'
+]
+  Days used by other exams: [
+  '2026-03-04',
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03'
+]
+  Selected 2026-03-05 (first session, used by other: false)
+  Selected 2026-03-04 (1 days from last, consec: 2, used by other: true)
+  Selected 2026-03-03 (1 days from last, consec: 3, used by other: true)
+  Selected 2026-03-02 (1 days from last, consec: 4, used by other: true)
+  Selected 2026-03-01 (1 days from last, consec: 5, used by other: true)
+  Selected 2026-02-28 (1 days from last, consec: 6, used by other: true)
+  Selected 2026-02-27 (1 days from last, consec: 7, used by other: true)
+  Selected 2026-02-26 (1 days from last, consec: 8, used by other: true)
+  Selected 2026-02-25 (1 days from last, consec: 9, used by other: true)
+  Stopping: selected 9 days, need 9 sessions
+  Placing 9 selected days, need 9 sessions
+  ✓ Placed session 1/9 on 2026-02-25
+  ✓ Placed session 2/9 on 2026-02-26
+  ✓ Placed session 3/9 on 2026-02-27
+  ✓ Placed session 4/9 on 2026-02-28
+  ✓ Placed session 5/9 on 2026-03-01
+  ✓ Placed session 6/9 on 2026-03-02
+  ✓ Placed session 7/9 on 2026-03-03
+  ✓ Placed session 8/9 on 2026-03-04
+  ✓ Placed session 9/9 on 2026-03-05
+  After gap enforcement: sessions on [
+  '2026-02-25', '2026-02-26',
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06'
+]
+  Final: 10 sessions total (target was 10, gap-enforcement may have added extras)
+Final session assignment for Exam2: {
+  '2026-03-06': 1,
+  '2026-02-25': 1,
+  '2026-02-26': 1,
+  '2026-02-27': 1,
+  '2026-02-28': 1,
+  '2026-03-01': 1,
+  '2026-03-02': 1,
+  '2026-03-03': 1,
+  '2026-03-04': 1,
+  '2026-03-05': 1
+}
+
+📅 Generating valid slots for Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+📅 Valid slots for Exam3: 2026-02-24, 2026-02-25, 2026-02-26, 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04, 2026-03-05, 2026-03-06, 2026-03-07, 2026-03-08
+
+*** assignSessionsEvenly called for Exam3 ***
+=== ASSIGNING SESSIONS FOR Exam3 ===
+Calculated hours: 10, Completed: 0, Remaining: 10, Sessions: 10
+Session duration: 60 minutes = 1 hours
+Valid slots: 13 days: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+Day before exam available: true, Total slots: 13
+Final review placed: true, Remaining sessions to place: 9, Available days: 12
+  Available days: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07'
+]
+  Need to place 9 sessions with max 2-day interval
+  Exam3 has 2 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 9 sessions (remaining: 9, already placed: 0)
+  Total sessions should be: 10 (including final review: true)
+  Available days count: 12, Sessions to place: 9
+  Distributing 9 sessions with diversification (max 2-day interval)
+  Available unassigned days: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07'
+]
+  Days used by other exams: [
+  '2026-03-04', '2026-02-24',
+  '2026-02-25', '2026-02-26',
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-06',
+  '2026-03-05'
+]
+  Selected 2026-03-07 (first session, used by other: false)
+  Selected 2026-03-06 (1 days from last, consec: 2, used by other: true)
+  Skipping 2026-03-05 (shouldSkip=true, daysDiff=1, 9 days left — safe)
+  Selected 2026-03-04 (2 days from last, consec: 1, used by other: true)
+  Selected 2026-03-03 (1 days from last, consec: 2, used by other: true)
+  Skipping 2026-03-02 (shouldSkip=true, daysDiff=1, 6 days left — safe)
+  Selected 2026-03-01 (2 days from last, consec: 1, used by other: true)
+  Selected 2026-02-28 (1 days from last, consec: 2, used by other: true)
+  Skipping 2026-02-27 (shouldSkip=true, daysDiff=1, 3 days left — safe)
+  Selected 2026-02-26 (2 days from last, consec: 1, used by other: true)
+  Selected 2026-02-25 (1 days from last, consec: 2, used by other: true)
+  Skipping 2026-02-24 (shouldSkip=true, daysDiff=1, 0 days left — safe)
+  Only selected 8/9 sessions, filling gaps...
+  Added 2026-03-05 to fill gap
+  Placing 9 selected days, need 9 sessions
+  ✓ Placed session 1/9 on 2026-02-25
+  ✓ Placed session 2/9 on 2026-02-26
+  ✓ Placed session 3/9 on 2026-02-28
+  ✓ Placed session 4/9 on 2026-03-01
+  ✓ Placed session 5/9 on 2026-03-03
+  ✓ Placed session 6/9 on 2026-03-04
+  ✓ Placed session 7/9 on 2026-03-05
+  ✓ Placed session 8/9 on 2026-03-06
+  ✓ Placed session 9/9 on 2026-03-07
+  After gap enforcement: sessions on [
+  '2026-02-25', '2026-02-26',
+  '2026-02-28', '2026-03-01',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Final: 10 sessions total (target was 10, gap-enforcement may have added extras)
+Final session assignment for Exam3: {
+  '2026-03-08': 1,
+  '2026-02-25': 1,
+  '2026-02-26': 1,
+  '2026-02-28': 1,
+  '2026-03-01': 1,
+  '2026-03-03': 1,
+  '2026-03-04': 1,
+  '2026-03-05': 1,
+  '2026-03-06': 1,
+  '2026-03-07': 1
+}
+Exam Exam1: rawHours=10, completed=0, totalHours=10, totalSessions=10
+Exam schedule has 9 entries: [
+  '2026-03-04',
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03'
+]
+Exam Exam2: rawHours=10, completed=0, totalHours=10, totalSessions=10
+Exam schedule has 10 entries: [
+  '2026-03-06', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05'
+]
+Exam Exam3: rawHours=10, completed=0, totalHours=10, totalSessions=10
+Exam schedule has 10 entries: [
+  '2026-03-08', '2026-02-25',
+  '2026-02-26', '2026-02-28',
+  '2026-03-01', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07'
+]
+=== PROCESSING ASSIGNMENTS ===
+Total assignments to process: 29
+  0: Exam1 on 2026-02-24 (1 sessions)
+  1: Exam1 on 2026-02-25 (1 sessions)
+  2: Exam2 on 2026-02-25 (1 sessions)
+  3: Exam3 on 2026-02-25 (1 sessions)
+  4: Exam1 on 2026-02-26 (1 sessions)
+  5: Exam2 on 2026-02-26 (1 sessions)
+  6: Exam3 on 2026-02-26 (1 sessions)
+  7: Exam1 on 2026-02-27 (1 sessions)
+  8: Exam2 on 2026-02-27 (1 sessions)
+  9: Exam1 on 2026-02-28 (1 sessions)
+  10: Exam2 on 2026-02-28 (1 sessions)
+  11: Exam3 on 2026-02-28 (1 sessions)
+  12: Exam1 on 2026-03-01 (1 sessions)
+  13: Exam2 on 2026-03-01 (1 sessions)
+  14: Exam3 on 2026-03-01 (1 sessions)
+  15: Exam1 on 2026-03-02 (1 sessions)
+  16: Exam2 on 2026-03-02 (1 sessions)
+  17: Exam1 on 2026-03-03 (1 sessions)
+  18: Exam2 on 2026-03-03 (1 sessions)
+  19: Exam3 on 2026-03-03 (1 sessions)
+  20: Exam1 on 2026-03-04 (2 sessions)
+  21: Exam2 on 2026-03-04 (1 sessions)
+  22: Exam3 on 2026-03-04 (1 sessions)
+  23: Exam2 on 2026-03-05 (1 sessions)
+  24: Exam3 on 2026-03-05 (1 sessions)
+  25: Exam2 on 2026-03-06 (1 sessions)
+  26: Exam3 on 2026-03-06 (1 sessions)
+  27: Exam3 on 2026-03-07 (1 sessions)
+  28: Exam3 on 2026-03-08 (1 sessions)
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-02-24
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-02-25
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-02-25
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-02-25
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-02-26
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-02-26
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-02-26
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-02-27
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-02-27
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-02-28
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-02-28
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-02-28
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-03-01
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-01
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-01
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-03-02
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-02
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-03-03
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-03
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-03
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-03-04
+Sessions to place: 2
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-04
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-04
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-05
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-05
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-06
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-06
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-07
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-08
+Sessions to place: 1
+Total sessions needed for exam: 10
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+=== BALANCING WORKLOAD ===
+Max sessions per day: 2
+Day 2026-02-24: 1 sessions { '1': 1 }
+  -> UNDERLOADED with 1 capacity
+Day 2026-02-25: 3 sessions { '1': 1, '2': 1, '3': 1 }
+  -> OVERLOADED by 1 sessions
+Day 2026-02-26: 3 sessions { '1': 1, '2': 1, '3': 1 }
+  -> OVERLOADED by 1 sessions
+Day 2026-02-27: 2 sessions { '1': 1, '2': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-02-28: 3 sessions { '1': 1, '2': 1, '3': 1 }
+  -> OVERLOADED by 1 sessions
+Day 2026-03-01: 3 sessions { '1': 1, '2': 1, '3': 1 }
+  -> OVERLOADED by 1 sessions
+Day 2026-03-02: 2 sessions { '1': 1, '2': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-03: 3 sessions { '1': 1, '2': 1, '3': 1 }
+  -> OVERLOADED by 1 sessions
+Day 2026-03-04: 4 sessions { '1': 2, '2': 1, '3': 1 }
+  -> OVERLOADED by 2 sessions
+Day 2026-03-05: 2 sessions { '2': 1, '3': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-06: 2 sessions { '2': 1, '3': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-07: 1 sessions { '3': 1 }
+  -> UNDERLOADED with 1 capacity
+Day 2026-03-08: 1 sessions { '3': 1 }
+  -> UNDERLOADED with 1 capacity
+Found 6 overloaded days, 4 busy days, 3 underloaded days
+Processing overloaded day 2026-02-25, need to move 1 sessions
+  Trying to move to underloaded day 2026-02-24 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    SKIP: Exam1 already has 1 session on 2026-02-24, avoiding doubling
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    MOVED 1 session of Exam2 from 2026-02-25 to 2026-02-24
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    MOVED 1 session of Exam3 from 2026-02-25 to 2026-02-24
+Processing overloaded day 2026-02-26, need to move 1 sessions
+  Trying to move to underloaded day 2026-02-24 (capacity: -1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+  Trying to move to underloaded day 2026-03-07 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, avoiding doubling
+  Trying to move to underloaded day 2026-03-08 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, avoiding doubling
+Processing overloaded day 2026-02-28, need to move 1 sessions
+  Trying to move to underloaded day 2026-02-24 (capacity: -1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+  Trying to move to underloaded day 2026-03-07 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, avoiding doubling
+  Trying to move to underloaded day 2026-03-08 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, avoiding doubling
+Processing overloaded day 2026-03-01, need to move 1 sessions
+  Trying to move to underloaded day 2026-02-24 (capacity: -1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+  Trying to move to underloaded day 2026-03-07 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, avoiding doubling
+  Trying to move to underloaded day 2026-03-08 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, avoiding doubling
+Processing overloaded day 2026-03-03, need to move 1 sessions
+  Trying to move to underloaded day 2026-02-24 (capacity: -1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+  Trying to move to underloaded day 2026-03-07 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, avoiding doubling
+  Trying to move to underloaded day 2026-03-08 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, avoiding doubling
+Processing overloaded day 2026-03-04, need to move 2 sessions
+  Trying to move to underloaded day 2026-02-24 (capacity: -1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+  Trying to move to underloaded day 2026-03-07 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+    SKIP: 2026-03-04 is day before exam for Exam1, protecting final review session
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, avoiding doubling
+  Trying to move to underloaded day 2026-03-08 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+    SKIP: 2026-03-04 is day before exam for Exam1, protecting final review session
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, avoiding doubling
+=== BALANCING BUSY DAYS ===
+Processing busy day 2026-02-27, can give 1 session
+  Available exams on busy day: [ 'Exam2', 'Exam1' ]
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+Processing busy day 2026-03-02, can give 1 session
+  Available exams on busy day: [ 'Exam2', 'Exam1' ]
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+Processing busy day 2026-03-05, can give 1 session
+  Available exams on busy day: [ 'Exam3', 'Exam2' ]
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, no doubling
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, no doubling
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+Processing busy day 2026-03-06, can give 1 session
+  Available exams on busy day: [ 'Exam3', 'Exam2' ]
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, no doubling
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, no doubling
+    Checking exam Exam2 (exam date: 2026-03-07)
+    SKIP: 2026-03-06 is day before exam for Exam2, protecting final review session
+=== EVENING OUT WORKLOAD ===
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Balanced: moved Exam2 from 2026-03-04 (4→3) to 2026-02-25 (1→2)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-24
+  Generated 9 valid slots: [
+  '2026-02-24',
+  '2026-02-25',
+  '2026-02-26',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 11 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-24, Initial start date: 2026-02-24
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-24
+  Generated 13 valid slots: [
+  '2026-02-24', '2026-02-25',
+  '2026-02-26', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07',
+  '2026-03-08'
+]
+=== FINAL BALANCED SCHEDULE ===
+Day 2026-02-24: 3 sessions { '1': 1, '2': 1, '3': 1 }
+Day 2026-02-25: 2 sessions { '1': 1, '2': 1 }
+Day 2026-02-26: 3 sessions { '1': 1, '2': 1, '3': 1 }
+Day 2026-02-27: 2 sessions { '1': 1, '2': 1 }
+Day 2026-02-28: 3 sessions { '1': 1, '2': 1, '3': 1 }
+Day 2026-03-01: 3 sessions { '1': 1, '2': 1, '3': 1 }
+Day 2026-03-02: 2 sessions { '1': 1, '2': 1 }
+Day 2026-03-03: 3 sessions { '1': 1, '2': 1, '3': 1 }
+Day 2026-03-04: 3 sessions { '1': 2, '3': 1 }
+Day 2026-03-05: 2 sessions { '2': 1, '3': 1 }
+Day 2026-03-06: 2 sessions { '2': 1, '3': 1 }
+Day 2026-03-07: 1 sessions { '3': 1 }
+Day 2026-03-08: 1 sessions { '3': 1 }
+=== FIXING MAX INTERVAL VIOLATIONS ===
+Checking Exam1: 2026-02-24, 2026-02-25, 2026-02-26, 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04
+Checking Exam2: 2026-02-24, 2026-02-25, 2026-02-26, 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-05, 2026-03-06
+Checking Exam3: 2026-02-24, 2026-02-26, 2026-02-28, 2026-03-01, 2026-03-03, 2026-03-04, 2026-03-05, 2026-03-06, 2026-03-07, 2026-03-08
+  2026-02-24: 3h
+  2026-02-25: 2h
+  2026-02-26: 3h
+  2026-02-27: 2h
+  2026-02-28: 3h
+  2026-03-01: 3h
+  2026-03-02: 2h
+  2026-03-03: 3h
+  2026-03-04: 3h
+  2026-03-05: 2h
+  2026-03-06: 2h
+  2026-03-07: 1h
+  2026-03-08: 1h
+
+=== Soft limit: 3 ===
+=== SCHEDULER CONSTRUCTOR CALLED ===
+Number of exams: 3
+Number of existing sessions: 0
+Existing sessions: []
+Completed hours: {}
+=== SCHEDULER generatePlan CALLED ===
+📐 Optimal start: totalHours=30, softLimit=3, daysNeeded=10, start=2026-02-27
+Exam scheduling order: [
+  { subject: 'Exam1', sessions: 10 },
+  { subject: 'Exam2', sessions: 10 },
+  { subject: 'Exam3', sessions: 10 }
+]
+
+📅 Generating valid slots for Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+📅 Valid slots for Exam1: 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04
+
+*** assignSessionsEvenly called for Exam1 ***
+=== ASSIGNING SESSIONS FOR Exam1 ===
+Calculated hours: 10, Completed: 0, Remaining: 10, Sessions: 10
+Session duration: 60 minutes = 1 hours
+Valid slots: 6 days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+Day before exam available: true, Total slots: 6
+Final review placed: true, Remaining sessions to place: 8, Available days: 5
+  Available days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03'
+]
+  Need to place 8 sessions with max 2-day interval
+  Exam1 has 2 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 8 sessions (remaining: 8, already placed: 0)
+  Total sessions should be: 10 (including final review: true)
+  Available days count: 5, Sessions to place: 8
+  Distributing 8 sessions with diversification (max 2-day interval)
+  Available unassigned days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03'
+]
+  Days used by other exams: []
+  Selected 2026-03-03 (first session, used by other: false)
+  Selected 2026-03-02 (1 days from last, consec: 2, used by other: false)
+  Selected 2026-03-01 (1 days from last, consec: 3, used by other: false)
+  Selected 2026-02-28 (1 days from last, consec: 4, used by other: false)
+  Selected 2026-02-27 (1 days from last, consec: 5, used by other: false)
+  Only selected 5/8 sessions, filling gaps...
+  Placing 5 selected days, need 8 sessions
+  ⚠️  Not enough days (5) for sessions (8)
+  Will place multiple sessions per day - IGNORING daily limit to ensure all sessions are created
+  Selected days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03'
+]
+  Current sessionMap before placement: { '2026-03-04': 2 }
+  Current sessionCount: 0
+  [Loop 0] Processing day 2026-02-27, remainingToPlace: 8
+    daysLeft: 5, sessionsForThisDay: 2
+    currentSessions: 0, sessionsToAdd: 2
+  ✓ Placed 2 session(s) on 2026-02-27 (total: 2, remaining: 6)
+  [Loop 1] Processing day 2026-02-28, remainingToPlace: 6
+    daysLeft: 4, sessionsForThisDay: 2
+    currentSessions: 0, sessionsToAdd: 2
+  ✓ Placed 2 session(s) on 2026-02-28 (total: 2, remaining: 4)
+  [Loop 2] Processing day 2026-03-01, remainingToPlace: 4
+    daysLeft: 3, sessionsForThisDay: 2
+    currentSessions: 0, sessionsToAdd: 2
+  ✓ Placed 2 session(s) on 2026-03-01 (total: 2, remaining: 2)
+  [Loop 3] Processing day 2026-03-02, remainingToPlace: 2
+    daysLeft: 2, sessionsForThisDay: 1
+    currentSessions: 0, sessionsToAdd: 1
+  ✓ Placed 1 session(s) on 2026-03-02 (total: 1, remaining: 1)
+  [Loop 4] Processing day 2026-03-03, remainingToPlace: 1
+    daysLeft: 1, sessionsForThisDay: 1
+    currentSessions: 0, sessionsToAdd: 1
+  ✓ Placed 1 session(s) on 2026-03-03 (total: 1, remaining: 0)
+  After multi-session placement, sessionMap: {
+  '2026-03-04': 2,
+  '2026-02-27': 2,
+  '2026-02-28': 2,
+  '2026-03-01': 2,
+  '2026-03-02': 1,
+  '2026-03-03': 1
+}
+  After multi-session placement, sessionCount: 8
+  After gap enforcement: sessions on [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Final: 6 sessions total (target was 10, gap-enforcement may have added extras)
+Final session assignment for Exam1: {
+  '2026-03-04': 2,
+  '2026-02-27': 2,
+  '2026-02-28': 2,
+  '2026-03-01': 2,
+  '2026-03-02': 1,
+  '2026-03-03': 1
+}
+
+📅 Generating valid slots for Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+📅 Valid slots for Exam2: 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04, 2026-03-05, 2026-03-06
+
+*** assignSessionsEvenly called for Exam2 ***
+=== ASSIGNING SESSIONS FOR Exam2 ===
+Calculated hours: 10, Completed: 0, Remaining: 10, Sessions: 10
+Session duration: 60 minutes = 1 hours
+Valid slots: 8 days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+Day before exam available: true, Total slots: 8
+Final review placed: true, Remaining sessions to place: 8, Available days: 7
+  Available days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05'
+]
+  Need to place 8 sessions with max 2-day interval
+  Exam2 has 2 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 8 sessions (remaining: 8, already placed: 0)
+  Total sessions should be: 10 (including final review: true)
+  Available days count: 7, Sessions to place: 8
+  Distributing 8 sessions with diversification (max 2-day interval)
+  Available unassigned days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05'
+]
+  Days used by other exams: [
+  '2026-03-04',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03'
+]
+  Selected 2026-03-05 (first session, used by other: false)
+  Selected 2026-03-04 (1 days from last, consec: 2, used by other: true)
+  Selected 2026-03-03 (1 days from last, consec: 3, used by other: true)
+  Selected 2026-03-02 (1 days from last, consec: 4, used by other: true)
+  Selected 2026-03-01 (1 days from last, consec: 5, used by other: true)
+  Selected 2026-02-28 (1 days from last, consec: 6, used by other: true)
+  Selected 2026-02-27 (1 days from last, consec: 7, used by other: true)
+  Only selected 7/8 sessions, filling gaps...
+  Placing 7 selected days, need 8 sessions
+  ⚠️  Not enough days (7) for sessions (8)
+  Will place multiple sessions per day - IGNORING daily limit to ensure all sessions are created
+  Selected days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05'
+]
+  Current sessionMap before placement: { '2026-03-06': 2 }
+  Current sessionCount: 0
+  [Loop 0] Processing day 2026-02-27, remainingToPlace: 8
+    daysLeft: 7, sessionsForThisDay: 2
+    currentSessions: 0, sessionsToAdd: 2
+  ✓ Placed 2 session(s) on 2026-02-27 (total: 2, remaining: 6)
+  [Loop 1] Processing day 2026-02-28, remainingToPlace: 6
+    daysLeft: 6, sessionsForThisDay: 1
+    currentSessions: 0, sessionsToAdd: 1
+  ✓ Placed 1 session(s) on 2026-02-28 (total: 1, remaining: 5)
+  [Loop 2] Processing day 2026-03-01, remainingToPlace: 5
+    daysLeft: 5, sessionsForThisDay: 1
+    currentSessions: 0, sessionsToAdd: 1
+  ✓ Placed 1 session(s) on 2026-03-01 (total: 1, remaining: 4)
+  [Loop 3] Processing day 2026-03-02, remainingToPlace: 4
+    daysLeft: 4, sessionsForThisDay: 1
+    currentSessions: 0, sessionsToAdd: 1
+  ✓ Placed 1 session(s) on 2026-03-02 (total: 1, remaining: 3)
+  [Loop 4] Processing day 2026-03-03, remainingToPlace: 3
+    daysLeft: 3, sessionsForThisDay: 1
+    currentSessions: 0, sessionsToAdd: 1
+  ✓ Placed 1 session(s) on 2026-03-03 (total: 1, remaining: 2)
+  [Loop 5] Processing day 2026-03-04, remainingToPlace: 2
+    daysLeft: 2, sessionsForThisDay: 1
+    currentSessions: 0, sessionsToAdd: 1
+  ✓ Placed 1 session(s) on 2026-03-04 (total: 1, remaining: 1)
+  [Loop 6] Processing day 2026-03-05, remainingToPlace: 1
+    daysLeft: 1, sessionsForThisDay: 1
+    currentSessions: 0, sessionsToAdd: 1
+  ✓ Placed 1 session(s) on 2026-03-05 (total: 1, remaining: 0)
+  After multi-session placement, sessionMap: {
+  '2026-03-06': 2,
+  '2026-02-27': 2,
+  '2026-02-28': 1,
+  '2026-03-01': 1,
+  '2026-03-02': 1,
+  '2026-03-03': 1,
+  '2026-03-04': 1,
+  '2026-03-05': 1
+}
+  After multi-session placement, sessionCount: 8
+  After gap enforcement: sessions on [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Final: 8 sessions total (target was 10, gap-enforcement may have added extras)
+Final session assignment for Exam2: {
+  '2026-03-06': 2,
+  '2026-02-27': 2,
+  '2026-02-28': 1,
+  '2026-03-01': 1,
+  '2026-03-02': 1,
+  '2026-03-03': 1,
+  '2026-03-04': 1,
+  '2026-03-05': 1
+}
+
+📅 Generating valid slots for Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+📅 Valid slots for Exam3: 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04, 2026-03-05, 2026-03-06, 2026-03-07, 2026-03-08
+
+*** assignSessionsEvenly called for Exam3 ***
+=== ASSIGNING SESSIONS FOR Exam3 ===
+Calculated hours: 10, Completed: 0, Remaining: 10, Sessions: 10
+Session duration: 60 minutes = 1 hours
+Valid slots: 10 days: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+Day before exam available: true, Total slots: 10
+Final review placed: true, Remaining sessions to place: 9, Available days: 9
+  Available days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06',
+  '2026-03-07'
+]
+  Need to place 9 sessions with max 2-day interval
+  Exam3 has 2 close exam(s) - NOT isolated
+  Multiple exams detected - applying diversification (not reusing existing sessions)
+  Need to place 9 sessions (remaining: 9, already placed: 0)
+  Total sessions should be: 10 (including final review: true)
+  Available days count: 9, Sessions to place: 9
+  Distributing 9 sessions with diversification (max 2-day interval)
+  Available unassigned days: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06',
+  '2026-03-07'
+]
+  Days used by other exams: [
+  '2026-03-04',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-06',
+  '2026-03-05'
+]
+  Selected 2026-03-07 (first session, used by other: false)
+  Selected 2026-03-06 (1 days from last, consec: 2, used by other: true)
+  Selected 2026-03-05 (1 days from last, consec: 3, used by other: true)
+  Selected 2026-03-04 (1 days from last, consec: 4, used by other: true)
+  Selected 2026-03-03 (1 days from last, consec: 5, used by other: true)
+  Selected 2026-03-02 (1 days from last, consec: 6, used by other: true)
+  Selected 2026-03-01 (1 days from last, consec: 7, used by other: true)
+  Selected 2026-02-28 (1 days from last, consec: 8, used by other: true)
+  Selected 2026-02-27 (1 days from last, consec: 9, used by other: true)
+  Placing 9 selected days, need 9 sessions
+  ✓ Placed session 1/9 on 2026-02-27
+  ✓ Placed session 2/9 on 2026-02-28
+  ✓ Placed session 3/9 on 2026-03-01
+  ✓ Placed session 4/9 on 2026-03-02
+  ✓ Placed session 5/9 on 2026-03-03
+  ✓ Placed session 6/9 on 2026-03-04
+  ✓ Placed session 7/9 on 2026-03-05
+  ✓ Placed session 8/9 on 2026-03-06
+  ✓ Placed session 9/9 on 2026-03-07
+  After gap enforcement: sessions on [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Final: 10 sessions total (target was 10, gap-enforcement may have added extras)
+Final session assignment for Exam3: {
+  '2026-03-08': 1,
+  '2026-02-27': 1,
+  '2026-02-28': 1,
+  '2026-03-01': 1,
+  '2026-03-02': 1,
+  '2026-03-03': 1,
+  '2026-03-04': 1,
+  '2026-03-05': 1,
+  '2026-03-06': 1,
+  '2026-03-07': 1
+}
+Exam Exam1: rawHours=10, completed=0, totalHours=10, totalSessions=10
+Exam schedule has 6 entries: [
+  '2026-03-04',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03'
+]
+Exam Exam2: rawHours=10, completed=0, totalHours=10, totalSessions=10
+Exam schedule has 8 entries: [
+  '2026-03-06',
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05'
+]
+Exam Exam3: rawHours=10, completed=0, totalHours=10, totalSessions=10
+Exam schedule has 10 entries: [
+  '2026-03-08', '2026-02-27',
+  '2026-02-28', '2026-03-01',
+  '2026-03-02', '2026-03-03',
+  '2026-03-04', '2026-03-05',
+  '2026-03-06', '2026-03-07'
+]
+=== PROCESSING ASSIGNMENTS ===
+Total assignments to process: 24
+  0: Exam1 on 2026-02-27 (2 sessions)
+  1: Exam2 on 2026-02-27 (2 sessions)
+  2: Exam3 on 2026-02-27 (1 sessions)
+  3: Exam1 on 2026-02-28 (2 sessions)
+  4: Exam2 on 2026-02-28 (1 sessions)
+  5: Exam3 on 2026-02-28 (1 sessions)
+  6: Exam1 on 2026-03-01 (2 sessions)
+  7: Exam2 on 2026-03-01 (1 sessions)
+  8: Exam3 on 2026-03-01 (1 sessions)
+  9: Exam1 on 2026-03-02 (1 sessions)
+  10: Exam2 on 2026-03-02 (1 sessions)
+  11: Exam3 on 2026-03-02 (1 sessions)
+  12: Exam1 on 2026-03-03 (1 sessions)
+  13: Exam2 on 2026-03-03 (1 sessions)
+  14: Exam3 on 2026-03-03 (1 sessions)
+  15: Exam1 on 2026-03-04 (2 sessions)
+  16: Exam2 on 2026-03-04 (1 sessions)
+  17: Exam3 on 2026-03-04 (1 sessions)
+  18: Exam2 on 2026-03-05 (1 sessions)
+  19: Exam3 on 2026-03-05 (1 sessions)
+  20: Exam2 on 2026-03-06 (2 sessions)
+  21: Exam3 on 2026-03-06 (1 sessions)
+  22: Exam3 on 2026-03-07 (1 sessions)
+  23: Exam3 on 2026-03-08 (1 sessions)
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-02-27
+Sessions to place: 2
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-02-27
+Sessions to place: 2
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-02-27
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-02-28
+Sessions to place: 2
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-02-28
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-02-28
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-03-01
+Sessions to place: 2
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-01
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-01
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-03-02
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-02
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-02
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-03-03
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-03
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-03
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam1
+Date: 2026-03-04
+Sessions to place: 2
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-04
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-04
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-05
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-05
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam2
+Date: 2026-03-06
+Sessions to place: 2
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-06
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-07
+Sessions to place: 1
+Total sessions needed for exam: 10
+
+=== Processing Assignment ===
+Exam: Exam3
+Date: 2026-03-08
+Sessions to place: 1
+Total sessions needed for exam: 10
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+=== BALANCING WORKLOAD ===
+Max sessions per day: 3
+Day 2026-02-27: 5 sessions { '1': 2, '2': 2, '3': 1 }
+  -> OVERLOADED by 2 sessions
+Day 2026-02-28: 4 sessions { '1': 2, '2': 1, '3': 1 }
+  -> OVERLOADED by 1 sessions
+Day 2026-03-01: 4 sessions { '1': 2, '2': 1, '3': 1 }
+  -> OVERLOADED by 1 sessions
+Day 2026-03-02: 3 sessions { '1': 1, '2': 1, '3': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-03: 3 sessions { '1': 1, '2': 1, '3': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-04: 4 sessions { '1': 2, '2': 1, '3': 1 }
+  -> OVERLOADED by 1 sessions
+Day 2026-03-05: 2 sessions { '2': 1, '3': 1 }
+  -> UNDERLOADED with 1 capacity
+Day 2026-03-06: 3 sessions { '2': 2, '3': 1 }
+  -> BUSY (can give 1 session if needed)
+Day 2026-03-07: 1 sessions { '3': 1 }
+  -> UNDERLOADED with 2 capacity
+Day 2026-03-08: 1 sessions { '3': 1 }
+  -> UNDERLOADED with 2 capacity
+Found 4 overloaded days, 3 busy days, 3 underloaded days
+Processing overloaded day 2026-02-27, need to move 2 sessions
+  Trying to move to underloaded day 2026-03-05 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-05: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    SKIP: Exam2 already has 1 session on 2026-03-05, avoiding doubling
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-05, avoiding doubling
+  Trying to move to underloaded day 2026-03-07 (capacity: 2)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, avoiding doubling
+  Trying to move to underloaded day 2026-03-08 (capacity: 2)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, avoiding doubling
+Processing overloaded day 2026-02-28, need to move 1 sessions
+  Trying to move to underloaded day 2026-03-05 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-05: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    SKIP: Exam2 already has 1 session on 2026-03-05, avoiding doubling
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-05, avoiding doubling
+  Trying to move to underloaded day 2026-03-07 (capacity: 2)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, avoiding doubling
+  Trying to move to underloaded day 2026-03-08 (capacity: 2)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, avoiding doubling
+Processing overloaded day 2026-03-01, need to move 1 sessions
+  Trying to move to underloaded day 2026-03-05 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-05: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    SKIP: Exam2 already has 1 session on 2026-03-05, avoiding doubling
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-05, avoiding doubling
+  Trying to move to underloaded day 2026-03-07 (capacity: 2)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, avoiding doubling
+  Trying to move to underloaded day 2026-03-08 (capacity: 2)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, avoiding doubling
+Processing overloaded day 2026-03-04, need to move 1 sessions
+  Trying to move to underloaded day 2026-03-05 (capacity: 1)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+    SKIP: 2026-03-04 is day before exam for Exam1, protecting final review session
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    SKIP: Exam2 already has 1 session on 2026-03-05, avoiding doubling
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-05, avoiding doubling
+  Trying to move to underloaded day 2026-03-07 (capacity: 2)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+    SKIP: 2026-03-04 is day before exam for Exam1, protecting final review session
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, avoiding doubling
+  Trying to move to underloaded day 2026-03-08 (capacity: 2)
+  Available exams on overloaded day: [ '1', '2', '3' ]
+    Checking exam Exam1 (exam date: 2026-03-05)
+    SKIP: 2026-03-04 is day before exam for Exam1, protecting final review session
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, avoiding doubling
+=== BALANCING BUSY DAYS ===
+Processing busy day 2026-03-02, can give 1 session
+  Available exams on busy day: [ 'Exam3', 'Exam2', 'Exam1' ]
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, no doubling
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, no doubling
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+Processing busy day 2026-03-03, can give 1 session
+  Available exams on busy day: [ 'Exam3', 'Exam2', 'Exam1' ]
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, no doubling
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, no doubling
+    Checking exam Exam2 (exam date: 2026-03-07)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-07: not a valid date for Exam2
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+    Can't move to 2026-03-08: not a valid date for Exam2
+    Checking exam Exam1 (exam date: 2026-03-05)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-07: not a valid date for Exam1
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+    Can't move to 2026-03-08: not a valid date for Exam1
+Processing busy day 2026-03-06, can give 1 session
+  Available exams on busy day: [ 'Exam3', 'Exam2' ]
+    Checking exam Exam3 (exam date: 2026-03-09)
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-07, no doubling
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+    SKIP: Exam3 already has 1 session on 2026-03-08, no doubling
+    Checking exam Exam2 (exam date: 2026-03-07)
+    SKIP: 2026-03-06 is day before exam for Exam2, protecting final review session
+=== EVENING OUT WORKLOAD ===
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 9, Sessions needed: 10
+  Final start date: 2026-02-27
+  Generated 6 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 11, Sessions needed: 10
+  🔍 Gap check for Exam2:
+    Earlier exam: Exam1 on 2026-03-05
+    This exam: Exam2 on 2026-03-07
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 8 valid slots: [
+  '2026-02-27',
+  '2026-02-28',
+  '2026-03-01',
+  '2026-03-02',
+  '2026-03-03',
+  '2026-03-04',
+  '2026-03-05',
+  '2026-03-06'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+  Current date: 2026-02-24, nowUTC: 2026-02-24T00:00:00.000Z
+  Input start: 2026-02-27, Initial start date: 2026-02-27
+  Days until exam: 13, Sessions needed: 10
+  🔍 Gap check for Exam3:
+    Earlier exam: Exam2 on 2026-03-07
+    This exam: Exam3 on 2026-03-09
+    Gap: 2 days, Sessions needed: 10
+    Threshold: 12 days
+    ✗ Gap (2) < threshold (12), not applying isolation
+  Final start date: 2026-02-27
+  Generated 10 valid slots: [
+  '2026-02-27', '2026-02-28',
+  '2026-03-01', '2026-03-02',
+  '2026-03-03', '2026-03-04',
+  '2026-03-05', '2026-03-06',
+  '2026-03-07', '2026-03-08'
+]
+=== FINAL BALANCED SCHEDULE ===
+Day 2026-02-27: 5 sessions { '1': 2, '2': 2, '3': 1 }
+Day 2026-02-28: 4 sessions { '1': 2, '2': 1, '3': 1 }
+Day 2026-03-01: 4 sessions { '1': 2, '2': 1, '3': 1 }
+Day 2026-03-02: 3 sessions { '1': 1, '2': 1, '3': 1 }
+Day 2026-03-03: 3 sessions { '1': 1, '2': 1, '3': 1 }
+Day 2026-03-04: 4 sessions { '1': 2, '2': 1, '3': 1 }
+Day 2026-03-05: 2 sessions { '2': 1, '3': 1 }
+Day 2026-03-06: 3 sessions { '2': 2, '3': 1 }
+Day 2026-03-07: 1 sessions { '3': 1 }
+Day 2026-03-08: 1 sessions { '3': 1 }
+=== FIXING MAX INTERVAL VIOLATIONS ===
+Checking Exam1: 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04
+Checking Exam2: 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04, 2026-03-05, 2026-03-06
+Checking Exam3: 2026-02-27, 2026-02-28, 2026-03-01, 2026-03-02, 2026-03-03, 2026-03-04, 2026-03-05, 2026-03-06, 2026-03-07, 2026-03-08
+  2026-02-27: 5h
+  2026-02-28: 4h
+  2026-03-01: 4h
+  2026-03-02: 3h
+  2026-03-03: 3h
+  2026-03-04: 4h
+  2026-03-05: 2h
+  2026-03-06: 3h
+  2026-03-07: 1h
+  2026-03-08: 1h

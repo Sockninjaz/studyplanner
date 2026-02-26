@@ -9,12 +9,14 @@ import ExamModal from '@/components/exams/exam-modal';
 import EditExamModal from '@/components/exams/edit-exam-modal';
 import AddItemModal from '@/components/calendar/add-item-modal';
 import CreateTaskModal from '@/components/calendar/create-task-modal';
-import { useSidebar } from '@/app/(dashboard)/layout';
+import { useSidebar } from '@/components/shared/sidebar-context';
 
 interface UserPreferences {
     daily_study_limit: number;
+    soft_daily_limit: number;
     adjustment_percentage: number;
     session_duration: number;
+    enable_daily_limits: boolean;
 }
 
 export default function TodayPage() {
@@ -31,8 +33,10 @@ export default function TodayPage() {
     const [selectedExam, setSelectedExam] = useState<any>(null);
     const [userPreferences, setUserPreferences] = useState<UserPreferences>({
         daily_study_limit: 4,
+        soft_daily_limit: 2,
         adjustment_percentage: 25,
         session_duration: 30,
+        enable_daily_limits: true,
     });
 
     useEffect(() => {
@@ -58,8 +62,10 @@ export default function TodayPage() {
                 const data = await res.json();
                 const serverPrefs = {
                     daily_study_limit: data.daily_study_limit || 4,
+                    soft_daily_limit: data.soft_daily_limit || 2,
                     adjustment_percentage: data.adjustment_percentage || 25,
                     session_duration: data.session_duration || 30,
+                    enable_daily_limits: data.enable_daily_limits !== false,
                 };
 
                 if (!savedPrefs) {
@@ -163,62 +169,64 @@ export default function TodayPage() {
 
     return (
         <>
-            <div className="flex h-[calc(100vh-4rem)] gap-4">
-                {/* Main Content Area */}
-                <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-[60%]' : 'w-full'}`}>
-                    {/* Header */}
-                    <div className="bg-[#ffff] border-b border-[#4a4a4a] border-opacity-20 px-4 py-3">
-                        <div className="flex items-center justify-between">
-                            <h1 className="text-2xl font-bold text-[#4a4a4a]">
-                                Today's Schedule
-                            </h1>
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setIsAddItemModalOpen(true)}
-                                    className="bg-[rgb(54,65,86)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Add Item
-                                </button>
+            <div className="h-full flex flex-col bg-white">
+                <div className="flex h-full gap-4 overflow-hidden">
+                    {/* Main Content Area */}
+                    <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-[60%]' : 'w-full'}`}>
+                        {/* Header */}
+                        <div className="bg-[#ffff] px-4 py-3">
+                            <div className="flex items-center justify-between">
+                                <h1 className="text-2xl font-bold text-[#4a4a4a]">
+                                    Today's Schedule
+                                </h1>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setIsAddItemModalOpen(true)}
+                                        className="bg-[rgb(54,65,86)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Add Item
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Content */}
-                    <div className="h-[calc(100%-4rem)] overflow-hidden">
-                        <CalendarListView
-                            onSessionClick={handleSessionClick}
-                            onTaskClick={handleTaskClick}
-                            onAddItemClick={handleAddItemClick}
-                            onExamView={handleExamView}
-                            onExamEdit={handleExamEdit}
-                            sidebarOpen={isSidebarOpen}
-                            sidebarCollapsed={isSidebarCollapsed}
-                            viewMode="today"
-                        />
-                    </div>
-                </div>
-
-                {/* Sidebar - Session or Task */}
-                {isSidebarOpen && (
-                    <div className="w-[40%] transition-all duration-300">
-                        <div className="h-full rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden">
-                            {selectedSessionId ? (
-                                <SessionSidebar
-                                    sessionId={selectedSessionId}
-                                    onClose={handleCloseSidebar}
-                                />
-                            ) : selectedTaskId ? (
-                                <TaskSidebar
-                                    taskId={selectedTaskId}
-                                    onClose={handleCloseSidebar}
-                                />
-                            ) : null}
+                        {/* Content */}
+                        <div className="h-[calc(100%-4rem)] overflow-hidden">
+                            <CalendarListView
+                                onSessionClick={handleSessionClick}
+                                onTaskClick={handleTaskClick}
+                                onAddItemClick={handleAddItemClick}
+                                onExamView={handleExamView}
+                                onExamEdit={handleExamEdit}
+                                sidebarOpen={isSidebarOpen}
+                                sidebarCollapsed={isSidebarCollapsed}
+                                viewMode="today"
+                            />
                         </div>
                     </div>
-                )}
+
+                    {/* Sidebar - Session or Task */}
+                    {isSidebarOpen && (
+                        <div className="w-[40%] transition-all duration-300">
+                            <div className="h-full rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden">
+                                {selectedSessionId ? (
+                                    <SessionSidebar
+                                        sessionId={selectedSessionId}
+                                        onClose={handleCloseSidebar}
+                                    />
+                                ) : selectedTaskId ? (
+                                    <TaskSidebar
+                                        taskId={selectedTaskId}
+                                        onClose={handleCloseSidebar}
+                                    />
+                                ) : null}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Add Item Modal */}
@@ -240,34 +248,41 @@ export default function TodayPage() {
             />
 
             {/* Exam Modal - View */}
-            {selectedExam && isExamModalOpen && (
-                <ExamModal
-                    exam={selectedExam}
-                    isOpen={isExamModalOpen}
-                    onClose={handleCloseExamModal}
-                />
-            )}
+            {
+                selectedExam && isExamModalOpen && (
+                    <ExamModal
+                        exam={selectedExam}
+                        isOpen={isExamModalOpen}
+                        onClose={handleCloseExamModal}
+                    />
+                )
+            }
 
             {/* Edit Exam Modal */}
-            {selectedExam && isEditExamModalOpen && (
-                <EditExamModal
-                    exam={selectedExam}
-                    isOpen={isEditExamModalOpen}
-                    onClose={handleCloseEditExamModal}
-                />
-            )}
+            {
+                selectedExam && isEditExamModalOpen && (
+                    <EditExamModal
+                        exam={selectedExam}
+                        isOpen={isEditExamModalOpen}
+                        onClose={handleCloseEditExamModal}
+                    />
+                )
+            }
 
             {/* Create Exam Modal */}
-            {!selectedExam && (
-                <CreateExamModal
-                    isOpen={isExamModalOpen}
-                    onClose={handleCloseExamModal}
-                    dailyMaxHours={userPreferences.daily_study_limit}
-                    adjustmentPercentage={userPreferences.adjustment_percentage}
-                    sessionDuration={userPreferences.session_duration}
-                    initialDate={selectedDate}
-                />
-            )}
+            {
+                !selectedExam && (
+                    <CreateExamModal
+                        isOpen={isExamModalOpen}
+                        onClose={handleCloseExamModal}
+                        dailyMaxHours={userPreferences.daily_study_limit}
+                        adjustmentPercentage={userPreferences.adjustment_percentage}
+                        sessionDuration={userPreferences.session_duration}
+                        enableDailyLimits={userPreferences.enable_daily_limits}
+                        initialDate={selectedDate}
+                    />
+                )
+            }
         </>
     );
 }
