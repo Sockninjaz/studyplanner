@@ -887,10 +887,10 @@ export class StudyPlannerV1 {
   private mergeExamsIntoDailyPlan(): Map<string, Map<string, number>> {
     const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
     const softLimit = this.getEffectiveSoftLimit();
-    // Use the effective soft limit as the per-day ceiling during merge. When concurrent exams
-    // overflow this limit, the excess is sent backward to earlier empty days (provided
-    // by addEmptyDaysToSchedule using start_date). The balancer then evens everything out.
-    const MAX_SESSIONS_PER_DAY = Math.max(1, Math.floor(softLimit / STUDY_CHUNK_HOURS));
+    // Hard ceiling from daily_max_hours — never exceeded
+    const HARD_MAX_SESSIONS = Math.max(1, Math.floor(this.inputs.daily_max_hours / STUDY_CHUNK_HOURS));
+    // Soft target: when preferences ON, use soft_daily_limit; when OFF, computed below
+    let MAX_SESSIONS_PER_DAY = Math.max(1, Math.floor(softLimit / STUDY_CHUNK_HOURS));
 
     // Get preliminary schedules for all exams (build sequentially so later exams can avoid earlier ones)
     this.preliminarySchedules.clear();
@@ -913,6 +913,22 @@ export class StudyPlannerV1 {
       console.log(`📅 Valid slots for ${exam.subject}: ${validSlots.map(d => d.toISOString().split('T')[0]).join(', ')}`);
       const sessionMap = this.assignSessionsEvenly(exam, validSlots);
       this.preliminarySchedules.set(exam.id, sessionMap);
+    }
+
+    // When toggle is OFF, compute an ideal sessions-per-day for even distribution
+    // instead of using the high daily_max_hours as the target
+    if (this.inputs.enable_daily_limits === false) {
+      const allDaysSet = new Set<string>();
+      let totalSessions = 0;
+      this.preliminarySchedules.forEach((schedule) => {
+        schedule.forEach((sessions, dateStr) => {
+          allDaysSet.add(dateStr);
+          totalSessions += sessions;
+        });
+      });
+      const idealPerDay = Math.max(1, Math.ceil(totalSessions / Math.max(1, allDaysSet.size)));
+      MAX_SESSIONS_PER_DAY = Math.min(idealPerDay, HARD_MAX_SESSIONS);
+      console.log(`📊 Toggle OFF: total=${totalSessions} sessions across ${allDaysSet.size} days → idealPerDay=${idealPerDay}, effectiveMax=${MAX_SESSIONS_PER_DAY}`);
     }
 
     const preliminarySchedules = this.preliminarySchedules;
@@ -1105,8 +1121,27 @@ export class StudyPlannerV1 {
 
   private balanceWorkload(mergedSchedule: Map<string, Map<string, number>>): void {
     const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
-    const softLimit = this.getEffectiveSoftLimit();
-    const MAX_SESSIONS_PER_DAY = Math.max(1, Math.floor(softLimit / STUDY_CHUNK_HOURS));
+    const HARD_MAX_SESSIONS = Math.max(1, Math.floor(this.inputs.daily_max_hours / STUDY_CHUNK_HOURS));
+
+    // When toggle is OFF, compute ideal from the actual schedule for even spreading
+    let MAX_SESSIONS_PER_DAY: number;
+    if (this.inputs.enable_daily_limits === false) {
+      let totalSessions = 0;
+      let totalDaysWithSessions = 0;
+      mergedSchedule.forEach((daySchedule) => {
+        const daySessions = Array.from(daySchedule.values()).reduce((sum, s) => sum + s, 0);
+        totalSessions += daySessions;
+        if (daySessions > 0) totalDaysWithSessions++;
+      });
+      // Use all available days (including empty ones for spreading)
+      const totalDays = mergedSchedule.size;
+      const idealPerDay = Math.max(1, Math.ceil(totalSessions / Math.max(1, totalDays)));
+      MAX_SESSIONS_PER_DAY = Math.min(idealPerDay, HARD_MAX_SESSIONS);
+      console.log(`📊 Balance (toggle OFF): total=${totalSessions}, days=${totalDays}, idealPerDay=${idealPerDay}, effectiveMax=${MAX_SESSIONS_PER_DAY}`);
+    } else {
+      const softLimit = this.getEffectiveSoftLimit();
+      MAX_SESSIONS_PER_DAY = Math.max(1, Math.floor(softLimit / STUDY_CHUNK_HOURS));
+    }
 
     // Helper: would moving a session of examId from sourceDate to targetDate create a gap > 2 empty days (MAX_INTERVAL_DAYS)?
     // Checks that removing from sourceDate AND adding to targetDate both respect the consecutive gap limit.
