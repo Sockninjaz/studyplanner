@@ -82,10 +82,15 @@ export class StudyPlannerV1 {
     this.subjects = this.initializeInternalState(inputs.exams);
   }
 
-  // Returns the effective soft limit: soft_daily_limit when daily preferences are ON,
-  // or daily_max_hours when OFF (i.e., let the algorithm decide naturally).
+  // Returns the effective soft limit for scheduling distribution.
+  // When daily preferences are ON: returns soft_daily_limit (user's preferred daily target)
+  // When daily preferences are OFF: returns daily_max_hours (hard ceiling, no soft preference)
+  // This is used for optimal start date calculations and session distribution targets.
   private getEffectiveSoftLimit(): number {
     if (this.inputs.enable_daily_limits === false) {
+      // No soft preference — use the hard max as the ceiling.
+      // The key difference from ON: optimal start dates are skipped (see generateValidSlotsForExam),
+      // so sessions spread across ALL available days rather than being compressed.
       return this.inputs.daily_max_hours;
     }
     return this.inputs.soft_daily_limit ?? 2;
@@ -241,16 +246,22 @@ export class StudyPlannerV1 {
     const inputStartStr = this.inputs.start_date.toISOString().split('T')[0];
     let startDateUTC = new Date(inputStartStr + 'T00:00:00.000Z');
 
-    const optimalStarts = this.computePerExamOptimalStarts();
-    const perExamOptimalStart = optimalStarts[exam.id];
+    // When daily preferences are ON, use per-exam optimal starts to compress the schedule
+    // toward the soft limit. When OFF, skip this entirely so sessions spread across all days
+    // from today (original algorithm behavior).
+    if (this.inputs.enable_daily_limits !== false) {
+      const optimalStarts = this.computePerExamOptimalStarts();
+      const perExamOptimalStart = optimalStarts[exam.id];
 
-    // Restrict the start date for this exam strictly to what it needs,
-    // preventing late exams from bleeding backward into early isolated exams.
-    if (perExamOptimalStart && perExamOptimalStart.getTime() > startDateUTC.getTime()) {
-      startDateUTC = new Date(perExamOptimalStart);
-      console.log(`  📐 Simulated Exact Per-Exam Start for ${exam.subject}: ${startDateUTC.toISOString().split('T')[0]}`);
+      // Restrict the start date for this exam strictly to what it needs,
+      // preventing late exams from bleeding backward into early isolated exams.
+      if (perExamOptimalStart && perExamOptimalStart.getTime() > startDateUTC.getTime()) {
+        startDateUTC = new Date(perExamOptimalStart);
+        console.log(`  📐 Simulated Exact Per-Exam Start for ${exam.subject}: ${startDateUTC.toISOString().split('T')[0]}`);
+      }
+    } else {
+      console.log(`  Daily preferences OFF: using all available days from today for ${exam.subject}`);
     }
-    // ------------------------------
 
     const completedHrs = this.inputs.completed_hours?.[exam.id] || 0;
     const sessionsNeeded = Math.ceil(Math.max(0, this.calculateTotalHours(exam) - completedHrs) / (this.inputs.session_duration / 60));
