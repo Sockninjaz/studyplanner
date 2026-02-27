@@ -1001,13 +1001,61 @@ export class StudyPlannerV1 {
       console.log(`Total sessions needed for exam: ${assignment.totalSessions}`);
 
       let currentDate = assignment.date;
+      let remainingSessions = assignment.sessions;
 
-      if (!mergedSchedule.has(currentDate)) {
-        mergedSchedule.set(currentDate, new Map());
+      // Try to place sessions on the assigned date first, with overflow handling
+      while (remainingSessions > 0) {
+        if (!mergedSchedule.has(currentDate)) {
+          mergedSchedule.set(currentDate, new Map());
+        }
+
+        const daySchedule = mergedSchedule.get(currentDate)!;
+        const currentSessionsOnDay = Array.from(daySchedule.values()).reduce((sum, s) => sum + s, 0);
+        const availableSlots = MAX_SESSIONS_PER_DAY - currentSessionsOnDay;
+
+        if (availableSlots > 0) {
+          // We can fit some or all sessions on this day
+          const sessionsToPlace = Math.min(remainingSessions, availableSlots);
+          daySchedule.set(assignment.examId, (daySchedule.get(assignment.examId) || 0) + sessionsToPlace);
+          remainingSessions -= sessionsToPlace;
+          console.log(`  Placed ${sessionsToPlace} sessions on ${currentDate}, ${remainingSessions} remaining`);
+        } else {
+          console.log(`  No available slots on ${currentDate} (${currentSessionsOnDay}/${MAX_SESSIONS_PER_DAY})`);
+        }
+
+        if (remainingSessions > 0) {
+          // Need to move to an earlier day
+          const examForSlots = this.inputs.exams.find(e => e.id === assignment.examId)!;
+          const validSlots = this.generateValidSlotsForExam(examForSlots);
+          const sortedValidDates = validSlots
+            .map(d => d.toISOString().split('T')[0])
+            .sort();
+
+          const currentIndex = sortedValidDates.indexOf(currentDate);
+          let foundEarlierSlot = false;
+
+          // Search backwards for an earlier day with free slots
+          for (let i = currentIndex - 1; i >= 0; i--) {
+            const earlierDate = sortedValidDates[i];
+            const earlierSchedule = mergedSchedule.get(earlierDate);
+            const earlierSessionsOnDay = earlierSchedule ? Array.from(earlierSchedule.values()).reduce((sum: number, s: number) => sum + s, 0) : 0;
+            if (earlierSessionsOnDay < MAX_SESSIONS_PER_DAY) {
+              foundEarlierSlot = true;
+              currentDate = earlierDate;
+              console.log(`  Found earlier slot on ${earlierDate} with ${earlierSessionsOnDay} sessions`);
+              break;
+            }
+          }
+
+          if (!foundEarlierSlot) {
+            // No earlier slot available, this is an overload situation
+            // Place the remaining sessions on the current day anyway
+            const overflowSchedule = mergedSchedule.get(currentDate)!;
+            overflowSchedule.set(assignment.examId, (overflowSchedule.get(assignment.examId) || 0) + remainingSessions);
+            remainingSessions = 0;
+          }
+        }
       }
-
-      const daySchedule = mergedSchedule.get(currentDate)!;
-      daySchedule.set(assignment.examId, (daySchedule.get(assignment.examId) || 0) + assignment.sessions);
 
       processedAssignments.add(key);
     }
