@@ -1916,10 +1916,16 @@ export class StudyPlannerV1 {
   public generatePlan(): DailySchedule[] | { error: string; choices: string[] } | ScheduleResult {
     console.log('=== SCHEDULER generatePlan CALLED ===');
 
-    const optimalStart = this.calculateOptimalStartDate();
-    if (!this.inputs.start_date || optimalStart > this.inputs.start_date) {
-      console.log(`Overriding start date: input was ${this.inputs.start_date}, optimal is ${optimalStart}`);
-      this.inputs.start_date = optimalStart;
+    // Only compute and override the optimal start date when daily preferences are ON.
+    // When OFF, use today as start and let sessions spread across all available days.
+    if (this.inputs.enable_daily_limits !== false) {
+      const optimalStart = this.calculateOptimalStartDate();
+      if (!this.inputs.start_date || optimalStart > this.inputs.start_date) {
+        console.log(`Overriding start date: input was ${this.inputs.start_date}, optimal is ${optimalStart}`);
+        this.inputs.start_date = optimalStart;
+      }
+    } else {
+      console.log('Daily preferences OFF: using today as start date, no optimal start override');
     }
 
     this.subjects = this.initializeInternalState(this.inputs.exams);
