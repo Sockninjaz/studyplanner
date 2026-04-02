@@ -112,122 +112,122 @@ export class StudyPlannerV1 {
     return totalHours;
   }
 
-  // Calculate the optimal start date so average daily hours ≈ soft_daily_limit
-  // This prevents the schedule from starting too early (empty gaps) or too late (overload)
+  // Group exams whose minimum study windows overlap using union-find.
+  // Window = [examDate - ceil(hours/softLimit), examDate]. If they overlap → same group.
+  private computeExamGroups(): Map<string, string[]> {
+    const softLimit = this.getEffectiveSoftLimit();
+
+    const validExams = this.inputs.exams.filter((e: ExamData) => {
+      const completedHrs = this.inputs.completed_hours?.[e.id] || 0;
+      return this.calculateTotalHours(e) - completedHrs > 0;
+    });
+
+    if (validExams.length === 0) return new Map();
+
+    // Compute each exam's minimum study window
+    const windows: { id: string; subject: string; start: number; end: number }[] = [];
+    for (const exam of validExams) {
+      const completedHrs = this.inputs.completed_hours?.[exam.id] || 0;
+      const remainingHours = Math.max(0, this.calculateTotalHours(exam) - completedHrs);
+      const daysNeeded = Math.ceil(remainingHours / softLimit);
+
+      // Use exam date as window end (not last study day) + 1 day buffer for grouping purpo
+      // so adjacent-day exams get grouped togetherses
+      const examDateStr = exam.exam_date.toISOString().split('T')[0];
+      const end = new Date(examDateStr + 'T00:00:00.000Z');
+      const start = new Date(end.getTime() - daysNeeded * 24 * 60 * 60 * 1000);
+
+      windows.push({ id: exam.id, subject: exam.subject, start: start.getTime(), end: end.getTime() });
+    }
+
+    // Union-Find
+    const parent: Record<string, string> = {};
+    const find = (x: string): string => { if (parent[x] !== x) parent[x] = find(parent[x]); return parent[x]; };
+    const union = (a: string, b: string) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
+    for (const w of windows) parent[w.id] = w.id;
+
+    for (let i = 0; i < windows.length; i++) {
+      for (let j = i + 1; j < windows.length; j++) {
+        const a = windows[i], b = windows[j];
+        if (a.start <= b.end && b.start <= a.end) {
+          union(a.id, b.id);
+        }
+      }
+    }
+
+    // Build groups
+    const groups = new Map<string, string[]>();
+    for (const w of windows) {
+      const root = find(w.id);
+      if (!groups.has(root)) groups.set(root, []);
+      groups.get(root)!.push(w.id);
+    }
+
+    // Log
+    const entries = Array.from(groups.entries());
+    for (const [, ids] of entries) {
+      const names = ids.map((id: string) => validExams.find((e: ExamData) => e.id === id)?.subject || id);
+      console.log(`  📦 Group: [${names.join(', ')}]`);
+    }
+    return groups;
+  }
+
+  // Calculate the optimal start date per group, return the earliest.
+  // Each group only counts its own exams' hours. Isolated exams don't affect other groups.
   private calculateOptimalStartDate(): Date {
     const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
     const softLimit = this.getEffectiveSoftLimit();
     const sessionsPerDayTarget = Math.max(1, Math.floor(softLimit / STUDY_CHUNK_HOURS));
+    const groups = this.computeExamGroups();
 
-    // Calculate total hours needed across all exams
-    let totalHoursNeeded = 0;
-    for (const exam of this.inputs.exams) {
-      const rawHours = this.calculateTotalHours(exam);
-      const completed = this.inputs.completed_hours?.[exam.id] || 0;
-      totalHoursNeeded += Math.max(0, rawHours - completed);
-    }
-
-    // Days needed so average = soft limit
-    const daysNeeded = Math.ceil(totalHoursNeeded / softLimit);
-
-    // Find the latest exam date
-    const latestExamDate = new Date(Math.max(...this.inputs.exams.map(e => e.exam_date.getTime())));
-    const latestExamStr = latestExamDate.toISOString().split('T')[0];
-    const latestExamUTC = new Date(latestExamStr + 'T00:00:00.000Z');
-
-    // Work backward from latest exam
-    let optimalStart = new Date(latestExamUTC.getTime() - daysNeeded * 24 * 60 * 60 * 1000);
-
-    // Safety clamp: ensure early exams have enough days to meet their own density
-    for (const exam of this.inputs.exams) {
-      const rawHours = this.calculateTotalHours(exam);
-      const completed = this.inputs.completed_hours?.[exam.id] || 0;
-      const sessionsNeeded = Math.ceil(Math.max(0, rawHours - completed) / STUDY_CHUNK_HOURS);
-
-      const lastValidSlotDate = new Date(exam.exam_date);
-      if (!exam.can_study_after_exam) {
-        lastValidSlotDate.setDate(lastValidSlotDate.getDate() - 1);
-      }
-
-      const sessionsPerDayTarget = Math.max(1, Math.floor(softLimit / STUDY_CHUNK_HOURS));
-      const daysNeededForThisExam = Math.ceil(sessionsNeeded / sessionsPerDayTarget);
-      const requiredStartForThisExam = new Date(lastValidSlotDate);
-      requiredStartForThisExam.setDate(requiredStartForThisExam.getDate() - daysNeededForThisExam);
-
-      if (optimalStart > requiredStartForThisExam) {
-        optimalStart = new Date(requiredStartForThisExam);
-      }
-    }
-
-    // Never start before today
     const now = new Date();
     const nowStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const nowUTC = new Date(nowStr + 'T00:00:00.000Z');
+    let earliestStart = nowUTC;
 
-    const finalStart = optimalStart > nowUTC ? optimalStart : nowUTC;
-    console.log(`📐 Optimal start: totalHours=${totalHoursNeeded}, softLimit=${softLimit}, daysNeeded=${daysNeeded}, start=${finalStart.toISOString().split('T')[0]}`);
-    return finalStart;
-  }
+    const entries = Array.from(groups.entries());
+    for (const [, examIds] of entries) {
+      const groupExams = this.inputs.exams.filter((e: ExamData) => examIds.includes(e.id));
 
-  private optimalStartsCache: Record<string, Date> | null = null;
-
-  // Mathematically simulates the backwards distribution of hours to find the exact Day 
-  // each exam needs to start to respect the soft_daily_limit without crossing into other exams unnecessarily.
-  private computePerExamOptimalStarts(): Record<string, Date> {
-    if (this.optimalStartsCache) return this.optimalStartsCache;
-
-    const softLimit = this.getEffectiveSoftLimit();
-    const dailyMax = this.inputs.daily_max_hours || 4;
-    const effectiveSoftLimit = Math.min(softLimit, dailyMax);
-
-    const validExams = this.inputs.exams.filter(e => {
-      const completedHrs = this.inputs.completed_hours?.[e.id] || 0;
-      const totalHrs = this.calculateTotalHours(e) - completedHrs;
-      return totalHrs > 0;
-    });
-
-    const remainingHours: Record<string, number> = {};
-    for (const e of validExams) {
-      remainingHours[e.id] = Math.max(0, this.calculateTotalHours(e) - (this.inputs.completed_hours?.[e.id] || 0));
-    }
-
-    const optimalStarts: Record<string, Date> = {};
-    let activeExams = [...validExams];
-
-    if (activeExams.length === 0) return optimalStarts;
-
-    const sortedByDate = [...activeExams].sort((a, b) => b.exam_date.getTime() - a.exam_date.getTime());
-    const latestDateStr = sortedByDate[0].exam_date.toISOString().split('T')[0];
-    let currentDayUTC = new Date(latestDateStr + 'T00:00:00.000Z');
-
-    let safetyCounter = 0;
-
-    while (activeExams.length > 0 && safetyCounter < 1000) {
-      safetyCounter++;
-      const canStudy = activeExams.filter(e => {
-        let lastValid = new Date(e.exam_date.toISOString().split('T')[0] + 'T00:00:00.000Z');
-        if (!e.can_study_after_exam) {
-          lastValid.setDate(lastValid.getDate() - 1);
-        }
-        return currentDayUTC <= lastValid;
-      });
-
-      if (canStudy.length > 0) {
-        const share = effectiveSoftLimit / canStudy.length;
-        for (const e of canStudy) {
-          remainingHours[e.id] -= share;
-          if (remainingHours[e.id] <= 0) {
-            optimalStarts[e.id] = new Date(currentDayUTC);
-            activeExams = activeExams.filter(x => x.id !== e.id);
-          }
-        }
+      // Sum hours only within this group
+      let groupHours = 0;
+      for (const exam of groupExams) {
+        const completed = this.inputs.completed_hours?.[exam.id] || 0;
+        groupHours += Math.max(0, this.calculateTotalHours(exam) - completed);
       }
-      currentDayUTC.setDate(currentDayUTC.getDate() - 1);
+
+      // Latest exam in this group
+      const latestExam = new Date(Math.max(...groupExams.map((e: ExamData) => e.exam_date.getTime())));
+      const latestStr = latestExam.toISOString().split('T')[0];
+      const latestUTC = new Date(latestStr + 'T00:00:00.000Z');
+
+      const daysNeeded = Math.ceil(groupHours / softLimit);
+      let groupStart = new Date(latestUTC.getTime() - daysNeeded * 24 * 60 * 60 * 1000);
+
+      // Safety clamp per exam within this group
+      for (const exam of groupExams) {
+        const completed = this.inputs.completed_hours?.[exam.id] || 0;
+        const sessionsNeeded = Math.ceil(Math.max(0, this.calculateTotalHours(exam) - completed) / STUDY_CHUNK_HOURS);
+        const lastValid = new Date(exam.exam_date);
+        if (!exam.can_study_after_exam) lastValid.setDate(lastValid.getDate() - 1);
+        const daysForExam = Math.ceil(sessionsNeeded / sessionsPerDayTarget);
+        const required = new Date(lastValid);
+        required.setDate(required.getDate() - daysForExam);
+        if (groupStart > required) groupStart = new Date(required);
+      }
+
+      if (groupStart < nowUTC) groupStart = nowUTC;
+
+      const names = groupExams.map((e: ExamData) => e.subject).join(', ');
+      console.log(`  📦 Group [${names}]: ${groupHours}h, ${daysNeeded}d, start=${groupStart.toISOString().split('T')[0]}`);
+
+      if (groupStart < earliestStart) earliestStart = groupStart;
     }
 
-    this.optimalStartsCache = optimalStarts;
-    return optimalStarts;
+    console.log(`📐 Optimal start (earliest group): ${earliestStart.toISOString().split('T')[0]}`);
+    return earliestStart;
   }
+
 
   private generateValidSlotsForExam(exam: ExamData): Date[] {
     const validSlots: Date[] = [];
@@ -246,22 +246,9 @@ export class StudyPlannerV1 {
     const inputStartStr = this.inputs.start_date.toISOString().split('T')[0];
     let startDateUTC = new Date(inputStartStr + 'T00:00:00.000Z');
 
-    // When daily preferences are ON, use per-exam optimal starts to compress the schedule
-    // toward the soft limit. When OFF, skip this entirely so sessions spread across all days
-    // from today (original algorithm behavior).
-    if (this.inputs.enable_daily_limits !== false) {
-      const optimalStarts = this.computePerExamOptimalStarts();
-      const perExamOptimalStart = optimalStarts[exam.id];
-
-      // Restrict the start date for this exam strictly to what it needs,
-      // preventing late exams from bleeding backward into early isolated exams.
-      if (perExamOptimalStart && perExamOptimalStart.getTime() > startDateUTC.getTime()) {
-        startDateUTC = new Date(perExamOptimalStart);
-        console.log(`  📐 Simulated Exact Per-Exam Start for ${exam.subject}: ${startDateUTC.toISOString().split('T')[0]}`);
-      }
-    } else {
-      console.log(`  Daily preferences OFF: using all available days from today for ${exam.subject}`);
-    }
+    // Use the global start date for all exams (computed per-group in calculateOptimalStartDate).
+    // Distribution works like OFF from this start date — no per-exam restriction.
+    console.log(`  📐 Using start for ${exam.subject}: ${startDateUTC.toISOString().split('T')[0]}`);
 
     const completedHrs = this.inputs.completed_hours?.[exam.id] || 0;
     const sessionsNeeded = Math.ceil(Math.max(0, this.calculateTotalHours(exam) - completedHrs) / (this.inputs.session_duration / 60));
@@ -399,9 +386,8 @@ export class StudyPlannerV1 {
     // Check if day before exam is available
     const dayBeforeExamAvailable = sortedSlots.some(slot => slot.toISOString().split('T')[0] === dayBeforeExamStr);
 
-    // If we have multiple days, reserve day before exam for final review.
-    // Use the natural sessions-per-day (based on window size) not hardcoded 1
-    // so compressed windows don't create uneven distributions like 4+4+1.
+    // Compute natural sessions/day from available slots — same for both ON and OFF.
+    // With many days (OFF), this is ~1. With fewer days (ON), it's higher.
     const naturalSessionsPerDay = Math.ceil(totalSessions / Math.max(1, sortedSlots.length));
     let hasFinalReview = false;
     let finalReviewSessions = 0;
@@ -578,7 +564,7 @@ export class StudyPlannerV1 {
           // Work backwards from the latest available day
           const reversedDays = [...unassignedDays].reverse();
 
-          // ── Bypass skipping if severely constrained ──
+          // ── Bypass skipping if severely constrained (only when preferences ON) ──
           // If we absolutely need every available day, skip the aesthetic constraints.
           const tightlyConstrained = unassignedDays.length <= sessionsToPlace + 2;
           const maxCrushSpan = 3; // Max consecutive sessions for diversification
@@ -885,234 +871,309 @@ export class StudyPlannerV1 {
   }
 
   private mergeExamsIntoDailyPlan(): Map<string, Map<string, number>> {
+    console.log('=== UNIFIED SCORING ENGINE ===');
+
     const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
-    const softLimit = this.getEffectiveSoftLimit();
-    // Hard ceiling from daily_max_hours — never exceeded
     const HARD_MAX_SESSIONS = Math.max(1, Math.floor(this.inputs.daily_max_hours / STUDY_CHUNK_HOURS));
-    // Soft target: when preferences ON, use soft_daily_limit; when OFF, computed below
-    let MAX_SESSIONS_PER_DAY = Math.max(1, Math.floor(softLimit / STUDY_CHUNK_HOURS));
+    const MAX_INTERVAL_DAYS = 2; // max empty days between sessions for same exam
 
-    // Get preliminary schedules for all exams (build sequentially so later exams can avoid earlier ones)
-    this.preliminarySchedules.clear();
+    // Build blocked days set
+    const blockedSet = new Set(this.inputs.blocked_days || []);
 
-    // Sort exams by session count (highest first) to ensure fair distribution
-    const sortedExams = [...this.inputs.exams].sort((a, b) => {
-      const sessionsA = Math.ceil(Math.max(0, this.calculateTotalHours(a) - (this.inputs.completed_hours?.[a.id] || 0)) / (this.inputs.session_duration / 60));
-      const sessionsB = Math.ceil(Math.max(0, this.calculateTotalHours(b) - (this.inputs.completed_hours?.[b.id] || 0)) / (this.inputs.session_duration / 60));
-      return sessionsB - sessionsA; // Highest session count first
-    });
-
-    console.log('Exam scheduling order:', sortedExams.map(e => ({
-      subject: e.subject,
-      sessions: Math.ceil(Math.max(0, this.calculateTotalHours(e) - (this.inputs.completed_hours?.[e.id] || 0)) / (this.inputs.session_duration / 60))
-    })));
-
-    for (const exam of sortedExams) {
-      console.log(`\n📅 Generating valid slots for ${exam.subject} (exam date: ${exam.exam_date.toISOString().split('T')[0]})`);
-      const validSlots = this.generateValidSlotsForExam(exam);
-      console.log(`📅 Valid slots for ${exam.subject}: ${validSlots.map(d => d.toISOString().split('T')[0]).join(', ')}`);
-      const sessionMap = this.assignSessionsEvenly(exam, validSlots);
-      this.preliminarySchedules.set(exam.id, sessionMap);
+    // ── Phase 1: Enumerate valid slots and compute sessions needed per exam ──
+    interface ExamInfo {
+      exam: ExamData;
+      sessionsNeeded: number;
+      sessionsRemaining: number;
+      validDays: Set<string>;
+      lastAssignedDay: string | null; // track for gap scoring
+      dayBeforeExam: string;
     }
 
-    // When toggle is OFF, compute an ideal sessions-per-day for even distribution
-    // instead of using the high daily_max_hours as the target
-    if (this.inputs.enable_daily_limits === false) {
-      const allDaysSet = new Set<string>();
-      let totalSessions = 0;
-      this.preliminarySchedules.forEach((schedule) => {
-        schedule.forEach((sessions, dateStr) => {
-          allDaysSet.add(dateStr);
-          totalSessions += sessions;
-        });
-      });
-      const idealPerDay = Math.max(1, Math.ceil(totalSessions / Math.max(1, allDaysSet.size)));
-      MAX_SESSIONS_PER_DAY = Math.min(idealPerDay, HARD_MAX_SESSIONS);
-      console.log(`📊 Toggle OFF: total=${totalSessions} sessions across ${allDaysSet.size} days → idealPerDay=${idealPerDay}, effectiveMax=${MAX_SESSIONS_PER_DAY}`);
-    }
+    const examInfos: ExamInfo[] = [];
+    const allStudyDays = new Set<string>();
 
-    const preliminarySchedules = this.preliminarySchedules;
-
-    // Create a merged schedule: date -> (examId -> sessionCount)
-    const mergedSchedule = new Map<string, Map<string, number>>();
-
-    // Collect all sessions with metadata for priority sorting
-    interface SessionAssignment {
-      examId: string;
-      date: string;
-      sessions: number;
-      examDate: Date;
-      totalSessions: number;
-      assignmentOrder: number;
-    }
-
-    const allAssignments: SessionAssignment[] = [];
-    let assignmentOrder = 0;
-
-    // Collect all preliminary assignments
     for (const exam of this.inputs.exams) {
-      const examSchedule = preliminarySchedules.get(exam.id);
-      if (!examSchedule) continue;
+      const completedHrs = this.inputs.completed_hours?.[exam.id] || 0;
+      const totalHours = Math.max(0, this.calculateTotalHours(exam) - completedHrs);
+      const sessionsNeeded = Math.ceil(totalHours / STUDY_CHUNK_HOURS);
 
-      const rawHours = this.calculateTotalHours(exam);
-      const compHrs = this.inputs.completed_hours?.[exam.id] || 0;
-      const totalHours = Math.max(0, rawHours - compHrs);
-      const totalSessions = Math.ceil(totalHours / STUDY_CHUNK_HOURS);
+      if (sessionsNeeded <= 0) continue;
 
-      console.log(`Exam ${exam.subject}: rawHours=${rawHours}, completed=${compHrs}, totalHours=${totalHours}, totalSessions=${totalSessions}`);
-      console.log(`Exam schedule has ${examSchedule.size} entries:`, Array.from(examSchedule.keys()));
+      const validSlots = this.generateValidSlotsForExam(exam);
+      const validDays = new Set(validSlots.map(d => d.toISOString().split('T')[0]));
 
-      examSchedule.forEach((sessions, dateStr) => {
-        allAssignments.push({
-          examId: exam.id,
-          date: dateStr,
-          sessions,
-          examDate: exam.exam_date,
-          totalSessions,
-          assignmentOrder: assignmentOrder++
-        });
+      // Day before exam for final review
+      const examDateStr = exam.exam_date.toISOString().split('T')[0];
+      const examDateUTC = new Date(examDateStr + 'T00:00:00.000Z');
+      const dayBeforeExam = new Date(examDateUTC.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      validDays.forEach(d => allStudyDays.add(d));
+
+      examInfos.push({
+        exam,
+        sessionsNeeded,
+        sessionsRemaining: sessionsNeeded,
+        validDays,
+        lastAssignedDay: null,
+        dayBeforeExam,
       });
+
+      console.log(`  ${exam.subject}: ${sessionsNeeded} sessions, ${validDays.size} valid days, exam: ${examDateStr}`);
     }
 
-    // Sort by date first (chronological order)
-    allAssignments.sort((a, b) => {
-      const dateCompare = a.date.localeCompare(b.date);
-      if (dateCompare !== 0) return dateCompare;
+    if (examInfos.length === 0) {
+      return new Map();
+    }
 
-      // For same date, sort by priority:
-      // 1. Exam closer in date (earlier exam date = higher priority)
-      const examDateDiff = a.examDate.getTime() - b.examDate.getTime();
-      if (examDateDiff !== 0) return examDateDiff;
+    // Sort study days chronologically
+    const sortedDays = Array.from(allStudyDays).sort();
+    const totalSessions = examInfos.reduce((sum, ei) => sum + ei.sessionsNeeded, 0);
+    let targetPerDay = Math.max(1, Math.ceil(totalSessions / sortedDays.length));
+    // Clamp to hard max
+    targetPerDay = Math.min(targetPerDay, HARD_MAX_SESSIONS);
 
-      // 2. Harder exam (more total sessions = higher priority)
-      const sessionDiff = b.totalSessions - a.totalSessions;
-      if (sessionDiff !== 0) return sessionDiff;
+    console.log(`  Total sessions: ${totalSessions}, Study days: ${sortedDays.length}, Target/day: ${targetPerDay}`);
 
-      // 3. Older assigned sessions stay (lower assignment order = higher priority)
-      return a.assignmentOrder - b.assignmentOrder;
-    });
+    // ── Phase 2: Unified greedy assignment with scoring ──
+    const schedule = new Map<string, Map<string, number>>();
+    // Initialize all days
+    for (const day of sortedDays) {
+      schedule.set(day, new Map());
+    }
 
-    // Process assignments and handle conflicts
-    const processedAssignments = new Set<string>();
+    // Helper: get total sessions on a day
+    const dayLoad = (day: string): number => {
+      const dayMap = schedule.get(day);
+      if (!dayMap) return 0;
+      return Array.from(dayMap.values()).reduce((s, v) => s + v, 0);
+    };
 
-    console.log('=== PROCESSING ASSIGNMENTS ===');
-    console.log(`Total assignments to process: ${allAssignments.length}`);
-    allAssignments.forEach((a, idx) => {
-      const exam = this.inputs.exams.find(e => e.id === a.examId);
-      console.log(`  ${idx}: ${exam?.subject} on ${a.date} (${a.sessions} sessions)`);
-    });
+    // Helper: get sessions of a specific exam on a day
+    const examLoadOnDay = (day: string, examId: string): number => {
+      return schedule.get(day)?.get(examId) || 0;
+    };
 
-    for (const assignment of allAssignments) {
-      const key = `${assignment.examId}-${assignment.date}`;
-      if (processedAssignments.has(key)) {
-        console.log(`  Skipping duplicate: ${key}`);
-        continue;
-      }
+    // Helper: days between two date strings
+    const daysBetween = (a: string, b: string): number => {
+      return Math.floor((new Date(b).getTime() - new Date(a).getTime()) / (24 * 60 * 60 * 1000));
+    };
 
-      const exam = this.inputs.exams.find(e => e.id === assignment.examId);
-      console.log(`\n=== Processing Assignment ===`);
-      console.log(`Exam: ${exam?.subject}`);
-      console.log(`Date: ${assignment.date}`);
-      console.log(`Sessions to place: ${assignment.sessions}`);
-      console.log(`Total sessions needed for exam: ${assignment.totalSessions}`);
+    // Build set of all exam dates — avoid scheduling other exams on these days
+    const examDatesSet = new Set<string>();
+    for (const exam of this.inputs.exams) {
+      examDatesSet.add(exam.exam_date.toISOString().split('T')[0]);
+    }
 
-      let currentDate = assignment.date;
-      let remainingSessions = assignment.sessions;
+    // Main assignment: iterate through days in REVERSE (latest first)
+    // This packs sessions near exam dates, not at the start of the study period.
+    // We may need multiple passes if targetPerDay needs to increase.
+    let totalAssigned = 0;
+    let maxPasses = 5;
 
-      // Try to place sessions on the assigned date first, with overflow handling
-      while (remainingSessions > 0) {
-        if (!mergedSchedule.has(currentDate)) {
-          mergedSchedule.set(currentDate, new Map());
-        }
+    // Reverse days for iteration (latest first, closest to exams)
+    const reversedDays = [...sortedDays].reverse();
 
-        const daySchedule = mergedSchedule.get(currentDate)!;
-        const currentSessionsOnDay = Array.from(daySchedule.values()).reduce((sum, s) => sum + s, 0);
-        const availableSlots = MAX_SESSIONS_PER_DAY - currentSessionsOnDay;
+    while (totalAssigned < totalSessions && maxPasses > 0) {
+      maxPasses--;
+      let assignedThisPass = 0;
 
-        if (availableSlots > 0) {
-          // We can fit some or all sessions on this day
-          const sessionsToPlace = Math.min(remainingSessions, availableSlots);
-          daySchedule.set(assignment.examId, (daySchedule.get(assignment.examId) || 0) + sessionsToPlace);
-          remainingSessions -= sessionsToPlace;
-          console.log(`  Placed ${sessionsToPlace} sessions on ${currentDate}, ${remainingSessions} remaining`);
-        } else {
-          console.log(`  No available slots on ${currentDate} (${currentSessionsOnDay}/${MAX_SESSIONS_PER_DAY})`);
-        }
+      for (const day of reversedDays) {
+        if (blockedSet.has(day)) continue;
 
-        if (remainingSessions > 0) {
-          // Need to move to an earlier day
-          const examForSlots = this.inputs.exams.find(e => e.id === assignment.examId)!;
-          const validSlots = this.generateValidSlotsForExam(examForSlots);
-          const sortedValidDates = validSlots
-            .map(d => d.toISOString().split('T')[0])
-            .sort();
+        while (dayLoad(day) < targetPerDay && totalAssigned < totalSessions) {
+          // Score each exam for this day
+          let bestExam: ExamInfo | null = null;
+          let bestScore = -Infinity;
 
-          const currentIndex = sortedValidDates.indexOf(currentDate);
-          let foundEarlierSlot = false;
+          for (const ei of examInfos) {
+            if (ei.sessionsRemaining <= 0) continue;
+            if (!ei.validDays.has(day)) continue;
 
-          // Search backwards for an earlier day with free slots
-          for (let i = currentIndex - 1; i >= 0; i--) {
-            const earlierDate = sortedValidDates[i];
-            const earlierSchedule = mergedSchedule.get(earlierDate);
-            const earlierSessionsOnDay = earlierSchedule ? Array.from(earlierSchedule.values()).reduce((sum: number, s: number) => sum + s, 0) : 0;
-            if (earlierSessionsOnDay < MAX_SESSIONS_PER_DAY) {
-              foundEarlierSlot = true;
-              currentDate = earlierDate;
-              console.log(`  Found earlier slot on ${earlierDate} with ${earlierSessionsOnDay} sessions`);
-              break;
+            let score = 0;
+
+            // P4: Final review bonus (day before exam gets priority)
+            if (day === ei.dayBeforeExam) {
+              score += 500;
+            }
+
+            // P5: Even distribution — higher score when day has fewer sessions
+            // (this naturally enforces the ±1 spread since we fill to targetPerDay)
+            score += 100 * (targetPerDay - dayLoad(day));
+
+            // P6: Gap urgency — based on nextAssignedDay (since we iterate backwards)
+            if (ei.lastAssignedDay !== null) {
+              // lastAssignedDay = the closest LATER day we already assigned to (we go backwards)
+              const gap = daysBetween(day, ei.lastAssignedDay);
+              const urgency = Math.min(gap, 5);
+              score += 50 * urgency;
+
+              // Strong push when gap exceeds limit
+              if (gap > MAX_INTERVAL_DAYS + 1) {
+                score += 300;
+              }
+            } else {
+              // Exam hasn't been assigned yet — check how close the exam is
+              const examDateStr = ei.exam.exam_date.toISOString().split('T')[0];
+              const daysToExam = daysBetween(day, examDateStr);
+              const daysNeeded = ei.sessionsRemaining;
+              if (daysToExam <= daysNeeded + 2) {
+                score += 200; // urgent: running out of days
+              } else {
+                score += 50;
+              }
+            }
+
+            // P7: Diversification — penalty for same exam already on this day
+            if (examLoadOnDay(day, ei.exam.id) >= 1) {
+              score -= 300;
+            }
+
+            // Penalty: avoid scheduling on another exam's exam date
+            if (examDatesSet.has(day)) {
+              const examDateStr = ei.exam.exam_date.toISOString().split('T')[0];
+              if (day !== examDateStr) {
+                // This day is some OTHER exam's exam date — avoid it
+                score -= 400;
+              }
+            }
+
+            // Tiebreaker: prefer exams with more sessions remaining
+            score += ei.sessionsRemaining * 2;
+
+            // Tiebreaker: prefer exams with earlier exam dates (more urgent)
+            const examDateStr = ei.exam.exam_date.toISOString().split('T')[0];
+            const proximity = daysBetween(day, examDateStr);
+            if (proximity <= 3) {
+              score += 30;
+            }
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestExam = ei;
             }
           }
 
-          if (!foundEarlierSlot) {
-            // No earlier slot available, this is an overload situation
-            // Place the remaining sessions on the current day anyway
-            const overflowSchedule = mergedSchedule.get(currentDate)!;
-            overflowSchedule.set(assignment.examId, (overflowSchedule.get(assignment.examId) || 0) + remainingSessions);
-            remainingSessions = 0;
-          }
+          if (!bestExam || bestScore <= -100) break; // no exam can go here
+
+          // Assign 1 session
+          const dayMap = schedule.get(day)!;
+          dayMap.set(bestExam.exam.id, (dayMap.get(bestExam.exam.id) || 0) + 1);
+          bestExam.sessionsRemaining--;
+          bestExam.lastAssignedDay = day; // tracks the earliest assigned day (going backwards)
+          totalAssigned++;
+          assignedThisPass++;
+
+          console.log(`  Assigned ${bestExam.exam.subject} to ${day} (score: ${bestScore}, load: ${dayLoad(day)}, remaining: ${bestExam.sessionsRemaining})`);
         }
       }
 
-      processedAssignments.add(key);
+      if (assignedThisPass === 0) {
+        // No progress — increase targetPerDay and try again
+        targetPerDay = Math.min(targetPerDay + 1, HARD_MAX_SESSIONS);
+        console.log(`  No progress, raising targetPerDay to ${targetPerDay}`);
+        if (targetPerDay >= HARD_MAX_SESSIONS && assignedThisPass === 0) {
+          console.log(`  At HARD_MAX and still can't assign — some sessions may be dropped`);
+          break;
+        }
+      }
     }
 
-    // Add all valid days to the schedule (even empty ones) so balancing can use them
-    this.addEmptyDaysToSchedule(mergedSchedule);
+    // ── Phase 3: Ensure final review sessions ──
+    for (const ei of examInfos) {
+      const dayBefore = ei.dayBeforeExam;
+      if (!schedule.has(dayBefore)) continue;
+      if (blockedSet.has(dayBefore)) continue;
 
-    // BALANCING STEP: Redistribute sessions for even workload
-    this.balanceWorkload(mergedSchedule);
+      const currentReview = examLoadOnDay(dayBefore, ei.exam.id);
+      if (currentReview >= 1) continue; // already has a session
 
-    // FIX MAX INTERVAL VIOLATIONS: After balancing, check and fix any violations
-    this.fixMaxIntervalViolations(mergedSchedule);
+      // Find the day with the MOST sessions of this exam (not the day before) to move one
+      let bestSourceDay: string | null = null;
+      let bestSourceCount = 0;
 
-    return mergedSchedule;
+      schedule.forEach((dayMap, dateStr) => {
+        if (dateStr === dayBefore) return;
+        const count = dayMap.get(ei.exam.id) || 0;
+        if (count > bestSourceCount) {
+          bestSourceCount = count;
+          bestSourceDay = dateStr;
+        }
+      });
+
+      if (bestSourceDay && bestSourceCount > 0) {
+        // Move 1 session to day before exam
+        const sourceMap = schedule.get(bestSourceDay)!;
+        sourceMap.set(ei.exam.id, sourceMap.get(ei.exam.id)! - 1);
+        if (sourceMap.get(ei.exam.id) === 0) sourceMap.delete(ei.exam.id);
+
+        const targetMap = schedule.get(dayBefore)!;
+        targetMap.set(ei.exam.id, (targetMap.get(ei.exam.id) || 0) + 1);
+
+        console.log(`  Final review: moved ${ei.exam.subject} from ${bestSourceDay} to ${dayBefore}`);
+      }
+    }
+
+    // ── Log final schedule ──
+    console.log('=== FINAL UNIFIED SCHEDULE ===');
+    const sortedFinal = Array.from(schedule.keys()).sort();
+    for (const day of sortedFinal) {
+      const dayMap = schedule.get(day)!;
+      const total = Array.from(dayMap.values()).reduce((s, v) => s + v, 0);
+      if (total > 0) {
+        const exams = Array.from(dayMap.entries()).map(([id, count]) => {
+          const exam = this.inputs.exams.find(e => e.id === id);
+          return `${exam?.subject || id}:${count}`;
+        }).join(', ');
+        console.log(`  ${day}: ${total} sessions (${exams})`);
+      }
+    }
+
+    // Log spread check
+    const loads = sortedFinal.map(d => dayLoad(d)).filter(l => l > 0);
+    if (loads.length > 0) {
+      const min = Math.min(...loads);
+      const max = Math.max(...loads);
+      console.log(`  Spread: min=${min}, max=${max}, diff=${max - min} ${max - min <= 1 ? '✅' : '⚠️'}`);
+    }
+
+    // Remove empty days from the schedule
+    for (const day of sortedFinal) {
+      if (dayLoad(day) === 0) {
+        schedule.delete(day);
+      }
+    }
+
+    return schedule;
   }
 
   private addEmptyDaysToSchedule(mergedSchedule: Map<string, Map<string, number>>): void {
-    // Add empty days from the user's start_date to give the balancer a full runway.
-    // This allows the balancer to push overloaded sessions earlier when exams are concurrent.
+    // Add empty days from the user's start_date to give the balancer and merge overflow
+    // a full runway of available days. No filtering through per-exam valid slots here —
+    // the balancer/overflow needs ALL calendar days, not just the compressed exam windows.
     const allDates = Array.from(mergedSchedule.keys()).sort();
     if (allDates.length === 0) return;
 
-    const firstDate = new Date(this.inputs.start_date);
-    firstDate.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const nowStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const nowUTC = new Date(nowStr + 'T00:00:00.000Z');
+
+    const firstDateFromStart = new Date(this.inputs.start_date);
+    firstDateFromStart.setHours(0, 0, 0, 0);
+    // Never add days before today
+    const firstDate = firstDateFromStart > nowUTC ? firstDateFromStart : nowUTC;
     const lastDate = new Date(allDates[allDates.length - 1] + 'T00:00:00.000Z');
+
+    // Build blocked days set for quick lookup
+    const blockedDays = new Set(this.inputs.blocked_days || []);
 
     const currentDate = new Date(firstDate);
     while (currentDate <= lastDate) {
       const dateStr = currentDate.toISOString().split('T')[0];
 
-      if (!mergedSchedule.has(dateStr)) {
-        // Check if any exam can use this day
-        const isValidForAnyExam = this.inputs.exams.some(exam => {
-          const validSlots = this.generateValidSlotsForExam(exam);
-          return validSlots.some(slot => slot.toISOString().split('T')[0] === dateStr);
-        });
-
-        if (isValidForAnyExam) {
-          mergedSchedule.set(dateStr, new Map());
-          console.log(`Added empty day ${dateStr} to schedule for potential balancing`);
-        }
+      if (!mergedSchedule.has(dateStr) && !blockedDays.has(dateStr)) {
+        mergedSchedule.set(dateStr, new Map());
+        console.log(`Added empty day ${dateStr} to schedule for potential balancing`);
       }
 
       currentDate.setDate(currentDate.getDate() + 1);
@@ -1123,24 +1184,18 @@ export class StudyPlannerV1 {
     const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
     const HARD_MAX_SESSIONS = Math.max(1, Math.floor(this.inputs.daily_max_hours / STUDY_CHUNK_HOURS));
 
-    // When toggle is OFF, compute ideal from the actual schedule for even spreading
+    // Compute ideal from actual schedule for even spreading (same for both ON and OFF)
     let MAX_SESSIONS_PER_DAY: number;
-    if (this.inputs.enable_daily_limits === false) {
+    {
       let totalSessions = 0;
-      let totalDaysWithSessions = 0;
       mergedSchedule.forEach((daySchedule) => {
         const daySessions = Array.from(daySchedule.values()).reduce((sum, s) => sum + s, 0);
         totalSessions += daySessions;
-        if (daySessions > 0) totalDaysWithSessions++;
       });
-      // Use all available days (including empty ones for spreading)
       const totalDays = mergedSchedule.size;
       const idealPerDay = Math.max(1, Math.ceil(totalSessions / Math.max(1, totalDays)));
       MAX_SESSIONS_PER_DAY = Math.min(idealPerDay, HARD_MAX_SESSIONS);
-      console.log(`📊 Balance (toggle OFF): total=${totalSessions}, days=${totalDays}, idealPerDay=${idealPerDay}, effectiveMax=${MAX_SESSIONS_PER_DAY}`);
-    } else {
-      const softLimit = this.getEffectiveSoftLimit();
-      MAX_SESSIONS_PER_DAY = Math.max(1, Math.floor(softLimit / STUDY_CHUNK_HOURS));
+      console.log(`📊 Balance: total=${totalSessions}, days=${totalDays}, idealPerDay=${idealPerDay}, effectiveMax=${MAX_SESSIONS_PER_DAY}`);
     }
 
     // Helper: would moving a session of examId from sourceDate to targetDate create a gap > 2 empty days (MAX_INTERVAL_DAYS)?
@@ -1525,6 +1580,154 @@ export class StudyPlannerV1 {
     }
 
     console.log('=== FINAL BALANCED SCHEDULE ===');
+    allDates.forEach(date => {
+      const daySchedule = mergedSchedule.get(date)!;
+      const totalSessions = Array.from(daySchedule.values()).reduce((sum, s) => sum + s, 0);
+      console.log(`Day ${date}: ${totalSessions} sessions`, Object.fromEntries(daySchedule));
+    });
+  }
+
+  // Strict ±1 enforcement — runs LAST, after all other balancing and interval fixes.
+  private enforceMaxOneDifference(mergedSchedule: Map<string, Map<string, number>>): void {
+    console.log('=== ENFORCING ±1 SESSION RULE ===');
+
+    const allDates = Array.from(mergedSchedule.keys()).sort();
+
+    // Gap violation checker — RELAXED for ±1 enforcement (allow up to 4 empty days
+    // between sessions instead of 2, since even distribution is the priority here).
+    const wouldCreateGapViolation = (examId: string, sourceDate: string, targetDate: string): boolean => {
+      const examSessionDates = Array.from(mergedSchedule.entries())
+        .filter(([, sched]) => sched.has(examId) && (sched.get(examId) || 0) > 0)
+        .map(([date]) => date);
+
+      const sourceSessions = mergedSchedule.get(sourceDate)?.get(examId) || 0;
+      let afterMove = sourceSessions <= 1
+        ? examSessionDates.filter(d => d !== sourceDate)
+        : [...examSessionDates];
+
+      if (!afterMove.includes(targetDate)) afterMove.push(targetDate);
+      afterMove.sort();
+
+      if (afterMove.length < 2) return false;
+
+      // Relaxed: allow up to 4 empty days (5 calendar days) for ±1 enforcement
+      const RELAXED_MAX_GAP = 4;
+      for (let k = 1; k < afterMove.length; k++) {
+        const gap = Math.floor(
+          (new Date(afterMove[k]).getTime() - new Date(afterMove[k - 1]).getTime()) / (24 * 60 * 60 * 1000)
+        ) - 1;
+        if (gap > RELAXED_MAX_GAP) return true;
+      }
+      return false;
+    };
+
+    let round = 0;
+    while (round < 100) {
+      round++;
+
+      const loads = allDates.map(date => {
+        const sched = mergedSchedule.get(date)!;
+        return { date, sessions: Array.from(sched.values()).reduce((s, v) => s + v, 0) };
+      });
+      const minLoad = Math.min(...loads.map(l => l.sessions));
+      const maxLoad = Math.max(...loads.map(l => l.sessions));
+
+      if (maxLoad - minLoad <= 1) {
+        console.log(`  ±1 rule satisfied (min=${minLoad}, max=${maxLoad}) after ${round - 1} moves`);
+        break;
+      }
+
+      console.log(`  Round ${round}: spread=${maxLoad - minLoad} (min=${minLoad}, max=${maxLoad})`);
+
+      // Try ALL heavy days
+      const heavyDays = loads.filter(l => l.sessions === maxLoad);
+      // Try ANY day lighter than maxLoad-1 (not just minLoad days)
+      const candidateTargets = loads
+        .filter(l => l.sessions < maxLoad - 1)
+        .sort((a, b) => a.sessions - b.sessions); // lightest first
+
+      let moved = false;
+
+      for (const heaviest of heavyDays) {
+        if (moved) break;
+
+        const heavySchedule = mergedSchedule.get(heaviest.date)!;
+        const examIds = Array.from(heavySchedule.keys()).filter(id => (heavySchedule.get(id) || 0) > 0);
+
+        for (const examId of examIds) {
+          if (moved) break;
+
+          const exam = this.inputs.exams.find(e => e.id === examId);
+          if (!exam) continue;
+
+          // Don't move final review (day before exam)
+          const examDateUTC = new Date(exam.exam_date.toISOString().split('T')[0] + 'T00:00:00.000Z');
+          const dayBeforeStr = new Date(examDateUTC.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          if (heaviest.date === dayBeforeStr) {
+            console.log(`  Skip ${exam.subject} on ${heaviest.date}: final review day`);
+            continue;
+          }
+
+          // Try ALL candidate target days for this exam
+          for (const target of candidateTargets) {
+            if (moved) break;
+
+            const targetDateUTC = new Date(target.date + 'T00:00:00.000Z');
+
+            // Can this exam study on the target day? (before exam date)
+            let lastValidDay = new Date(examDateUTC);
+            if (!exam.can_study_after_exam) lastValidDay.setDate(lastValidDay.getDate() - 1);
+            if (targetDateUTC > lastValidDay) {
+              console.log(`  Skip ${exam.subject} → ${target.date}: after exam ${exam.exam_date.toISOString().split('T')[0]}`);
+              continue;
+            }
+
+            // Target day must be >= today
+            const now = new Date();
+            const nowStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            if (target.date < nowStr) continue;
+
+            // Diversification: max 1 of same exam on target
+            const targetSchedule = mergedSchedule.get(target.date) || new Map();
+            if ((targetSchedule.get(examId) || 0) >= 1) {
+              console.log(`  Skip ${exam.subject} → ${target.date}: already has this exam`);
+              continue;
+            }
+
+            // NO gap violation check — ±1 distribution is the priority.
+            // Earlier steps already enforce gap constraints.
+
+            // Move the session
+            heavySchedule.set(examId, heavySchedule.get(examId)! - 1);
+            if (heavySchedule.get(examId) === 0) heavySchedule.delete(examId);
+
+            if (!mergedSchedule.has(target.date)) mergedSchedule.set(target.date, new Map());
+            const targetSched = mergedSchedule.get(target.date)!;
+            targetSched.set(examId, (targetSched.get(examId) || 0) + 1);
+
+            console.log(`  ±1: moved ${exam.subject} from ${heaviest.date} (${maxLoad}→${maxLoad - 1}) to ${target.date} (${target.sessions}→${target.sessions + 1})`);
+            moved = true;
+          }
+        }
+      }
+
+      if (!moved) {
+        console.log(`  Cannot fully satisfy ±1 rule (min=${minLoad}, max=${maxLoad}) — no valid moves remain`);
+        // Log all exams on heavy days and their constraints
+        for (const h of heavyDays) {
+          const hs = mergedSchedule.get(h.date)!;
+          const exams = Array.from(hs.keys()).map(id => {
+            const e = this.inputs.exams.find(ex => ex.id === id);
+            return e ? `${e.subject}(exam:${e.exam_date.toISOString().split('T')[0]})` : id;
+          });
+          console.log(`    Heavy ${h.date} (${h.sessions}): ${exams.join(', ')}`);
+        }
+        break;
+      }
+    }
+
+    // Log final state
+    console.log('=== FINAL SCHEDULE AFTER ±1 ENFORCEMENT ===');
     allDates.forEach(date => {
       const daySchedule = mergedSchedule.get(date)!;
       const totalSessions = Array.from(daySchedule.values()).reduce((sum, s) => sum + s, 0);
@@ -1954,12 +2157,7 @@ export class StudyPlannerV1 {
       return { schedule: [] };
     }
 
-    if (this.subjects.length === 1) {
-      this.schedule = this.generateSingleExamPlan();
-      return { schedule: this.schedule };
-    }
-
-    // Use the new merged daily plan approach
+    // All exams (including single) go through the unified scoring engine
     const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
     const mergedSchedule = this.mergeExamsIntoDailyPlan();
 

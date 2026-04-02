@@ -86,9 +86,10 @@ export async function GET(request: Request) {
         start: exam.date,
         end: new Date(new Date(exam.date).getTime() + 2 * 60 * 60 * 1000), // 2 hours duration
         allDay: false,
+        editable: false, // Exams cannot be dragged
         backgroundColor: applyOpacity(color, 0.4),
         borderColor: color,
-        textColor: '#ffffff', // Keep text white/readable or dark depending on background
+        textColor: '#ffffff',
         url: `/exams`,
         extendedProps: {
           type: 'exam',
@@ -131,7 +132,8 @@ export async function GET(request: Request) {
       start: task.date,
       end: task.date,
       allDay: true,
-      backgroundColor: task.isCompleted ? '#10b981' : '#f59e0b', // Green if completed, amber if not
+      editable: false, // Tasks cannot be dragged
+      backgroundColor: task.isCompleted ? '#10b981' : '#f59e0b',
       borderColor: task.isCompleted ? '#059669' : '#d97706',
       textColor: '#ffffff',
       extendedProps: {

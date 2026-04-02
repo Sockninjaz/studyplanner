@@ -20,13 +20,46 @@ interface CalendarProps {
 const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClick, sidebarOpen, sidebarCollapsed, onDatesSet }, ref) => {
   const { data, error, isLoading, mutate } = useSWR('/api/calendar/events', fetcher);
   const calendarRef = useRef<FullCalendar>(null);
+  // Keep a ref to the latest onAddItemClick so dayCellDidMount closures always use the current callback
+  const onAddItemClickRef = useRef(onAddItemClick);
+  onAddItemClickRef.current = onAddItemClick;
 
   useImperativeHandle(ref, () => ({
     getApi: () => calendarRef.current?.getApi(),
   }));
 
   const handleEventDrop = async (info: any) => {
-    // Drop logic removed as editable is set to false, but kept for future reference or if needed
+    // Only handle session events (exams/tasks have editable:false so won't reach here anyway)
+    const sessionId = info.event.extendedProps?.sessionId;
+    if (!sessionId) {
+      info.revert();
+      return;
+    }
+
+    // Build the new start/end times preserving the original duration
+    const oldStart = info.oldEvent.start as Date;
+    const oldEnd = info.oldEvent.end as Date | null;
+    const newStart = info.event.start as Date;
+    const duration = oldEnd ? oldEnd.getTime() - oldStart.getTime() : 60 * 60 * 1000; // default 1h
+    const newEnd = new Date(newStart.getTime() + duration);
+
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: newStart.toISOString(),
+          startTime: newStart.toISOString(),
+          endTime: newEnd.toISOString(),
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update session');
+      mutate(); // Refresh calendar events
+    } catch (err) {
+      console.error('Session drag failed:', err);
+      info.revert(); // Snap event back to original position
+    }
   };
 
   useEffect(() => {
@@ -66,7 +99,8 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
         initialView="dayGridMonth"
         headerToolbar={false}
         events={events}
-        editable={false}
+        editable={true}
+        eventDrop={handleEventDrop}
         height="100%"
         dayMaxEvents={3}
         datesSet={onDatesSet}
@@ -90,14 +124,22 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
         }}
         dayCellDidMount={(info) => {
           const dayCell = info.el;
-          const dateStr = info.dateStr;
+          const dateObj = info.date;
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const day = String(dateObj.getDate()).padStart(2, '0');
+          const dateStr = `${year}-${month}-${day}`;
           const dayTop = dayCell.querySelector('.fc-daygrid-day-top');
 
           if (dayTop) {
+            // Prevent duplicate buttons during React HMR or FullCalendar re-renders
+            if (dayTop.querySelector('.fc-add-btn')) return;
+
             const addButton = document.createElement('button');
             addButton.innerHTML = '+';
-            addButton.className = 'fc-add-btn opacity-0 hover:bg-gray-100 transition-all rounded px-1.5 ml-1 text-sm font-medium';
+            addButton.className = 'fc-add-btn transition-opacity hover:bg-gray-100 rounded px-1.5 ml-1 text-sm font-medium';
             addButton.title = 'Add exam or event';
+            addButton.style.opacity = '0'; // default hidden, css hover will reveal it
 
             // Append to day-top so it appears to the right of the date number
             dayTop.appendChild(addButton);
@@ -109,10 +151,17 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
               addButton.style.opacity = '0';
             });
 
+            // Use pointerdown to bypass internal FullCalendar touch interference
+            addButton.addEventListener('pointerdown', (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            });
+
             addButton.addEventListener('click', (e) => {
               e.stopPropagation();
-              if (onAddItemClick) {
-                onAddItemClick(dateStr);
+              e.preventDefault();
+              if (onAddItemClickRef.current) {
+                onAddItemClickRef.current(dateStr);
               }
             });
           }
@@ -202,6 +251,10 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
           align-items: center;
           justify-content: center;
           z-index: 2;
+          opacity: 0;
+        }
+        .fc-daygrid-day:hover .fc-add-btn {
+          opacity: 1;
         }
         .fc-day-today {
           background-color: transparent !important;

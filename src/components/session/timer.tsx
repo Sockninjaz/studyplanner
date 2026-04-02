@@ -25,6 +25,10 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskText, setNewTaskText] = useState('');
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  // Wall-clock timestamp when the timer should reach 0 (null = not running)
+  const [endTime, setEndTime] = useState<number | null>(null);
+  // Remember session time when user switches to break mid-session
+  const [savedSessionTime, setSavedSessionTime] = useState<number | null>(null);
 
   // Load tasks and notes from session on mount
   useEffect(() => {
@@ -76,7 +80,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
 
     if (timeLeft <= 0) {
       if (mode === 'session') {
-        // Session completed - update task sessions and start break
+        // Session completed - update task sessions, then stop (don't auto-start break)
         if (currentTaskId) {
           const updatedTasks = tasks.map(task =>
             task.id === currentTaskId
@@ -86,33 +90,51 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
           setTasks(updatedTasks);
         }
         setSessionCount(prev => prev + 1);
+        // Switch to break mode but paused, ready for user to start
         setMode('break');
-        setTimeLeft(5 * 60); // 5-minute break
+        setTimeLeft(5 * 60);
+        setEndTime(null);
+        setIsPaused(true);
       } else {
-        // Break completed, check if we should continue
-        if (sessionCount + 1 >= Math.ceil(duration / 25)) {
+        // Break completed - check if all pomodoros done
+        const totalPomodoros = Math.ceil(duration / 25);
+        if (sessionCount >= totalPomodoros) {
           // All sessions completed
           setMode('idle');
+          setEndTime(null);
           onComplete();
         } else {
-          // Start next session
+          // Switch to session mode but paused, ready for user to start
           setMode('session');
           setTimeLeft(25 * 60);
+          setEndTime(null);
+          setIsPaused(true);
         }
       }
       return;
     }
 
+    // Set endTime if not already set (e.g. on first render after unpause)
+    if (endTime === null) {
+      setEndTime(Date.now() + timeLeft * 1000);
+    }
+
+    // Use wall-clock time: compute remaining from endTime, immune to tab throttling
     const intervalId = setInterval(() => {
-      setTimeLeft((prevTime) => prevTime - 1);
-    }, 1000);
+      if (endTime !== null) {
+        const remaining = Math.ceil((endTime - Date.now()) / 1000);
+        setTimeLeft(Math.max(0, remaining));
+      }
+    }, 250); // Check 4x/sec for smoother updates when tab regains focus
 
     return () => clearInterval(intervalId);
-  }, [mode, timeLeft, duration, onComplete, isPaused, sessionCount, currentTaskId]);
+  }, [mode, timeLeft, duration, onComplete, isPaused, sessionCount, currentTaskId, endTime]);
 
   const startTimer = (selectedMode: 'session' | 'break' = 'session') => {
     setMode(selectedMode);
-    setTimeLeft(selectedMode === 'session' ? 25 * 60 : 5 * 60);
+    const seconds = selectedMode === 'session' ? 25 * 60 : 5 * 60;
+    setTimeLeft(seconds);
+    setEndTime(Date.now() + seconds * 1000);
     setIsPaused(false);
     if (selectedMode === 'session') {
       setSessionCount(0);
@@ -121,15 +143,18 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
 
   const pauseTimer = () => {
     setIsPaused(true);
+    setEndTime(null); // Clear endTime so it gets recomputed on continue
   };
 
   const continueTimer = () => {
+    setEndTime(Date.now() + timeLeft * 1000); // Recompute endTime from current timeLeft
     setIsPaused(false);
   };
 
   const resetTimer = () => {
     setMode('idle');
     setTimeLeft(25 * 60);
+    setEndTime(null);
     setIsPaused(false);
     setSessionCount(0);
   };
@@ -165,15 +190,23 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
   };
 
   const switchToBreak = () => {
+    // Save current session time so we can restore it when switching back
+    if (mode === 'session') {
+      setSavedSessionTime(timeLeft);
+    }
     setMode('break');
     setTimeLeft(5 * 60);
-    setIsPaused(false);
+    setEndTime(null);
+    setIsPaused(true);
   };
 
   const switchToSession = () => {
     setMode('session');
-    setTimeLeft(25 * 60);
-    setIsPaused(false);
+    // Restore saved session time if available, otherwise default 25 min
+    setTimeLeft(savedSessionTime !== null ? savedSessionTime : 25 * 60);
+    setSavedSessionTime(null);
+    setEndTime(null);
+    setIsPaused(true);
   };
 
   const formatTime = (seconds: number) => {
@@ -213,7 +246,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
         <div className="mb-3 text-base font-semibold capitalize">
           {mode === 'idle' ? 'Ready to start?' :
             mode === 'session' ? `Study Session ${sessionCount + 1}/${Math.ceil(duration / 25)}` :
-              'Break Time'}
+              `Break ${sessionCount}/${Math.ceil(duration / 25)}`}
         </div>
 
         {/* Mode Selection */}

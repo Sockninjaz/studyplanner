@@ -11,7 +11,7 @@ import EditExamModal from '@/components/exams/edit-exam-modal';
 import AddItemModal from '@/components/calendar/add-item-modal';
 import CreateTaskModal from '@/components/calendar/create-task-modal';
 import { useSidebar } from '@/components/shared/sidebar-context';
-import { isValidCalendarDate } from '@/lib/dateUtils';
+
 
 interface UserPreferences {
   daily_study_limit: number;
@@ -47,6 +47,12 @@ export default function CalendarPage() {
 
   useEffect(() => {
     fetchUserPreferences();
+
+    // Load saved view mode
+    const savedMode = localStorage.getItem('calendarViewMode');
+    if (savedMode === 'list' || savedMode === 'calendar') {
+      setViewMode(savedMode);
+    }
   }, []);
 
   const handleDatesSet = (info: any) => {
@@ -115,12 +121,21 @@ export default function CalendarPage() {
     setSelectedTaskId(null);
   };
 
-  const handleAddItemClick = (date: string) => {
-    if (!isValidCalendarDate(date)) {
-      alert('The selected date is invalid for this year (e.g. Feb 29th on a non-leap year). Please select a valid date.');
-      return;
+  const handleAddItemClick = (date?: string) => {
+    let normalizedDate = new Date().toISOString().split('T')[0];
+
+    if (date) {
+      // Split and pad to ensure strict YYYY-MM-DD format (HTML date inputs will reject "2026-3-20")
+      const parts = date.split('T')[0].split('-');
+      if (parts.length === 3) {
+        const year = parts[0];
+        const month = parts[1].padStart(2, '0');
+        const day = parts[2].padStart(2, '0');
+        normalizedDate = `${year}-${month}-${day}`;
+      }
     }
-    setSelectedDate(date);
+
+    setSelectedDate(normalizedDate);
     setIsAddItemModalOpen(true);
   };
 
@@ -236,7 +251,10 @@ export default function CalendarPage() {
                 </div>
                 <div className="flex items-center bg-white rounded-lg p-1 border border-[#4a4a4a] border-opacity-20 shadow-sm">
                   <button
-                    onClick={() => setViewMode('list')}
+                    onClick={() => {
+                      setViewMode('list');
+                      localStorage.setItem('calendarViewMode', 'list');
+                    }}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
                       ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
                       : 'text-[#4a4a4a] hover:bg-gray-50 hover:text-[#4a4a4a]'
@@ -245,7 +263,10 @@ export default function CalendarPage() {
                     List
                   </button>
                   <button
-                    onClick={() => setViewMode('calendar')}
+                    onClick={() => {
+                      setViewMode('calendar');
+                      localStorage.setItem('calendarViewMode', 'calendar');
+                    }}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'calendar'
                       ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
                       : 'text-[#4a4a4a] hover:bg-gray-50 hover:text-[#4a4a4a]'
