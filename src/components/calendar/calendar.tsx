@@ -92,7 +92,7 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
   const events = data?.data || [];
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full bg-white dark:bg-slate-900">
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -137,7 +137,7 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
 
             const addButton = document.createElement('button');
             addButton.innerHTML = '+';
-            addButton.className = 'fc-add-btn transition-opacity hover:bg-gray-100 rounded px-1.5 ml-1 text-sm font-medium';
+            addButton.className = 'fc-add-btn transition-opacity hover:bg-gray-100 dark:hover:bg-slate-800 rounded px-1.5 ml-1 text-sm font-medium';
             addButton.title = 'Add exam or event';
             addButton.style.opacity = '0'; // default hidden, css hover will reveal it
 
@@ -210,6 +210,9 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
         .fc-theme-standard td, .fc-theme-standard th {
           border-color: #f3f4f6;
         }
+        :global(.dark) .fc-theme-standard td, :global(.dark) .fc-theme-standard th {
+          border-color: #334155;
+        }
         .fc-theme-standard .fc-scrollgrid {
           border: none !important;
         }
@@ -233,14 +236,17 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          padding: 2px 4px;
+          padding: 0 2px;
         }
         .fc-daygrid-day-number {
-          padding: 4px 8px !important;
-          font-size: 0.875rem;
+          padding: 2px 6px !important;
+          font-size: 0.75rem;
           color: #374151;
           text-decoration: none !important;
           z-index: 1;
+        }
+        :global(.dark) .fc-daygrid-day-number {
+          color: #f8fafc;
         }
         .fc-add-btn {
           color: #6b7280;
@@ -266,13 +272,19 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
           background-color: #ef4444;
           color: white;
           border-radius: 4px;
-          margin: 2px;
+          margin: 1px;
           display: inline-block;
-          width: 24px;
-          height: 24px;
+          width: 20px;
+          height: 20px;
           padding: 0 !important;
-          line-height: 24px;
+          line-height: 20px;
           text-align: center;
+        }
+        .fc-event-title {
+          font-size: 0.7rem !important;
+          font-weight: 500;
+          line-height: 1.2;
+          padding: 0.5px 2px;
         }
       `}</style>
     </div>

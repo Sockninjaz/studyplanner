@@ -73,14 +73,14 @@ export default function NotesSection({ sessionId, initialNotes = '' }: Props) {
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold text-gray-900">Notes</h3>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-slate-100">Notes</h3>
         {saveStatus && (
           <span className={`text-sm px-2 py-1 rounded ${
             saveStatus === 'saved' 
-              ? 'bg-green-100 text-green-700' 
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
               : saveStatus === 'saving'
-              ? 'bg-blue-100 text-blue-700'
-              : 'bg-yellow-100 text-yellow-700'
+              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+              : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
           }`}>
             {saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}
           </span>
@@ -95,7 +95,7 @@ export default function NotesSection({ sessionId, initialNotes = '' }: Props) {
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder="Take notes during your study session..."
-          className="w-full p-4 border-2 border-gray-200 rounded-lg resize-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-all duration-300 text-gray-900 placeholder-gray-400"
+          className="w-full p-4 border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-lg resize-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-all duration-300 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500"
           style={{ 
             minHeight: '80px',
             height: isExpanded 
@@ -109,7 +109,7 @@ export default function NotesSection({ sessionId, initialNotes = '' }: Props) {
         />
         
         {/* Character count */}
-        <div className="mt-2 text-xs text-gray-500 text-right">
+        <div className="mt-2 text-xs text-gray-500 dark:text-slate-400 text-right">
           {notes.length} characters
         </div>
       </div>

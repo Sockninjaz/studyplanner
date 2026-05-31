@@ -1,9 +1,9 @@
 'use client';
 
 import ExamList from '@/components/exams/exam-list';
-import CreateExamModal from '@/components/exams/create-exam-modal';
 import UserPreferences from '@/components/user/user-preferences';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface UserPreferences {
   daily_study_limit: number;
@@ -14,7 +14,7 @@ interface UserPreferences {
 }
 
 export default function ExamsPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
   const [userPreferences, setUserPreferences] = useState<UserPreferences>({
     daily_study_limit: 4,
     soft_daily_limit: 2,
@@ -23,15 +23,14 @@ export default function ExamsPage() {
     enable_daily_limits: true,
   });
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const handleAddExam = () => router.push('/exams/create');
 
   return (
     <div className="p-4 md:p-6 2xl:p-10 max-w-screen-2xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Exams</h1>
         <button
-          onClick={openModal}
+          onClick={handleAddExam}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
         >
           + Add Exam
@@ -46,15 +45,6 @@ export default function ExamsPage() {
           <UserPreferences onPreferencesChange={setUserPreferences} />
         </div>
       </div>
-
-      <CreateExamModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        dailyMaxHours={userPreferences.daily_study_limit}
-        adjustmentPercentage={userPreferences.adjustment_percentage}
-        sessionDuration={userPreferences.session_duration}
-        enableDailyLimits={userPreferences.enable_daily_limits}
-      />
     </div>
   );
 }

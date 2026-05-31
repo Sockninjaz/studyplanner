@@ -14,6 +14,10 @@ export interface IExam extends Document {
   user: mongoose.Types.ObjectId;
   studyMaterials: IStudyMaterial[];
   can_study_after_exam: boolean;
+  originalFileName?: string;
+  rawMaterialText?: string;
+  useRag: boolean;
+  color?: string;
 }
 
 const StudyMaterialSchema = new Schema<IStudyMaterial>({
@@ -30,7 +34,14 @@ const ExamSchema: Schema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   studyMaterials: [StudyMaterialSchema],
   can_study_after_exam: { type: Boolean, default: false },
+  originalFileName: { type: String },
+  rawMaterialText: { type: String },
+  useRag: { type: Boolean, default: false },
   color: { type: String },
 }, { timestamps: true });
 
-export default mongoose.models.Exam || mongoose.model<IExam>('Exam', ExamSchema);
+if (mongoose.models.Exam) {
+  delete mongoose.models.Exam;
+}
+
+export default mongoose.model<IExam>('Exam', ExamSchema);

@@ -1,5 +1,19 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface IOnboardingProfile {
+  country?: string;
+  countryName?: string;
+  region?: string;
+  regionName?: string;
+  academicTier?: string;
+  academicTierLabel?: string;
+  grade?: string;
+  gradeLabel?: string;
+  examBoard?: string;
+  examBoardLabel?: string;
+  completedAt?: Date;
+}
+
 export interface IUser extends Document {
   name: string;
   email: string;
@@ -10,6 +24,7 @@ export interface IUser extends Document {
   adjustment_percentage?: number; // Max percentage adjustment for difficulty/confidence (default: 25)
   session_duration?: number; // Duration of each study session in minutes (default: 30)
   enable_daily_limits?: boolean; // Whether to enforce daily maximums (default 2)
+  onboardingProfile?: IOnboardingProfile;
 }
 
 const UserSchema: Schema = new Schema({
@@ -23,6 +38,19 @@ const UserSchema: Schema = new Schema({
   enable_daily_limits: { type: Boolean, default: true },
   studySessions: [{ type: Schema.Types.ObjectId, ref: 'StudySession' }],
   exams: [{ type: Schema.Types.ObjectId, ref: 'Exam' }],
+  onboardingProfile: {
+    country: { type: String },
+    countryName: { type: String },
+    region: { type: String },
+    regionName: { type: String },
+    academicTier: { type: String },
+    academicTierLabel: { type: String },
+    grade: { type: String },
+    gradeLabel: { type: String },
+    examBoard: { type: String },
+    examBoardLabel: { type: String },
+    completedAt: { type: Date },
+  },
 });
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

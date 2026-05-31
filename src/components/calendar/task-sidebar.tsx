@@ -102,7 +102,7 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
 
   if (!taskId) {
     return (
-      <div className="w-full h-full flex items-center justify-center text-gray-500">
+      <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-slate-400">
         <p>Select a task from the calendar to view details</p>
       </div>
     );
@@ -111,7 +111,7 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
   if (loading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <p className="text-gray-600">Loading task...</p>
+        <p className="text-gray-600 dark:text-slate-400">Loading task...</p>
       </div>
     );
   }
@@ -127,18 +127,18 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
   const duration = 60; // Default duration for tasks
 
   return (
-    <div className="h-full flex flex-col bg-white border-l border-gray-200">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700">
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 p-6">
+      <div className="flex-shrink-0 border-b border-gray-200 dark:border-slate-700 p-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-2xl font-bold text-gray-900">{task.name}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{task.name}</h2>
           <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               onClose();
             }}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+            className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
             title="Close sidebar"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,11 +146,11 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
             </svg>
           </button>
         </div>
-        <p className="text-base text-gray-600 mb-4">{task.description || ''}</p>
+        <p className="text-base text-gray-600 dark:text-slate-400 mb-4">{task.description || ''}</p>
 
         {/* Completion Toggle */}
         <div className="mt-3">
-          <label className="flex items-center cursor-pointer bg-gray-50 rounded-lg px-4 py-3 hover:bg-gray-100 transition-colors">
+          <label className="flex items-center cursor-pointer bg-gray-50 dark:bg-slate-800 rounded-lg px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
             <input
               type="checkbox"
               checked={task.isCompleted || false}
@@ -167,8 +167,8 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {task.isCompleted ? (
-          <div className="text-center text-green-600 mt-8 flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+          <div className="text-center text-green-600 dark:text-green-400 mt-8 flex flex-col items-center gap-4">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
@@ -178,13 +178,13 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
         ) : (
           <>
             {/* Timer Section */}
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Study Timer</h3>
+            <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Study Timer</h3>
               <Timer duration={duration} onComplete={handleTaskComplete} sessionId={taskId} session={task} />
             </div>
 
             {/* Notes Section - Takes up most space */}
-            <div className="bg-gray-50 rounded-xl p-6 min-h-[400px]">
+            <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-6 min-h-[400px]">
               <NotesSection sessionId={taskId} initialNotes={task.notes || ''} />
             </div>
           </>

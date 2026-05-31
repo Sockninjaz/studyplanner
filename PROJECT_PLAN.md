@@ -414,3 +414,8 @@ studyplanner/
 - Collaborative study groups
 - Integration with calendar apps
 - Advanced analytics dashboard
+- **Zero-to-One Collaborative Study Network (Thiel Flywheel):**
+  - **Shared Syllabus Mapping:** If a student from a specific school, grade, and region uploads a syllabus, the AI structures it into a high-fidelity schedule. Future students from that same cohort can adopt this syllabus map in one click.
+  - **Collaborative Difficulty Tuning:** Aggregate anonymized statistics of how long students actually take to study specific chapters. Use this cohort data to automatically adjust estimated study hours and buffer allocations for new students.
+  - **Cohort-Wide RAG Knowledge Base:** Index uploaded documents across a class cohort (anonymized/consensual) to create a unified searchable database. Provide a "Cohort Chat" where students ask questions answered directly using the collective pool of uploaded notes and textbooks.
+  - **Auto-Generated Community Study Assets:** Automatically compile the flashcards, quiz questions, and summaries generated during individual Pomodoro sessions into a community-rated resource library for that specific course.

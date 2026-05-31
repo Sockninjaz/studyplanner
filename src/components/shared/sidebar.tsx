@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
+import { Sun, Moon } from 'lucide-react';
 import ExamModal from '@/components/exams/exam-modal';
-import CreateExamModal from '@/components/exams/create-exam-modal';
+import { useRouter } from 'next/navigation';
 
 interface UserPreferences {
   daily_study_limit: number;
@@ -28,8 +30,8 @@ interface SidebarProps {
 const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userPreferences, setUserPreferences] = useState<UserPreferences>({
     daily_study_limit: 4,
@@ -38,8 +40,11 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
     session_duration: 30,
     enable_daily_limits: true,
   });
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetchExams();
     fetchPreferences();
 
@@ -110,13 +115,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   };
 
   const openCreateModal = () => {
-    setIsCreateModalOpen(true);
-  };
-
-  const closeCreateModal = () => {
-    setIsCreateModalOpen(false);
-    // Refresh exams list after creating a new one
-    fetchExams();
+    router.push('/exams/create');
   };
 
   const handleDeleteExam = async (examId: string) => {
@@ -146,12 +145,10 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   return (
     <>
       <aside
-        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-white duration-300 ease-linear lg:static lg:translate-x-0 ${isCollapsed ? 'w-16' : 'w-56'
-          } flex-col`}
+        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-white duration-300 ease-linear lg:static lg:translate-x-0 ${isCollapsed ? 'w-16' : 'w-48'} flex-col`}
         style={{ backgroundColor: 'rgb(54, 65, 86)' }}
       >
-        <div className={`flex items-center justify-between gap-2 ${isCollapsed ? 'px-2 py-4' : 'px-6 py-5 lg:py-6'
-          }`}>
+        <div className={`flex items-center justify-between gap-2 ${isCollapsed ? 'px-2 py-4' : 'px-4 py-4'}`}>
           {!isCollapsed && (
             <Link href="/">
             </Link>
@@ -174,29 +171,37 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
         </div>
 
         <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
-          <nav className={`mt-5 py-4 ${isCollapsed ? 'px-1' : 'px-4'} lg:mt-9 lg:px-6`}>
+          <nav className={`mt-2 py-2 ${isCollapsed ? 'px-1' : 'px-3'} lg:px-4`}>
             {!isCollapsed && (
               <div>
-                <ul className="mb-6 flex flex-col gap-0.5">
+                <ul className="mb-4 flex flex-col gap-0.5">
                   <li>
-                    <Link href="/calendar" className="group relative flex items-center gap-3 rounded-md py-2 px-3 font-medium text-[15px] text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
-                      <svg className="w-[18px] h-[18px] opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <Link href="/calendar" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
                       Schedule
                     </Link>
                   </li>
                   <li>
-                    <Link href="/today" className="group relative flex items-center gap-3 rounded-md py-2 px-3 font-medium text-[15px] text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
-                      <svg className="w-[18px] h-[18px] opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <Link href="/today" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                       </svg>
                       Today
                     </Link>
                   </li>
                   <li>
-                    <Link href="/exams" className="group relative flex items-center gap-3 rounded-md py-2 px-3 font-medium text-[15px] text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
-                      <svg className="w-[18px] h-[18px] opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <Link href="/chat" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      Chat
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/exams" className="group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
+                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
                       </svg>
                       Exams
@@ -218,6 +223,11 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </Link>
+                <Link href="/chat" className="flex justify-center py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors" title="Chat">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </Link>
                 <Link href="/exams" className="flex justify-center py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors" title="Exams">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477 4.5 1.253" />
@@ -227,22 +237,22 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
             )}
 
             {!isCollapsed && (
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-2 px-3 group/header cursor-pointer">
-                  <h3 className="text-xs font-semibold text-gray-400">My Exams</h3>
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-1.5 px-2.5 group/header cursor-pointer">
+                  <h3 className="text-[11px] uppercase tracking-wider font-semibold text-gray-400">My Exams</h3>
                   <button
                     onClick={openCreateModal}
                     className="text-gray-400 hover:text-white p-1 rounded-md transition-colors opacity-0 group-hover/header:opacity-100 flex items-center justify-center"
                     title="Add Exam"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
                 </div>
-                <ul className="mb-6 flex flex-col gap-0.5">
+                <ul className="mb-4 flex flex-col gap-0.5">
                   {loading ? (
-                    <li className="px-4 py-3 text-base text-white opacity-60">Loading exams...</li>
+                    <li className="px-2.5 py-2 text-xs text-white opacity-60">Loading exams...</li>
                   ) : exams.length === 0 ? (
                     <li className="px-4 py-3 text-base text-white opacity-60">No exams scheduled</li>
                   ) : (
@@ -280,25 +290,25 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                           <div className="w-full group relative flex items-center rounded-md font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
                             <button
                               onClick={() => openExamModal(exam)}
-                              className="flex-1 flex items-center gap-3 py-2 px-3 text-left min-w-0 overflow-hidden"
+                              className="flex-1 flex items-center gap-2.5 py-1.5 px-2.5 text-left min-w-0 overflow-hidden"
                             >
                               <div
-                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: examColor }}
                               />
-                              <span className="text-[15px] truncate min-w-0" title={exam.subject}>
+                              <span className="text-[13px] truncate min-w-0" title={exam.subject}>
                                 {exam.subject}
                               </span>
                             </button>
                             <button
                               onClick={(e) => {
-                                e.stopPropagation(); // Prevent opening the modal
+                                e.stopPropagation();
                                 handleDeleteExam(exam._id);
                               }}
-                              className="px-2 py-1.5 text-gray-400 hover:text-red-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="px-2 py-1 text-gray-400 hover:text-red-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                               aria-label={`Delete ${exam.subject}`}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                             </button>
                           </div>
                         </li>
@@ -310,21 +320,35 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
             )}
           </nav>
         </div>
+
+        {/* Theme Toggle */}
+        <div className={`mt-auto border-t border-white/10 ${isCollapsed ? 'px-2 py-2' : 'px-4 py-3'}`}>
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className={`flex items-center justify-center w-full rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors ${
+              isCollapsed ? 'p-1.5' : 'py-1.5 px-2.5 gap-2.5'
+            }`}
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {mounted && theme === 'dark' ? (
+              <>
+                <Sun className="w-4 h-4 opacity-80 flex-shrink-0" />
+                {!isCollapsed && <span className="font-medium text-[13px]">Light Mode</span>}
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 opacity-80 flex-shrink-0" />
+                {!isCollapsed && <span className="font-medium text-[13px]">Dark Mode</span>}
+              </>
+            )}
+          </button>
+        </div>
       </aside>
 
       <ExamModal
         exam={selectedExam}
         isOpen={isModalOpen}
         onClose={closeModal}
-      />
-
-      <CreateExamModal
-        isOpen={isCreateModalOpen}
-        onClose={closeCreateModal}
-        dailyMaxHours={userPreferences.daily_study_limit}
-        adjustmentPercentage={userPreferences.adjustment_percentage}
-        sessionDuration={userPreferences.session_duration}
-        enableDailyLimits={userPreferences.enable_daily_limits}
       />
     </>
   );

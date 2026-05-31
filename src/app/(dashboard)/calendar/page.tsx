@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Calendar from '@/components/calendar/calendar';
 import CalendarListView from '@/components/calendar/calendar-list-view';
 import SessionSidebar from '@/components/calendar/session-sidebar';
 import TaskSidebar from '@/components/calendar/task-sidebar';
-import CreateExamModal from '@/components/exams/create-exam-modal';
 import ExamModal from '@/components/exams/exam-modal';
-import EditExamModal from '@/components/exams/edit-exam-modal';
 import AddItemModal from '@/components/calendar/add-item-modal';
 import CreateTaskModal from '@/components/calendar/create-task-modal';
 import { useSidebar } from '@/components/shared/sidebar-context';
@@ -22,6 +21,7 @@ interface UserPreferences {
 }
 
 export default function CalendarPage() {
+  const router = useRouter();
   const { isSidebarCollapsed } = useSidebar();
   const calendarRef = useRef<any>(null);
   const [currentMonthTitle, setCurrentMonthTitle] = useState('');
@@ -29,7 +29,6 @@ export default function CalendarPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
-  const [isEditExamModalOpen, setIsEditExamModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -153,7 +152,11 @@ export default function CalendarPage() {
 
   const handleAddExam = () => {
     setIsAddItemModalOpen(false);
-    setIsExamModalOpen(true);
+    if (selectedDate) {
+      router.push(`/exams/create?date=${selectedDate}`);
+    } else {
+      router.push('/exams/create');
+    }
   };
 
   const handleExamView = async (examId: string) => {
@@ -171,25 +174,9 @@ export default function CalendarPage() {
     }
   };
 
-  const handleExamEdit = async (examId: string) => {
-    try {
-      const mongoId = examId.replace('exam-', '');
-      const response = await fetch(`/api/exams/${mongoId}`);
-      if (response.ok) {
-        const examData = await response.json();
-        setSelectedExam(examData.data);
-        setSelectedExamId(examId);
-        setIsEditExamModalOpen(true);
-      }
-    } catch (error) {
-      console.error('Failed to fetch exam:', error);
-    }
-  };
-
-  const handleCloseEditExamModal = () => {
-    setIsEditExamModalOpen(false);
-    setSelectedExam(null);
-    setSelectedExamId(undefined);
+  const handleExamEdit = (examId: string) => {
+    const mongoId = examId.replace('exam-', '');
+    router.push(`/exams/create?edit=${mongoId}`);
   };
 
   const handleAddTask = () => {
@@ -222,42 +209,42 @@ export default function CalendarPage() {
 
   return (
     <>
-      <div className="flex h-full flex-col overflow-hidden bg-white">
+      <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-slate-900">
         {/* Main Content Area */}
         <div className="flex-1 flex flex-row overflow-hidden">
-          <div className={`transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-[calc(100%-320px)]' : 'w-full'}`}>
+          <div className={`transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-[calc(100%-280px)]' : 'w-full'}`}>
             {/* View Toggle and Header - Clean, no borders */}
-            <div className="bg-[#ffff] px-4 py-3 flex items-center justify-between h-16 flex-shrink-0">
-              <div className="flex items-center gap-4">
-                <h1 className="text-2xl font-bold text-[#4a4a4a]">
+            <div className="bg-[#ffff] dark:bg-slate-900 px-3 py-2 flex items-center justify-between h-14 flex-shrink-0 border-b border-gray-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <h1 className="text-lg md:text-xl font-bold text-[#4a4a4a] dark:text-slate-100">
                   {viewMode === 'calendar' ? currentMonthTitle : viewMode === 'list' ? 'Schedule' : 'Calendar'}
                 </h1>
               </div>
-              <div className="flex items-center gap-4">
-                <div className={`flex items-center gap-1 mr-2 transition-opacity duration-200 ${viewMode === 'calendar' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-1 mr-1 transition-opacity duration-200 ${viewMode === 'calendar' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                   <button onClick={handlePrev} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
                   <button onClick={handleNext} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
-                  <button onClick={handleToday} className="ml-2 px-3 py-1.5 text-sm font-medium border border-[#4a4a4a] border-opacity-20 rounded hover:bg-gray-50 transition-colors text-[#4a4a4a]">
+                  <button onClick={handleToday} className="ml-1 px-2.5 py-1 text-xs font-medium border border-[#4a4a4a] border-opacity-20 rounded hover:bg-gray-50 transition-colors text-[#4a4a4a]">
                     Today
                   </button>
                 </div>
-                <div className="flex items-center bg-white rounded-lg p-1 border border-[#4a4a4a] border-opacity-20 shadow-sm">
+                <div className="flex items-center bg-white dark:bg-slate-800 rounded-md p-0.5 border border-[#4a4a4a] border-opacity-20 shadow-sm">
                   <button
                     onClick={() => {
                       setViewMode('list');
                       localStorage.setItem('calendarViewMode', 'list');
                     }}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
+                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'list'
                       ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
-                      : 'text-[#4a4a4a] hover:bg-gray-50 hover:text-[#4a4a4a]'
+                      : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-[#4a4a4a] dark:hover:text-white'
                       }`}
                   >
                     List
@@ -267,9 +254,9 @@ export default function CalendarPage() {
                       setViewMode('calendar');
                       localStorage.setItem('calendarViewMode', 'calendar');
                     }}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'calendar'
+                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'calendar'
                       ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
-                      : 'text-[#4a4a4a] hover:bg-gray-50 hover:text-[#4a4a4a]'
+                      : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-[#4a4a4a] dark:hover:text-white'
                       }`}
                   >
                     Calendar
@@ -279,18 +266,18 @@ export default function CalendarPage() {
                   onClick={handleRegenerateSchedule}
                   disabled={isRegenerating}
                   title="Regenerate planner based on current preferences"
-                  className="bg-white border border-[#4a4a4a] border-opacity-20 text-[#4a4a4a] px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-white dark:bg-slate-800 border border-[#4a4a4a] border-opacity-20 text-[#4a4a4a] dark:text-slate-200 px-2.5 py-1 rounded text-xs hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   {isRegenerating ? 'Regenerating...' : 'Regenerate'}
                 </button>
                 <button
                   onClick={() => setIsAddItemModalOpen(true)}
-                  className="bg-[rgb(54,65,86)] text-white px-4 py-1.5 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2 shadow-sm text-sm font-medium"
+                  className="bg-[rgb(54,65,86)] text-white px-3 py-1 rounded hover:bg-opacity-90 transition-colors flex items-center gap-1.5 shadow-sm text-xs font-medium"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   Add Exam
@@ -329,7 +316,7 @@ export default function CalendarPage() {
 
           {/* Sidebar - Session or Task */}
           {isSidebarOpen && (
-            <div className="w-[320px] flex-shrink-0 transition-all duration-300 flex flex-col border-l border-gray-200 bg-white">
+            <div className="w-[280px] flex-shrink-0 transition-all duration-300 flex flex-col border-l border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
               <div className="flex-1 overflow-hidden">
                 {selectedSessionId ? (
                   <SessionSidebar
@@ -375,27 +362,6 @@ export default function CalendarPage() {
         />
       )}
 
-      {/* Edit Exam Modal */}
-      {selectedExam && isEditExamModalOpen && (
-        <EditExamModal
-          exam={selectedExam}
-          isOpen={isEditExamModalOpen}
-          onClose={handleCloseEditExamModal}
-        />
-      )}
-
-      {/* Create Exam Modal */}
-      {!selectedExam && (
-        <CreateExamModal
-          isOpen={isExamModalOpen}
-          onClose={handleCloseExamModal}
-          dailyMaxHours={userPreferences.daily_study_limit}
-          adjustmentPercentage={userPreferences.adjustment_percentage}
-          sessionDuration={userPreferences.session_duration}
-          enableDailyLimits={userPreferences.enable_daily_limits}
-          initialDate={selectedDate}
-        />
-      )}
     </>
   );
 }

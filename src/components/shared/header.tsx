@@ -7,11 +7,11 @@ interface HeaderProps {
 
 const Header = ({ isSidebarCollapsed = false, onToggleSidebar }: HeaderProps) => {
   return (
-    <header className="sticky top-0 z-10 flex w-full bg-neutral-light drop-shadow-md border-b border-neutral-dark border-opacity-20">
+    <header className="sticky top-0 z-10 flex w-full bg-neutral-light dark:bg-slate-900 drop-shadow-md border-b border-neutral-dark border-opacity-20 dark:border-slate-800">
       <div className="flex flex-grow items-center justify-between px-4 py-4 shadow-2 md:px-6 2xl:px-11">
         <div className="flex items-center gap-2 sm:gap-4">
           <Link href="/">
-            <h1 className="text-2xl font-bold text-neutral-dark">Study Planner</h1>
+            <h1 className="text-2xl font-bold text-neutral-dark dark:text-slate-100">Study Planner</h1>
           </Link>
         </div>
 
@@ -20,7 +20,7 @@ const Header = ({ isSidebarCollapsed = false, onToggleSidebar }: HeaderProps) =>
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
-              className="p-2 text-neutral-dark hover:bg-neutral-dark hover:bg-opacity-10 rounded-lg transition-colors"
+              className="p-2 text-neutral-dark dark:text-slate-300 hover:bg-neutral-dark hover:bg-opacity-10 dark:hover:bg-slate-800 rounded-lg transition-colors"
               title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,7 +34,7 @@ const Header = ({ isSidebarCollapsed = false, onToggleSidebar }: HeaderProps) =>
           )}
           
           {/* <!-- User Area --> */}
-          <div className="text-neutral-dark">User Menu</div>
+          <div className="text-neutral-dark dark:text-slate-100">User Menu</div>
           {/* <!-- User Area --> */}
         </div>
       </div>

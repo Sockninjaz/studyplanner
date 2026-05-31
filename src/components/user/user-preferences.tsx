@@ -179,12 +179,12 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
 
   if (isLoading) {
     return (
-      <div className="bg-white p-4 rounded-lg shadow">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-lg shadow">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/4 mb-4"></div>
           <div className="space-y-3">
-            <div className="h-8 bg-gray-200 rounded"></div>
-            <div className="h-8 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded"></div>
+            <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded"></div>
           </div>
         </div>
       </div>
@@ -192,17 +192,17 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
   }
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Study Preferences</h3>
+    <div className="bg-white dark:bg-slate-900 p-4 rounded-lg shadow">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Study Preferences</h3>
 
       <div className="space-y-4">
         {/* Toggle limits */}
-        <div className="flex items-center justify-between pb-2 border-b border-gray-100 mb-2">
+        <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-800 mb-2">
           <div>
-            <label htmlFor="enable-limits" className="block text-sm font-semibold text-gray-900">
+            <label htmlFor="enable-limits" className="block text-sm font-semibold text-gray-900 dark:text-slate-100">
               Enable Strict Daily Limits
             </label>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
               If disabled, the algorithm will try to fit study hours even if it exceeds your daily limit (capped at 2 hours/day for exams 2+ weeks away).
             </p>
           </div>
@@ -210,7 +210,7 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
             type="button"
             id="enable-limits"
             onClick={() => handleInputChange('enable_daily_limits', !preferences.enable_daily_limits)}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${preferences.enable_daily_limits ? 'bg-indigo-600' : 'bg-gray-200'
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${preferences.enable_daily_limits ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-gray-200 dark:bg-slate-700'
               }`}
           >
             <span
@@ -221,7 +221,7 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         </div>
 
         <div className={`transition-opacity duration-200 ${!preferences.enable_daily_limits ? 'opacity-50 pointer-events-none' : ''}`}>
-          <label htmlFor="daily-limit" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="daily-limit" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
             Daily Study Limit (Hours)
           </label>
           <div className="flex items-center gap-3">
@@ -234,17 +234,17 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
               onChange={(e) => handleInputChange('daily_study_limit', parseInt(e.target.value))}
               className="flex-1"
             />
-            <span className="text-lg font-bold text-indigo-600 w-8">
+            <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400 w-8">
               {preferences.daily_study_limit}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
             Maximum study hours per day (1-12 hours)
           </p>
         </div>
 
         <div className={`transition-opacity duration-200 ${!preferences.enable_daily_limits ? 'opacity-50 pointer-events-none' : ''}`}>
-          <label htmlFor="soft-limit" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="soft-limit" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
             Preferred Study Time Per Day (Hours)
           </label>
           <div className="flex items-center gap-3">
@@ -257,17 +257,17 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
               onChange={(e) => handleInputChange('soft_daily_limit', parseInt(e.target.value))}
               className="flex-1"
             />
-            <span className="text-lg font-bold text-blue-600 w-8">
+            <span className="text-lg font-bold text-blue-600 dark:text-blue-400 w-8">
               {preferences.soft_daily_limit}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
             Target study hours before expanding timeline (1-12 hours)
           </p>
         </div>
 
         <div>
-          <label htmlFor="session-duration" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="session-duration" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
             Session Duration (Minutes)
           </label>
           <div className="flex items-center gap-3">
@@ -281,17 +281,17 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
               onChange={(e) => handleInputChange('session_duration', parseInt(e.target.value))}
               className="flex-1"
             />
-            <span className="text-lg font-bold text-green-600 w-12">
+            <span className="text-lg font-bold text-green-600 dark:text-green-400 w-12">
               {preferences.session_duration}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
             Length of each study session (15-120 minutes)
           </p>
         </div>
 
         <div>
-          <label htmlFor="adjustment-percent" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="adjustment-percent" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
             Max Difficulty Adjustment (%)
           </label>
           <div className="flex items-center gap-3">
@@ -305,19 +305,19 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
               onChange={(e) => handleInputChange('adjustment_percentage', parseInt(e.target.value))}
               className="flex-1"
             />
-            <span className="text-sm font-medium text-gray-900 w-12">
+            <span className="text-sm font-medium text-gray-900 dark:text-slate-100 w-12">
               {preferences.adjustment_percentage}%
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
             Maximum percentage adjustment for difficulty/confidence (0-25%)
           </p>
         </div>
 
         {message && (
           <div className={`text-sm p-2 rounded ${message.includes('Error')
-            ? 'bg-red-100 text-red-700'
-            : 'bg-green-100 text-green-700'
+            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+            : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
             }`}>
             {message}
           </div>
@@ -326,7 +326,7 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         <button
           onClick={() => savePreferences()}
           disabled={isSaving}
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-indigo-600 dark:bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSaving ? 'Saving...' : 'Save Preferences'}
         </button>

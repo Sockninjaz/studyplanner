@@ -1,0 +1,787 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   ONBOARDING WIZARD — Design System
+   Imported only by the onboarding page — zero impact on the rest of the app.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Tokens */
+:root {
+  --ob-accent: #7c6cfc;
+  --ob-accent-2: #42bfdd;
+  --ob-bg: #0a0f1e;
+  --ob-surface: rgba(255, 255, 255, 0.05);
+  --ob-surface-hover: rgba(255, 255, 255, 0.09);
+  --ob-border: rgba(255, 255, 255, 0.1);
+  --ob-border-focus: rgba(124, 108, 252, 0.6);
+  --ob-text: #f0f0ff;
+  --ob-text-muted: rgba(240, 240, 255, 0.55);
+  --ob-radius: 16px;
+  --ob-radius-sm: 10px;
+  --ob-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Root page ───────────────────────────────────────────── */
+.ob-root {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--ob-bg);
+  color: var(--ob-text);
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.ob-splash {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ob-bg);
+}
+
+.ob-splash-logo {
+  animation: ob-pulse 1.4s ease-in-out infinite;
+}
+
+/* ── Ambient background blobs ────────────────────────────── */
+.ob-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ob-bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.2;
+  animation: ob-float linear infinite;
+}
+
+.ob-bg-blob--1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #7c6cfc, transparent);
+  top: -150px;
+  left: -100px;
+  animation-duration: 20s;
+}
+
+.ob-bg-blob--2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #42bfdd, transparent);
+  bottom: -100px;
+  right: -80px;
+  animation-duration: 25s;
+  animation-direction: reverse;
+}
+
+.ob-bg-blob--3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, #faafd5, transparent);
+  top: 50%;
+  left: 60%;
+  animation-duration: 18s;
+}
+
+@keyframes ob-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -15px) scale(1.05); }
+  66% { transform: translate(-10px, 10px) scale(0.97); }
+}
+
+/* ── Wizard card ──────────────────────────────────────────── */
+.ob-wizard {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 540px;
+  min-height: 540px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--ob-border);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(124, 108, 252, 0.08),
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Progress bar ─────────────────────────────────────────── */
+.ob-progress-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  z-index: 10;
+}
+
+.ob-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ob-accent), var(--ob-accent-2));
+  border-radius: 0 2px 2px 0;
+  transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Header row ───────────────────────────────────────────── */
+.ob-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 0;
+  gap: 0.75rem;
+}
+
+.ob-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ob-text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  transition: color var(--ob-transition), background var(--ob-transition), opacity var(--ob-transition);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ob-back-btn--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ob-back-btn:hover {
+  color: var(--ob-text);
+  background: var(--ob-surface-hover);
+}
+
+.ob-step-pills {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.ob-step-pill {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border);
+  color: var(--ob-text-muted);
+  transition: all var(--ob-transition);
+}
+
+.ob-step-pill--active {
+  background: var(--ob-accent);
+  border-color: var(--ob-accent);
+  color: white;
+  box-shadow: 0 0 12px rgba(124, 108, 252, 0.4);
+}
+
+.ob-step-pill--done {
+  background: rgba(124, 108, 252, 0.2);
+  border-color: rgba(124, 108, 252, 0.4);
+  color: var(--ob-accent);
+}
+
+.ob-step-counter {
+  font-size: 0.8rem;
+  color: var(--ob-text-muted);
+  font-weight: 500;
+  min-width: 3rem;
+  text-align: right;
+}
+
+/* ── Step container ───────────────────────────────────────── */
+.ob-step-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+
+/* ── Step content ─────────────────────────────────────────── */
+.ob-step-content {
+  flex: 1;
+  padding: 2rem 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: ob-step-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.ob-step-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ob-step-eyebrow {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ob-accent);
+  opacity: 0.9;
+}
+
+.ob-step-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ob-text);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.ob-step-subtitle {
+  font-size: 0.95rem;
+  color: var(--ob-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Combobox / Input ─────────────────────────────────────── */
+.ob-combobox-wrapper {
+  position: relative;
+}
+
+.ob-input-group {
+  display: flex;
+  align-items: center;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border);
+  border-radius: var(--ob-radius-sm);
+  transition: border-color var(--ob-transition), box-shadow var(--ob-transition);
+  overflow: hidden;
+}
+
+.ob-input-group:focus-within {
+  border-color: var(--ob-border-focus);
+  box-shadow: 0 0 0 3px rgba(124, 108, 252, 0.12);
+}
+
+.ob-input-flag {
+  padding: 0 0 0 1rem;
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 1;
+  transition: opacity var(--ob-transition);
+}
+
+.ob-input-flag--placeholder {
+  opacity: 0.4;
+}
+
+.ob-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  color: var(--ob-text);
+  font-family: inherit;
+  min-width: 0;
+}
+
+.ob-input::placeholder {
+  color: var(--ob-text-muted);
+}
+
+.ob-input-clear {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--ob-text-muted);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  transition: color var(--ob-transition);
+  flex-shrink: 0;
+}
+
+.ob-input-clear:hover { color: var(--ob-text); }
+
+/* Dropdown */
+.ob-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #161d35;
+  border: 1px solid var(--ob-border);
+  border-radius: var(--ob-radius-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  z-index: 50;
+  max-height: 280px;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  animation: ob-dropdown-in 150ms ease both;
+}
+
+@keyframes ob-dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ob-dropdown::-webkit-scrollbar { width: 4px; }
+.ob-dropdown::-webkit-scrollbar-track { background: transparent; }
+.ob-dropdown::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+.ob-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--ob-transition);
+  color: var(--ob-text);
+}
+
+.ob-dropdown-item:hover,
+.ob-dropdown-item--highlight {
+  background: var(--ob-surface-hover);
+}
+
+.ob-dropdown-item--selected {
+  background: rgba(124, 108, 252, 0.18);
+  color: #a89ffc;
+}
+
+.ob-dropdown-flag { font-size: 1.1rem; flex-shrink: 0; }
+.ob-dropdown-name { font-size: 0.95rem; font-weight: 500; flex: 1; }
+.ob-dropdown-code {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ob-text-muted);
+  background: rgba(255,255,255,0.06);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+/* ── Next button ──────────────────────────────────────────── */
+.ob-next-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  border: 1px solid rgba(124, 108, 252, 0.3);
+  border-radius: var(--ob-radius-sm);
+  background: rgba(124, 108, 252, 0.08);
+  color: var(--ob-text-muted);
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: not-allowed;
+  transition: all var(--ob-transition);
+  letter-spacing: 0.01em;
+}
+
+.ob-next-btn--active {
+  background: linear-gradient(135deg, var(--ob-accent), #9d6cfc);
+  border-color: transparent;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(124, 108, 252, 0.35);
+}
+
+.ob-next-btn--active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(124, 108, 252, 0.45);
+}
+
+.ob-next-btn--active:active {
+  transform: translateY(0);
+}
+
+.ob-next-arrow {
+  width: 18px;
+  height: 18px;
+  transition: transform var(--ob-transition);
+}
+
+.ob-next-btn--active:hover .ob-next-arrow {
+  transform: translateX(3px);
+}
+
+/* ── Track cards ──────────────────────────────────────────── */
+.ob-track-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.ob-track-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem 1.1rem;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border);
+  border-radius: var(--ob-radius-sm);
+  cursor: pointer;
+  text-align: left;
+  color: var(--ob-text);
+  font-family: inherit;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ob-track-card:hover {
+  background: var(--ob-surface-hover);
+  border-color: rgba(124, 108, 252, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.ob-track-card--selected {
+  background: rgba(124, 108, 252, 0.15);
+  border-color: var(--ob-accent);
+  box-shadow: 0 0 0 1px rgba(124, 108, 252, 0.3), 0 8px 24px rgba(124, 108, 252, 0.15);
+}
+
+.ob-track-card--pulse {
+  animation: ob-card-pulse 300ms ease both;
+}
+
+.ob-track-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+}
+
+.ob-track-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ob-text);
+}
+
+.ob-track-desc {
+  font-size: 0.78rem;
+  color: var(--ob-text-muted);
+  line-height: 1.4;
+}
+
+.ob-track-check {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  color: var(--ob-accent);
+}
+
+/* ── Exam board grid ──────────────────────────────────────── */
+.ob-board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.ob-board-card {
+  position: relative;
+  padding: 1.1rem 1rem;
+  background: var(--ob-surface);
+  border: 1.5px solid var(--ob-border);
+  border-radius: var(--ob-radius-sm);
+  cursor: pointer;
+  text-align: center;
+  color: var(--ob-text);
+  font-family: inherit;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ob-board-card:hover {
+  background: var(--ob-surface-hover);
+  border-color: var(--board-color, var(--ob-accent));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.ob-board-card--selected {
+  background: color-mix(in srgb, var(--board-color, var(--ob-accent)) 15%, transparent);
+  border-color: var(--board-color, var(--ob-accent));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--board-color, var(--ob-accent)) 40%, transparent),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.ob-board-card--pulse {
+  animation: ob-card-pulse 300ms ease both;
+}
+
+.ob-board-code {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ob-text);
+}
+
+.ob-board-card--selected .ob-board-code {
+  color: var(--board-color, var(--ob-accent));
+}
+
+.ob-board-desc {
+  font-size: 0.72rem;
+  color: var(--ob-text-muted);
+  line-height: 1.35;
+}
+
+.ob-board-check {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.7rem;
+  font-size: 0.85rem;
+  color: var(--board-color, var(--ob-accent));
+  font-weight: 700;
+}
+
+/* ── Auto-advance hint ────────────────────────────────────── */
+.ob-auto-advance-hint {
+  font-size: 0.8rem;
+  color: var(--ob-accent);
+  text-align: center;
+  animation: ob-fade-in 200ms ease both;
+}
+
+/* ── Complete step ────────────────────────────────────────── */
+.ob-complete-step {
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  gap: 1.2rem;
+}
+
+.ob-complete-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ob-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(124, 108, 252, 0.2);
+  border-top-color: var(--ob-accent);
+  border-radius: 50%;
+  animation: ob-spin 0.8s linear infinite;
+}
+
+.ob-complete-status {
+  color: var(--ob-text-muted);
+  font-size: 0.95rem;
+}
+
+.ob-complete-title {
+  font-size: 2rem;
+}
+
+.ob-complete-subtitle {
+  max-width: 300px;
+}
+
+.ob-success-icon {
+  animation: ob-success-pop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.ob-success-icon svg {
+  overflow: visible;
+}
+
+.ob-success-circle {
+  animation: ob-draw-circle 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  stroke-dasharray: 239;
+  stroke-dashoffset: 239;
+}
+
+.ob-success-check {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: ob-draw-check 400ms 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.ob-summary-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 360px;
+}
+
+.ob-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  gap: 0.5rem;
+}
+
+.ob-summary-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ob-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ob-summary-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ob-text);
+}
+
+.ob-redirect-hint {
+  font-size: 0.8rem;
+  color: var(--ob-text-muted);
+  animation: ob-pulse 1.2s ease-in-out infinite;
+}
+
+/* ── Keyframe animations ──────────────────────────────────── */
+@keyframes ob-step-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ob-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ob-card-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+@keyframes ob-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ob-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes ob-success-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ob-draw-circle {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes ob-draw-check {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ── View Transitions — directional slide ─────────────────── */
+@keyframes ob-slide-out-left {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(-6%); opacity: 0; }
+}
+
+@keyframes ob-slide-in-right {
+  from { transform: translateX(6%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes ob-slide-out-right {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(6%); opacity: 0; }
+}
+
+@keyframes ob-slide-in-left {
+  from { transform: translateX(-6%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+/* Default: forward navigation */
+::view-transition-old(ob-step) {
+  animation: 350ms cubic-bezier(0.4, 0, 0.2, 1) both ob-slide-out-left;
+}
+::view-transition-new(ob-step) {
+  animation: 350ms cubic-bezier(0.4, 0, 0.2, 1) both ob-slide-in-right;
+}
+
+/* Back navigation — reversed */
+:root[data-nav-dir="back"] ::view-transition-old(ob-step) {
+  animation-name: ob-slide-out-right;
+}
+:root[data-nav-dir="back"] ::view-transition-new(ob-step) {
+  animation-name: ob-slide-in-left;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+
+  .ob-track-card,
+  .ob-board-card,
+  .ob-next-btn,
+  .ob-back-btn {
+    transition: none !important;
+  }
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .ob-wizard {
+    border-radius: 16px;
+    min-height: unset;
+  }
+
+  .ob-step-content {
+    padding: 1.5rem 1.25rem 2rem;
+  }
+
+  .ob-step-title {
+    font-size: 1.5rem;
+  }
+
+  .ob-track-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ob-board-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

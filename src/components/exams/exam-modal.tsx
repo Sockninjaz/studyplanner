@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { mutate } from 'swr';
-import EditExamModal from './edit-exam-modal';
+import { useRouter } from 'next/navigation';
 
 interface StudySession {
   _id: string;
@@ -23,9 +23,11 @@ interface Exam {
     book: string;
     difficulty: number;
     confidence: number;
-    estimatedHours: number;
+    estimatedHours?: number; // legacy
+    user_estimated_total_hours?: number;
     completed: boolean;
   }>;
+  originalFileName?: string;
 }
 
 interface ExamModalProps {
@@ -40,14 +42,17 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (exam && isOpen) {
       fetchSessions();
-      setIsEditOpen(initialEditMode);
+      if (initialEditMode) {
+        router.push(`/exams/create?edit=${exam._id}`);
+        onClose();
+      }
     }
-  }, [exam, isOpen, initialEditMode]);
+  }, [exam, isOpen, initialEditMode, router]);
 
   const fetchSessions = async () => {
     if (!exam) return;
@@ -114,14 +119,17 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
       />
       
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl">
+      <div className="relative z-10 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-xl shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+        <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">{exam.subject}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{exam.subject}</h2>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setIsEditOpen(true)}
+                onClick={() => {
+                  router.push(`/exams/create?edit=${exam._id}`);
+                  onClose();
+                }}
                 className="text-blue-500 hover:text-blue-700 transition-colors"
                 title="Edit exam"
               >
@@ -143,7 +151,7 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
               </button>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -157,9 +165,9 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
         <div className="p-6 space-y-6">
           {/* Exam Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">Exam Date</h3>
-              <p className="text-blue-700">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Exam Date</h3>
+              <p className="text-blue-700 dark:text-blue-300">
                 {new Date(exam.date).toLocaleDateString('en-US', {
                   weekday: 'long',
                   year: 'numeric',
@@ -169,47 +177,61 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
               </p>
             </div>
             
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-green-900 mb-2">Progress</h3>
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+              <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">Progress</h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-green-700">{completedSessions} of {totalSessions} sessions completed</span>
-                  <span className="text-green-700 font-medium">{Math.round(progressPercentage)}%</span>
+                  <span className="text-green-700 dark:text-green-300">{completedSessions} of {totalSessions} sessions completed</span>
+                  <span className="text-green-700 dark:text-green-300 font-medium">{Math.round(progressPercentage)}%</span>
                 </div>
-                <div className="w-full bg-green-200 rounded-full h-2">
+                <div className="w-full bg-green-200 dark:bg-green-900/40 rounded-full h-2">
                   <div 
-                    className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${progressPercentage}%` }}
                   />
                 </div>
               </div>
             </div>
+
+            {exam.originalFileName && (
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg md:col-span-2">
+                <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  Source Material
+                </h3>
+                <p className="text-purple-700 dark:text-purple-300 font-medium font-mono text-sm">
+                  {exam.originalFileName}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Study Materials */}
           {exam.studyMaterials && exam.studyMaterials.length > 0 && (
             <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Study Materials</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-3">Study Materials</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {exam.studyMaterials.map((material, index) => (
-                  <div key={index} className="border border-gray-200 p-3 rounded-lg">
+                  <div key={index} className="border border-gray-200 dark:border-slate-700 p-3 rounded-lg">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-medium text-gray-900">{material.chapter}</p>
-                        <p className="text-sm text-gray-600">{material.book}</p>
+                        <p className="font-medium text-gray-900 dark:text-slate-100">{material.chapter}</p>
+                        <p className="text-sm text-gray-600 dark:text-slate-400">{material.book}</p>
                       </div>
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         material.completed 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' 
+                          : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200'
                       }`}>
                         {material.completed ? 'Completed' : 'In Progress'}
                       </span>
                     </div>
-                    <div className="mt-2 flex gap-4 text-xs text-gray-500">
+                    <div className="mt-2 flex gap-4 text-xs text-gray-500 dark:text-slate-400">
                       <span>Difficulty: {material.difficulty}/5</span>
                       <span>Confidence: {material.confidence}/5</span>
-                      <span>{material.estimatedHours}h</span>
+                      <span>{material.user_estimated_total_hours || material.estimatedHours || 1}h</span>
                     </div>
                   </div>
                 ))}
@@ -219,28 +241,28 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
 
           {/* Study Sessions */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-3">Study Sessions</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-3">Study Sessions</h3>
             {loading ? (
-              <p className="text-gray-500">Loading sessions...</p>
+              <p className="text-gray-500 dark:text-slate-400">Loading sessions...</p>
             ) : sessions.length === 0 ? (
-              <p className="text-gray-500">No study sessions planned yet.</p>
+              <p className="text-gray-500 dark:text-slate-400">No study sessions planned yet.</p>
             ) : (
               <div className="space-y-3">
                 {sessions.map((session) => (
-                  <div key={session._id} className="border border-gray-200 p-4 rounded-lg">
+                  <div key={session._id} className="border border-gray-200 dark:border-slate-700 p-4 rounded-lg">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-medium text-gray-900">{session.title}</h4>
-                        <p className="text-sm text-gray-600">{session.subject}</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <h4 className="font-medium text-gray-900 dark:text-slate-100">{session.title}</h4>
+                        <p className="text-sm text-gray-600 dark:text-slate-400">{session.subject}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                           {new Date(session.startTime).toLocaleDateString()} at{' '}
                           {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                       <span className={`px-3 py-1 text-xs rounded-full ${
                         session.isCompleted 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-blue-100 text-blue-800'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' 
+                          : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
                       }`}>
                         {session.isCompleted ? 'Completed' : 'Scheduled'}
                       </span>
@@ -248,7 +270,7 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
                     
                     {session.checklist && session.checklist.length > 0 && (
                       <div className="mt-3">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Checklist:</p>
+                        <p className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Checklist:</p>
                         <div className="space-y-1">
                           {session.checklist.map((item, index) => (
                             <div key={index} className="flex items-center gap-2 text-sm">
@@ -256,9 +278,9 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
                                 type="checkbox"
                                 checked={item.completed}
                                 readOnly
-                                className="rounded border-gray-300"
+                                className="rounded border-gray-300 dark:border-slate-600"
                               />
-                              <span className={item.completed ? 'text-gray-500 line-through' : 'text-gray-700'}>
+                              <span className={item.completed ? 'text-gray-500 line-through' : 'text-gray-700 dark:text-slate-300'}>
                                 {item.task}
                               </span>
                             </div>
@@ -274,20 +296,6 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
         </div>
       </div>
 
-      {/* Edit Exam Modal */}
-      {exam && (
-        <EditExamModal
-          exam={exam}
-          isOpen={isEditOpen}
-          onClose={() => {
-            setIsEditOpen(false);
-            // Refresh sessions and close the exam modal so data is fresh
-            fetchSessions();
-            onClose();
-          }}
-        />
-      )}
-
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -295,9 +303,9 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
             className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
             onClick={() => setShowDeleteConfirm(false)}
           />
-          <div className="relative z-10 w-full max-w-md mx-4 bg-white rounded-xl shadow-2xl p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Exam</h3>
-            <p className="text-gray-600 mb-6">
+          <div className="relative z-10 w-full max-w-md mx-4 bg-white dark:bg-slate-900 rounded-xl shadow-2xl p-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-2">Delete Exam</h3>
+            <p className="text-gray-600 dark:text-slate-400 mb-6">
               Are you sure you want to delete "{exam.subject}"? This will also delete all {sessions.length} study sessions associated with this exam. This action cannot be undone.
             </p>
             <div className="flex gap-3">
@@ -307,7 +315,7 @@ export default function ExamModal({ exam, isOpen, onClose, initialEditMode = fal
                   setShowDeleteConfirm(false);
                 }}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 text-gray-700 dark:text-slate-300 bg-gray-200 dark:bg-slate-800 rounded-md hover:bg-gray-300 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>

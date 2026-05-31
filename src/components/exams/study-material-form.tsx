@@ -46,11 +46,11 @@ export default function StudyMaterialForm({ examId }: { examId: string }) {
   };
 
   return (
-    <div className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-md">
-      <h2 className="mb-4 text-xl font-bold">Add Study Material</h2>
+    <div className="mt-6 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-md">
+      <h2 className="mb-4 text-xl font-bold dark:text-slate-100">Add Study Material</h2>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="md:col-span-2">
-          <label htmlFor="chapter" className="mb-2 block text-sm font-medium text-gray-700">
+          <label htmlFor="chapter" className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Chapter/Topic
           </label>
           <input
@@ -58,12 +58,12 @@ export default function StudyMaterialForm({ examId }: { examId: string }) {
             id="chapter"
             value={chapter}
             onChange={(e) => setChapter(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="block w-full rounded-md border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
         </div>
         <div className="md:col-span-2">
-          <label htmlFor="book" className="mb-2 block text-sm font-medium text-gray-700">
+          <label htmlFor="book" className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Book/Source
           </label>
           <input
@@ -71,12 +71,12 @@ export default function StudyMaterialForm({ examId }: { examId: string }) {
             id="book"
             value={book}
             onChange={(e) => setBook(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="block w-full rounded-md border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
         </div>
                 <div className="md:col-span-2">
-          <label htmlFor="estimatedHours" className="mb-2 block text-sm font-medium text-gray-700">
+          <label htmlFor="estimatedHours" className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
             Estimated Hours
           </label>
           <input
@@ -86,7 +86,7 @@ export default function StudyMaterialForm({ examId }: { examId: string }) {
             step="0.5"
             value={estimatedHours}
             onChange={(e) => setEstimatedHours(parseFloat(e.target.value))}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="block w-full rounded-md border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
         </div>

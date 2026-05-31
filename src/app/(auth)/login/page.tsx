@@ -35,24 +35,24 @@ export default function LoginPage() {
     if (result?.error) {
       setError('Invalid email or password');
     } else {
-      router.push('/calendar');
+      router.push('/onboarding');
     }
     setLoading(false);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h2 className="mb-6 text-center text-2xl font-bold">Login</h2>
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-slate-900">
+      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md dark:bg-slate-800">
+        <h2 className="mb-6 text-center text-2xl font-bold dark:text-white">Login</h2>
         {success && <p className="mb-4 text-center text-sm text-green-500">{success}</p>}
         {error && <p className="mb-4 text-center text-sm text-red-500">{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="mb-2 block text-sm font-bold text-gray-700" htmlFor="email">
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300" htmlFor="email">
               Email
             </label>
             <input
-              className="focus:shadow-outline w-full appearance-none rounded border py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none"
+              className="focus:shadow-outline w-full appearance-none rounded border border-gray-300 py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
               id="email"
               type="email"
               placeholder="Email"
@@ -62,11 +62,11 @@ export default function LoginPage() {
             />
           </div>
           <div className="mb-6">
-            <label className="mb-2 block text-sm font-bold text-gray-700" htmlFor="password">
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300" htmlFor="password">
               Password
             </label>
             <input
-              className="focus:shadow-outline mb-3 w-full appearance-none rounded border py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none"
+              className="focus:shadow-outline mb-3 w-full appearance-none rounded border border-gray-300 py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
               id="password"
               type="password"
               placeholder="******************"
@@ -85,9 +85,9 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
+        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           Don't have an account?{' '}
-          <a href="/register" className="text-blue-500 hover:text-blue-700">
+          <a href="/register" className="text-blue-500 hover:text-blue-400">
             Register here
           </a>
         </p>

@@ -15,6 +15,12 @@
   --neutral-light: #f8f6ef;
 }
 
+/* Dark mode variables override */
+.dark {
+  --neutral-dark: #f8f6ef; /* Invert neutral colors for custom CSS classes */
+  --neutral-light: #1e1e2e;
+}
+
 @layer base {
   .bg-primary {
     background-color: rgb(var(--primary-color));

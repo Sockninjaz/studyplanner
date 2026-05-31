@@ -83,7 +83,7 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
 
   if (!sessionId) {
     return (
-      <div className="w-full h-full flex items-center justify-center text-gray-500">
+      <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-slate-400">
         <p>Select a session from the calendar to view details</p>
       </div>
     );
@@ -92,7 +92,7 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
   if (loading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <p className="text-gray-600">Loading session...</p>
+        <p className="text-gray-600 dark:text-slate-400">Loading session...</p>
       </div>
     );
   }
@@ -110,18 +110,18 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
     : 60;
 
   return (
-    <div className="h-full flex flex-col bg-white border-l border-gray-200">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700">
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 p-5">
+      <div className="flex-shrink-0 border-b border-gray-200 dark:border-slate-700 p-5">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-bold text-gray-900">{session.title}</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">{session.title}</h2>
           <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               onClose();
             }}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+            className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
             title="Close sidebar"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,11 +129,11 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
             </svg>
           </button>
         </div>
-        <p className="text-sm text-gray-600 mb-3">{session.subject}</p>
+        <p className="text-sm text-gray-600 dark:text-slate-400 mb-3">{session.subject}</p>
 
         {/* Completion Toggle */}
         <div className="mt-2">
-          <label className="flex items-center cursor-pointer bg-gray-50 rounded-lg px-3 py-2.5 hover:bg-gray-100 transition-colors">
+          <label className="flex items-center cursor-pointer bg-gray-50 dark:bg-slate-800 rounded-lg px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
             <input
               type="checkbox"
               checked={session.isCompleted || false}
@@ -150,8 +150,8 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
         {session.isCompleted ? (
-          <div className="text-center text-green-600 mt-6 flex flex-col items-center gap-3">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+          <div className="text-center text-green-600 dark:text-green-400 mt-6 flex flex-col items-center gap-3">
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
@@ -161,18 +161,18 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
         ) : (
           <>
             {/* Timer Section */}
-            <div className="bg-gray-50 rounded-xl p-5">
-              <h3 className="text-base font-semibold text-gray-900 mb-3">Study Timer</h3>
+            <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-5">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-3">Study Timer</h3>
               <Timer duration={duration} onComplete={handleSessionComplete} sessionId={sessionId} session={session} />
             </div>
 
             {/* Notes Section - Takes up most space */}
-            <div className="bg-gray-50 rounded-xl p-5 min-h-[400px]">
+            <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-5 min-h-[400px]">
               <NotesSection sessionId={sessionId} initialNotes={session.notes || ''} />
             </div>
 
             {/* Study Materials */}
-            <div className="bg-gray-50 rounded-xl p-5">
+            <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-5">
               <StudyMaterialsDisplay exam={session.exam || null} />
             </div>
           </>

@@ -329,20 +329,20 @@ export default function CalendarListView({
         {/* Events List */}
         <div className="p-4 space-y-6">
           {Object.keys(groupedEvents).length === 0 ? (
-            <div className="text-center py-12 text-[#4a4a4a]">
+            <div className="text-center py-12 text-[#4a4a4a] dark:text-slate-400">
               <div className="mb-4">
-                <svg className="w-16 h-16 mx-auto text-[#4a4a4a] opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-16 h-16 mx-auto text-[#4a4a4a] dark:text-slate-500 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-[#4a4a4a] mb-2">No events scheduled</h3>
-              <p className="text-[#4a4a4a] opacity-70">Get started by adding your first exam</p>
+              <h3 className="text-lg font-medium text-[#4a4a4a] dark:text-slate-300 mb-2">No events scheduled</h3>
+              <p className="text-[#4a4a4a] dark:text-slate-400 opacity-70">Get started by adding your first exam</p>
             </div>
           ) : (
             Object.entries(groupedEvents).map(([date, events]) => (
               <div
                 key={date}
-                className="border-b border-[#4a4a4a] border-opacity-20 pb-6 last:border-b-0"
+                className="border-b border-[#4a4a4a] dark:border-slate-700 border-opacity-20 pb-6 last:border-b-0"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, date)}
               >
@@ -354,20 +354,20 @@ export default function CalendarListView({
                 >
                   <div className="flex items-center gap-2">
                     <svg
-                      className={`w-4 h-4 text-[#4a4a4a] opacity-40 transition-transform duration-200 ${expandedDate === date ? 'rotate-90' : ''
+                      className={`w-4 h-4 text-[#4a4a4a] dark:text-slate-400 opacity-40 transition-transform duration-200 ${expandedDate === date ? 'rotate-90' : ''
                         }`}
                       fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                    <h3 className="text-sm font-medium text-[#4a4a4a]">{formatDate(date)}</h3>
+                    <h3 className="text-sm font-medium text-[#4a4a4a] dark:text-slate-200">{formatDate(date)}</h3>
                     {events.length > 0 && (
-                      <span className="text-xs text-[#4a4a4a] opacity-50">
+                      <span className="text-xs text-[#4a4a4a] dark:text-slate-400 opacity-50">
                         {events.length} {events.length === 1 ? 'item' : 'items'}
                       </span>
                     )}
                     {blockedDays.has(date) && (
-                      <span className="text-xs text-[#4a4a4a] opacity-40 bg-[#4a4a4a] bg-opacity-10 px-1.5 py-0.5 rounded">
+                      <span className="text-xs text-[#4a4a4a] dark:text-slate-300 opacity-80 bg-[#4a4a4a] dark:bg-slate-600 bg-opacity-10 dark:bg-opacity-30 px-1.5 py-0.5 rounded">
                         Blocked
                       </span>
                     )}
@@ -383,7 +383,7 @@ export default function CalendarListView({
                         onAddItemClick(`${year}-${month}-${day}`);
                       }
                     }}
-                    className="text-[rgb(54,65,86)] hover:text-opacity-80 transition-colors"
+                    className="text-[rgb(54,65,86)] dark:text-slate-300 hover:text-opacity-80 transition-colors"
                     title="Add exam"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -447,8 +447,8 @@ export default function CalendarListView({
                       }}
                       disabled={togglingBlock}
                       className={`text-xs font-medium px-2.5 py-1 rounded-md border transition-colors ${blockedDays.has(date)
-                        ? 'text-[#4a4a4a] border-[#4a4a4a] border-opacity-30 hover:bg-[#4a4a4a] hover:bg-opacity-10'
-                        : 'text-red-600 border-red-300 hover:bg-red-50'
+                        ? 'text-[#4a4a4a] dark:text-slate-300 border-[#4a4a4a] dark:border-slate-500 border-opacity-30 hover:bg-[#4a4a4a] dark:hover:bg-slate-700 hover:bg-opacity-10 dark:hover:bg-opacity-30'
+                        : 'text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20'
                         } ${togglingBlock ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {blockedDays.has(date) ? 'Unblock this day' : 'Block this day'}
@@ -458,7 +458,7 @@ export default function CalendarListView({
 
                 {/* Events for this date */}
                 {events.length === 0 ? (
-                  <div className="text-center py-4 text-[#4a4a4a] opacity-50 text-sm">
+                  <div className="text-center py-4 text-[#4a4a4a] dark:text-slate-400 opacity-50 text-sm">
                     No sessions scheduled
                   </div>
                 ) : (
@@ -484,9 +484,9 @@ export default function CalendarListView({
                                 ? event.isCompleted
                                   ? 'border-green-200 bg-green-50 hover:bg-green-100'
                                   : 'border-amber-200 bg-amber-50 hover:bg-amber-100'
-                                : event.isCompleted
-                                  ? 'border-green-200 bg-green-50 hover:bg-green-100'
-                                  : 'border-[#4a4a4a] border-opacity-20 bg-[#f8f6ef] hover:bg-opacity-80'
+                              : event.isCompleted
+                                  ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40'
+                                  : 'border-[#4a4a4a] dark:border-slate-600 border-opacity-20 bg-[#f8f6ef] dark:bg-slate-800 hover:bg-opacity-80 dark:hover:bg-slate-700'
                             }`}
                           style={{
                             borderColor: event.type === 'exam' ? eventColor : undefined,
@@ -518,9 +518,9 @@ export default function CalendarListView({
                             <div className="flex items-center gap-2 mb-0.5">
                               <h4
                                 className={`text-sm font-medium truncate ${event.isCompleted ? 'line-through' : ''
-                                  }`}
+                                  } ${event.type === 'exam' ? '' : 'text-[#4a4a4a] dark:text-slate-200'}`}
                                 style={{
-                                  color: event.type === 'exam' ? eventColor : '#4a4a4a'
+                                  color: event.type === 'exam' ? eventColor : undefined
                                 }}
                               >
                                 {event.title}
@@ -532,7 +532,7 @@ export default function CalendarListView({
                               )}
                             </div>
 
-                            <div className="flex items-center gap-3 text-xs text-[#4a4a4a] opacity-70">
+                            <div className="flex items-center gap-3 text-xs text-[#4a4a4a] dark:text-slate-400 opacity-70">
                               {event.subject && (
                                 <span className="flex items-center gap-1">
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -553,7 +553,7 @@ export default function CalendarListView({
                                   onExamEdit(event.id);
                                 }
                               }}
-                              className="text-[#4a4a4a] opacity-40 hover:opacity-70 transition-opacity p-1 rounded hover:bg-[#4a4a4a] hover:bg-opacity-10"
+                              className="text-[#4a4a4a] dark:text-slate-400 opacity-40 hover:opacity-70 transition-opacity p-1 rounded hover:bg-[#4a4a4a] dark:hover:bg-slate-700 hover:bg-opacity-10"
                               title="Edit exam"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -568,7 +568,7 @@ export default function CalendarListView({
                                   e.stopPropagation();
                                   setOpenTaskMenuId(openTaskMenuId === event.id ? null : event.id);
                                 }}
-                                className="text-[#4a4a4a] opacity-40 hover:opacity-70 transition-opacity p-1 rounded hover:bg-[#4a4a4a] hover:bg-opacity-10"
+                                className="text-[#4a4a4a] dark:text-slate-400 opacity-40 hover:opacity-70 transition-opacity p-1 rounded hover:bg-[#4a4a4a] dark:hover:bg-slate-700 hover:bg-opacity-10"
                                 title="Task options"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -578,10 +578,10 @@ export default function CalendarListView({
 
                               {/* Dropdown menu */}
                               {openTaskMenuId === event.id && (
-                                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-1 z-50">
                                   <button
                                     onClick={(e) => handleTaskEdit(event.taskId!, e)}
-                                    className="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    className="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -590,7 +590,7 @@ export default function CalendarListView({
                                   </button>
                                   <button
                                     onClick={(e) => handleTaskDelete(event.taskId!, e)}
-                                    className="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    className="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -602,7 +602,7 @@ export default function CalendarListView({
                             </div>
                           ) : (
                             /* Click indicator for sessions */
-                            <div className="text-[#4a4a4a] opacity-40 group-hover:opacity-70 transition-opacity">
+                            <div className="text-[#4a4a4a] dark:text-slate-400 opacity-40 group-hover:opacity-70 transition-opacity">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>

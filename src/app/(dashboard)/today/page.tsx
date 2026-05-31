@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import CalendarListView from '@/components/calendar/calendar-list-view';
 import SessionSidebar from '@/components/calendar/session-sidebar';
 import TaskSidebar from '@/components/calendar/task-sidebar';
-import CreateExamModal from '@/components/exams/create-exam-modal';
 import ExamModal from '@/components/exams/exam-modal';
-import EditExamModal from '@/components/exams/edit-exam-modal';
 import AddItemModal from '@/components/calendar/add-item-modal';
 import CreateTaskModal from '@/components/calendar/create-task-modal';
 import { useSidebar } from '@/components/shared/sidebar-context';
@@ -20,12 +19,12 @@ interface UserPreferences {
 }
 
 export default function TodayPage() {
+    const router = useRouter();
     const { isSidebarCollapsed } = useSidebar();
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isExamModalOpen, setIsExamModalOpen] = useState(false);
-    const [isEditExamModalOpen, setIsEditExamModalOpen] = useState(false);
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -115,7 +114,11 @@ export default function TodayPage() {
 
     const handleAddExam = () => {
         setIsAddItemModalOpen(false);
-        setIsExamModalOpen(true);
+        if (selectedDate) {
+            router.push(`/exams/create?date=${selectedDate}`);
+        } else {
+            router.push('/exams/create');
+        }
     };
 
     const handleExamView = async (examId: string) => {
@@ -137,29 +140,9 @@ export default function TodayPage() {
         }
     };
 
-    const handleExamEdit = async (examId: string) => {
-        try {
-            const mongoId = examId.replace('exam-', '');
-            console.log('Opening edit modal for exam ID:', mongoId);
-
-            const response = await fetch(`/api/exams/${mongoId}`);
-            if (response.ok) {
-                const examData = await response.json();
-                setSelectedExam(examData.data);
-                setSelectedExamId(examId);
-                setIsEditExamModalOpen(true);
-            } else {
-                console.error('Failed to fetch exam:', response.status, response.statusText);
-            }
-        } catch (error) {
-            console.error('Failed to fetch exam:', error);
-        }
-    };
-
-    const handleCloseEditExamModal = () => {
-        setIsEditExamModalOpen(false);
-        setSelectedExam(null);
-        setSelectedExamId(undefined);
+    const handleExamEdit = (examId: string) => {
+        const mongoId = examId.replace('exam-', '');
+        router.push(`/exams/create?edit=${mongoId}`);
     };
 
     const handleAddTask = () => {
@@ -169,14 +152,14 @@ export default function TodayPage() {
 
     return (
         <>
-            <div className="h-full flex flex-col bg-white">
+            <div className="h-full flex flex-col bg-white dark:bg-slate-900">
                 <div className="flex h-full gap-4 overflow-hidden">
                     {/* Main Content Area */}
                     <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-[60%]' : 'w-full'}`}>
                         {/* Header */}
-                        <div className="bg-[#ffff] px-4 py-3">
+                        <div className="bg-[#ffff] dark:bg-slate-900 px-4 py-3">
                             <div className="flex items-center justify-between">
-                                <h1 className="text-2xl font-bold text-[#4a4a4a]">
+                                <h1 className="text-2xl font-bold text-[#4a4a4a] dark:text-slate-100">
                                     Today's Schedule
                                 </h1>
                                 <div className="flex items-center gap-3">
@@ -211,7 +194,7 @@ export default function TodayPage() {
                     {/* Sidebar - Session or Task */}
                     {isSidebarOpen && (
                         <div className="w-[40%] transition-all duration-300">
-                            <div className="h-full rounded-lg border border-gray-200 bg-white shadow-md overflow-hidden">
+                            <div className="h-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-md overflow-hidden">
                                 {selectedSessionId ? (
                                     <SessionSidebar
                                         sessionId={selectedSessionId}
@@ -258,31 +241,6 @@ export default function TodayPage() {
                 )
             }
 
-            {/* Edit Exam Modal */}
-            {
-                selectedExam && isEditExamModalOpen && (
-                    <EditExamModal
-                        exam={selectedExam}
-                        isOpen={isEditExamModalOpen}
-                        onClose={handleCloseEditExamModal}
-                    />
-                )
-            }
-
-            {/* Create Exam Modal */}
-            {
-                !selectedExam && (
-                    <CreateExamModal
-                        isOpen={isExamModalOpen}
-                        onClose={handleCloseExamModal}
-                        dailyMaxHours={userPreferences.daily_study_limit}
-                        adjustmentPercentage={userPreferences.adjustment_percentage}
-                        sessionDuration={userPreferences.session_duration}
-                        enableDailyLimits={userPreferences.enable_daily_limits}
-                        initialDate={selectedDate}
-                    />
-                )
-            }
         </>
     );
 }

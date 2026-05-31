@@ -19,13 +19,21 @@ export default function ExamDetailPage() {
 
   return (
     <div>
-      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-md">
-        <h1 className="mb-2 text-2xl font-bold">{title}</h1>
-        <p className="mb-2 text-lg text-gray-700">{subject}</p>
-        <p className="mb-4 text-sm text-gray-500">
-          Exam Date: {new Date(date).toLocaleDateString()}
-        </p>
-        <p className="text-gray-600">{description}</p>
+      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-md flex justify-between items-start">
+        <div>
+          <h1 className="mb-2 text-2xl font-bold">{title}</h1>
+          <p className="mb-2 text-lg text-gray-700">{subject}</p>
+          <p className="mb-4 text-sm text-gray-500">
+            Exam Date: {new Date(date).toLocaleDateString()}
+          </p>
+          <p className="text-gray-600">{description}</p>
+        </div>
+        <a 
+          href={`/exams/create?edit=${id}`}
+          className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
+        >
+          Edit Exam
+        </a>
       </div>
 
       <StudyMaterialForm examId={id as string} />

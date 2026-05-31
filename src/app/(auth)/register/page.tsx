@@ -50,8 +50,8 @@ export default function RegisterPage() {
           // If auto-signin fails, redirect to login with success message
           router.push('/login?message=Registration successful, please login');
         } else {
-          // If auto-signin succeeds, redirect to dashboard
-          router.push('/calendar');
+          // If auto-signin succeeds, redirect to onboarding
+          router.push('/onboarding');
         }
       }
     } catch (error) {
