@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
-import { readAIStream } from '@/lib/ai-stream';
 
 interface Exam {
   _id: string;
@@ -119,13 +118,19 @@ export default function ChatPage() {
       if (!res.ok) throw new Error('Failed to send message');
       if (!res.body) throw new Error('No response body');
 
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
       let assistantText = '';
-      await readAIStream(res.body, (chunk) => {
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
         assistantText += chunk;
         setMessages((prev) =>
           prev.map((m) => m.id === assistantId ? { ...m, content: assistantText } : m)
         );
-      });
+      }
     } catch (error) {
       console.error('Chat error:', error);
       setMessages((prev) =>

@@ -128,8 +128,7 @@ ${isSparseInput
   : `8. NO HALLUCINATION — CRITICAL: If a student asks a question that is NOT covered in the uploaded material, you MUST state clearly: "Jouw materiaal behandelt dit niet specifiek, maar in het algemeen..." (or in the detected language: "Your material doesn't specify this, but generally..."). Never present external knowledge as if it were in the material. This keeps the student focused on what will actually be on their exam.`}
 9. ACTIVE LEARNING: Propose active learning techniques: flashcard-style Q&A, short recall tests, concept explanations, "teach it back to me" exercises, and summary challenges.
 10. ENCOURAGEMENT: Be encouraging but honest — if they get something wrong, correct them clearly and explain why.
-11. FOCUS: If the student asks a question about the material, answer it thoroughly but bring them back to the session work afterwards.
-12. WEB SEARCH TOOL: If the user asks for information you don't have, or specifically asks to search the web (e.g. for a textbook's Table of Contents or a recent event), you have access to a web search tool. Use it to find accurate, up-to-date information before answering.${materialContext}`;
+11. FOCUS: If the student asks a question about the material, answer it thoroughly but bring them back to the session work afterwards.${materialContext}`;
 
     // If sparse input, force the smarter GPT-4o model because it needs maximum internal knowledge to tutor without a document
     const selectedModelName = isSparseInput ? 'gpt-4o' : (aiIntegration === 'gpt-4o' ? 'gpt-4o' : 'gpt-4o-mini');
@@ -139,37 +138,6 @@ ${isSparseInput
       model,
       system: systemMessage,
       messages,
-      // @ts-ignore
-      maxSteps: 3,
-      // @ts-ignore
-      tools: {
-        searchWeb: tool({
-          description: 'Search the web using Google to find real-time information, textbook table of contents, or anything not covered in the local material.',
-          parameters: z.object({
-            query: z.string().describe('The search query (e.g. "Chemie Overal 5 VWO table of contents" or "bol.com Chemie Overal 5 VWO inhoudsopgave")'),
-          }),
-          // @ts-ignore
-          execute: async ({ query }) => {
-            try {
-              const options = {
-                page: 0,
-                safe: false,
-                additional_params: { hl: 'en' }
-              };
-              const response = await google.search(query, options);
-              const results = response.results.slice(0, 3).map((r: any) => ({
-                title: r.title,
-                snippet: r.description,
-                url: r.url
-              }));
-              return JSON.stringify(results);
-            } catch (err) {
-              console.error('[searchWeb] failed:', err);
-              return JSON.stringify({ error: 'Search failed' });
-            }
-          },
-        }),
-      },
     });
 
     // Save chat in background after stream completes
@@ -197,7 +165,7 @@ ${isSparseInput
       }
     })();
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('[chat] Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

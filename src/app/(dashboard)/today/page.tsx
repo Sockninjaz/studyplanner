@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { readAIStream } from '@/lib/ai-stream';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -350,13 +349,18 @@ export default function StudyHubPage() {
 
       if (!res.ok || !res.body) throw new Error('Chat failed');
 
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
       let text = '';
-      await readAIStream(res.body, (chunk) => {
-        text += chunk;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        text += decoder.decode(value, { stream: true });
         setChatMessages(prev =>
           prev.map(m => m.id === assistantId ? { ...m, content: text } : m)
         );
-      });
+      }
     } catch {
       setChatMessages(prev =>
         prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.' } : m)
