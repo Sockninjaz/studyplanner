@@ -5,7 +5,7 @@ import BlockedDay from '@/models/BlockedDay';
 import { generateAISchedule } from '@/lib/scheduling/aiScheduler';
 import { separateSessions } from '@/lib/scheduling/sessionUtils';
 
-export async function regenerateSchedule(user: any, overridePrefs: any = {}) {
+export async function regenerateSchedule(user: any, overridePrefs: any = {}, forceRegenerateExamId?: string) {
   await dbConnect();
 
   // Get all user exams
@@ -39,6 +39,7 @@ export async function regenerateSchedule(user: any, overridePrefs: any = {}) {
     enable_daily_limits: overridePrefs.enable_daily_limits !== undefined ? overridePrefs.enable_daily_limits : user.enable_daily_limits,
     start_date: new Date(),
     existing_sessions: [...reschedulableSessions]
+      .filter((s: any) => forceRegenerateExamId ? s.exam.toString() !== forceRegenerateExamId : true)
       .sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
       .map((s: any) => ({
       examId: s.exam.toString(),

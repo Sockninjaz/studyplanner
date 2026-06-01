@@ -169,7 +169,7 @@ export async function PUT(
         adjustment_percentage: body.adjustment_percentage,
         session_duration: body.session_duration,
       };
-      const scheduleResult = await regenerateSchedule(user, overridePrefs);
+      const scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString());
       overloadWarning = scheduleResult.overloadWarning;
       overloadedDays = scheduleResult.overloadedDays || [];
     } else {
