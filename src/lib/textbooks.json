@@ -13,29 +13,6 @@
     ]
   },
   {
-    "subject": "scheikunde",
-    "title": "Chemie Overal",
-    "track": "VWO 5",
-    "chapters": [
-      "H7 Zuren en basen",
-      "H8 Ruimtelijke bouw van moleculen",
-      "H9 Redoxreacties",
-      "H10 Organische chemie",
-      "H11 Materialen"
-    ]
-  },
-  {
-    "subject": "scheikunde",
-    "title": "Chemie Overal",
-    "track": "VWO 6",
-    "chapters": [
-      "H12 Zuren en basen 2",
-      "H13 Redoxreacties 2",
-      "H14 Biochemie",
-      "H15 Industriële chemie"
-    ]
-  },
-  {
     "subject": "natuurkunde",
     "title": "Systematische Natuurkunde",
     "track": "VWO 4",
@@ -223,6 +200,48 @@
       "H9 Redoxreacties",
       "H10 Koolstofchemie",
       "H11 Materialen"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Chemie Overal 7e editie",
+    "track": "VWO 5",
+    "chapters": [
+      "H7 Zuren en basen I",
+      "H8 Energie en duurzaamheid",
+      "H9 Redox I",
+      "H10 Koolstofchemie",
+      "H11 Analyse",
+      "H12 Kunststoffen",
+      "H13 Zuren en basen II",
+      "H14 Duurzame productie"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Chemie Overal 7e editie",
+    "track": "VWO 6",
+    "chapters": [
+      "H14 Duurzame productie",
+      "H15 Biochemie",
+      "H16 Molecuulstructuur en reactiemechanismen",
+      "H17 Redox II",
+      "H18 Inovatieve materialen"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Chemie Overal 5e editie",
+    "track": "VWO Bovenbouw",
+    "chapters": [
+      "H8 Zuren",
+      "H9 Basen",
+      "H10 Analyse",
+      "H11 Redoxreacties",
+      "H12 Molecuulbouw",
+      "H13 Kunststoffen",
+      "H14 Nieuwe materialen",
+      "H15 Groene chemie"
     ]
   }
 ]
