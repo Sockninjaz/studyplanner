@@ -38,7 +38,9 @@ export async function regenerateSchedule(user: any, overridePrefs: any = {}) {
     session_duration: overridePrefs.session_duration || user.session_duration || 30,
     enable_daily_limits: overridePrefs.enable_daily_limits !== undefined ? overridePrefs.enable_daily_limits : user.enable_daily_limits,
     start_date: new Date(),
-    existing_sessions: reschedulableSessions.map((s: any) => ({
+    existing_sessions: [...reschedulableSessions]
+      .sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+      .map((s: any) => ({
       examId: s.exam.toString(),
       content: s.title
     })),

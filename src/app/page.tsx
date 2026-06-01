@@ -1,6 +1,13 @@
+import { redirect } from 'next/navigation';
+import { getServerSession } from 'next-auth/next';
 import Link from 'next/link';
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession();
+  if (session?.user) {
+    redirect('/today');
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
       <h1 className="text-4xl font-bold">Welcome to Study Planner</h1>

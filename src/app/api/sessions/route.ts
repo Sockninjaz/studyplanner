@@ -20,16 +20,27 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const examId = searchParams.get('examId');
+    const date = searchParams.get('date'); // format: YYYY-MM-DD or "today"
 
     let query: any = { user: user._id };
     if (examId) {
       query.exam = examId;
     }
 
-    const sessions = await StudySession.find(query).sort({ startTime: 1 });
+    if (date) {
+      const targetDate = date === 'today' ? new Date() : new Date(date);
+      const start = new Date(targetDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(targetDate);
+      end.setHours(23, 59, 59, 999);
+      query.startTime = { $gte: start, $lte: end };
+    }
+
+    const sessions = await StudySession.find(query).populate('exam').sort({ startTime: 1 });
     return NextResponse.json({ data: sessions }, { status: 200 });
   } catch (error) {
     console.error('Error fetching sessions:', error);
     return NextResponse.json({ error: 'Error fetching sessions' }, { status: 500 });
   }
 }
+

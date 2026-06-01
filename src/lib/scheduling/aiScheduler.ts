@@ -142,12 +142,24 @@ export async function generateAISchedule(
   // 2. Mathematically distribute subjects onto the final schedule Map
   const finalSchedule = new Map<string, Map<string, Array<SessionBlock>>>();
   const MAX_SESSIONS_PER_DAY = Math.floor(inputs.daily_max_hours / STUDY_CHUNK_HOURS);
+  const dailyCounts = new Map<string, number>();
+
+  // Helper to place a session
+  const placeSession = (dateStr: string, examId: string, block: SessionBlock) => {
+    if (!finalSchedule.has(dateStr)) finalSchedule.set(dateStr, new Map());
+    const dayMap = finalSchedule.get(dateStr)!;
+    if (!dayMap.has(examId)) dayMap.set(examId, []);
+    dayMap.get(examId)!.push(block);
+    dailyCounts.set(dateStr, (dailyCounts.get(dateStr) || 0) + 1);
+  };
+
+  // Sort exams by date ascending. Urgent exams get first pick of their valid days.
+  exams.sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime());
 
   for (const exam of exams) {
     let topics = examTopics.get(exam.id) || [];
     const required = exam.sessionsNeeded;
 
-    // Enforce EXACT count by linearly stretching or squashing the AI's generated topics to fit
     if (topics.length > 0 && topics.length !== required) {
       const stretched: SessionBlock[] = [];
       for (let i = 0; i < required; i++) {
@@ -156,83 +168,54 @@ export async function generateAISchedule(
       }
       topics = stretched;
     } else if (topics.length === 0 && required > 0) {
-      console.warn(`[AI Scheduler] Could not map topics for Exam ${exam.id} (${exam.subject}). Falling back to subject name.`);
       for (let i = 0; i < required; i++) {
         topics.push({ content: `Study ${exam.subject}` });
       }
     }
 
-    // Find valid dates for this exam
     const lastValidDay = exam.canStudyAfterExam
       ? exam.examDate
       : new Date(new Date(exam.examDate).getTime() - 86400000).toISOString().split('T')[0];
 
-    const validDates = availableDates.filter(d => !blockedSet.has(d) && d <= lastValidDay);
-    if (validDates.length === 0 || required === 0) continue;
+    const validDatesForExam = availableDates.filter(d => !blockedSet.has(d) && d <= lastValidDay);
+    if (validDatesForExam.length === 0 || topics.length === 0) continue;
 
-    // We want to evenly spread `topics` over `validDates`.
-    // Example: If 8 sessions over 10 days, they should be spread avoiding gaps > 2 days.
-    // Ensure final review is on the day before the exam (if available).
+    const targetDates: string[] = [];
+    let unassignedCount = topics.length;
+
+    // Pass 1: Final Review Reservation
     let dayBeforeExam = new Date(new Date(exam.examDate).getTime() - 86400000).toISOString().split('T')[0];
-    let targetDates: string[] = [];
-    let hasFinalReview = false;
-
-    if (validDates.includes(dayBeforeExam) && topics.length > 1) {
+    if (unassignedCount > 1 && validDatesForExam.includes(dayBeforeExam)) {
       targetDates.push(dayBeforeExam);
-      hasFinalReview = true;
+      dailyCounts.set(dayBeforeExam, (dailyCounts.get(dayBeforeExam) || 0) + 1);
+      unassignedCount--;
     }
 
-    const unassignedTopics = hasFinalReview ? topics.length - 1 : topics.length;
-    const availableDaysForSpread = validDates.filter(d => d !== (hasFinalReview ? dayBeforeExam : ''));
+    // Pass 2: Strict Global Water-Filling
+    // This perfectly flatlines the schedule to ensure <= 1 session difference globally
+    while (unassignedCount > 0) {
+      let minLoad = Infinity;
+      let minDay = validDatesForExam[validDatesForExam.length - 1]; // Default to latest
 
-    // Determine the user's preferred density per day based on their slider constraint
-    const softLimitHours = inputs.soft_daily_limit ?? 2;
-    const targetSessionsPerDay = Math.max(1, Math.floor(softLimitHours / STUDY_CHUNK_HOURS));
-
-    if (unassignedTopics > 0 && availableDaysForSpread.length > 0) {
-      const reversedDays = [...availableDaysForSpread].reverse();
-      const requiredDaysForPreferred = Math.ceil(unassignedTopics / targetSessionsPerDay);
-
-      if (availableDaysForSpread.length >= requiredDaysForPreferred) {
-        // User has enough time! Backwards-pack contiguously from the exam so there are no 0-hour days in between.
-        let placed = 0;
-        let dayIdx = 0;
-        
-        while (placed < unassignedTopics && dayIdx < reversedDays.length) {
-          const toPlaceThisDay = Math.min(targetSessionsPerDay, unassignedTopics - placed);
-          for (let i = 0; i < toPlaceThisDay; i++) {
-            targetDates.push(reversedDays[dayIdx]);
-            placed++;
-          }
-          dayIdx++;
-        }
-      } else {
-        // User DOES NOT have enough time for their preferred limits. We must stretch them to fit the available dates.
-        const remainingDays = availableDaysForSpread.length;
-        if (unassignedTopics >= remainingDays) {
-          // More topics than days left — layer them on evenly using round-robin over the days left!
-          let placed = 0;
-          let dayIdx = 0;
-          while (placed < unassignedTopics) {
-            targetDates.push(availableDaysForSpread[dayIdx % availableDaysForSpread.length]);
-            dayIdx++;
-            placed++;
-          }
-        } else {
-          // Spread evenly across the available days length (e.g. studying every 2nd or 3rd day)
-          const step = remainingDays / unassignedTopics;
-          for (let i = 0; i < unassignedTopics; i++) {
-            const idx = Math.min(Math.floor(i * step + step / 2), remainingDays - 1);
-            targetDates.push(availableDaysForSpread[idx]);
-          }
+      // Iterate backwards so the FIRST day we find with the strict minimum load is the LATEST possible day
+      for (let i = validDatesForExam.length - 1; i >= 0; i--) {
+        const d = validDatesForExam[i];
+        const load = dailyCounts.get(d) || 0;
+        if (load < minLoad) {
+          minLoad = load;
+          minDay = d;
         }
       }
+
+      targetDates.push(minDay);
+      dailyCounts.set(minDay, minLoad + 1);
+      unassignedCount--;
     }
 
     // Sort target dates chronologically
     targetDates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
-    // Place topics onto final Schedule Map 
+    // Place topics onto final Schedule Map chronologically
     for (let i = 0; i < topics.length; i++) {
       const dateStr = targetDates[i];
       if (!finalSchedule.has(dateStr)) finalSchedule.set(dateStr, new Map());
@@ -244,26 +227,6 @@ export async function generateAISchedule(
     }
   }
 
-  // Cap daily limit (Fix 3 from earlier applied globally)
-  let fixes = 0;
-  for (const [day, dayMap] of Array.from(finalSchedule.entries())) {
-    const totalSessions = Array.from(dayMap.values()).reduce((s, arr) => s + arr.length, 0);
-    if (totalSessions > MAX_SESSIONS_PER_DAY) {
-      const scale = MAX_SESSIONS_PER_DAY / totalSessions;
-      let remaining = MAX_SESSIONS_PER_DAY;
-      for (const [examId, sessionsArr] of Array.from(dayMap.entries())) {
-        const newCount = Math.max(1, Math.floor(sessionsArr.length * scale));
-        const capped = Math.min(newCount, remaining);
-        if (capped < sessionsArr.length) {
-          dayMap.set(examId, sessionsArr.slice(0, capped));
-        }
-        remaining -= capped;
-        if (remaining <= 0) break;
-      }
-      fixes++;
-    }
-  }
-
-  console.log(`[AI Scheduler] Algorithmic distribution complete: ${fixes} fixes applied`);
+  console.log(`[AI Scheduler] Algorithmic global distribution complete.`);
   return finalSchedule;
 }
