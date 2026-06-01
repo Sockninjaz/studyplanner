@@ -197,7 +197,7 @@ ${isSparseInput
       }
     })();
 
-    return result.toTextStreamResponse();
+    return result.toDataStreamResponse();
   } catch (error) {
     console.error('[chat] Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

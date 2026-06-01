@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { readAIStream } from '@/lib/ai-stream';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -171,7 +172,7 @@ export default function StudyHubPage() {
       setFetchingHistory(true);
       setChatMessages([]);
       try {
-        const res = await fetch(`/api/chat/history?examId=${session.exam._id}`);
+        const res = await fetch(`/api/chat/history?examId=${session.exam._id.toString()}`);
         if (res.ok) {
           const data = await res.json();
           if (data.messages) {
@@ -342,25 +343,20 @@ export default function StudyHubPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: allMessages,
-          examId: selectedSession.exam._id,
+          examId: selectedSession.exam._id.toString(),
           aiIntegration: 'gpt-4o-mini',
         }),
       });
 
       if (!res.ok || !res.body) throw new Error('Chat failed');
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let text = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        text += decoder.decode(value, { stream: true });
+      await readAIStream(res.body, (chunk) => {
+        text += chunk;
         setChatMessages(prev =>
           prev.map(m => m.id === assistantId ? { ...m, content: text } : m)
         );
-      }
+      });
     } catch {
       setChatMessages(prev =>
         prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.' } : m)
@@ -536,138 +532,15 @@ export default function StudyHubPage() {
           )}
         </div>
 
-        {/* ── CENTER: Timer + Session Info ───────────────────────────────────── */}
-        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-950 overflow-y-auto px-8 py-10">
-          {!selectedSession ? (
-            <div className="text-center opacity-40 select-none">
-              <svg className="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-lg font-semibold text-gray-500 dark:text-slate-500">Pick a session to start</p>
-              <p className="text-sm text-gray-400 dark:text-slate-600 mt-1">Select a session from the left to begin studying</p>
-            </div>
-          ) : (
-            <div className="w-full max-w-sm flex flex-col items-center gap-8">
-              {/* Session info */}
-              <div className="text-center">
-                <div
-                  className="w-4 h-4 rounded-full mx-auto mb-3"
-                  style={{ backgroundColor: examColor }}
-                />
-                <h2 className="text-lg font-bold text-gray-800 dark:text-slate-100">
-                  {selectedSession.exam?.subject || selectedSession.subject}
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 max-w-xs text-center leading-snug">
-                  {selectedSession.title}
-                </p>
-                {selectedSession.exam?.date && (
-                  <p className="text-xs text-gray-400 dark:text-slate-600 mt-2">
-                    Exam in {getDaysUntil(selectedSession.exam.date)} days
-                  </p>
-                )}
-              </div>
-
-              {/* Circular timer */}
-              <div className="relative flex items-center justify-center">
-                <svg width="200" height="200" className="-rotate-90">
-                  <circle
-                    cx="100" cy="100" r="88"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    className="text-gray-200 dark:text-slate-800"
-                  />
-                  <circle
-                    cx="100" cy="100" r="88"
-                    fill="none"
-                    stroke={timerFinished ? '#22c55e' : examColor}
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 88}`}
-                    strokeDashoffset={`${2 * Math.PI * 88 * (1 - timerProgress / 100)}`}
-                    style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-                  />
-                </svg>
-                <div className="absolute text-center">
-                  <span className={`text-4xl font-bold tabular-nums ${timerFinished ? 'text-green-500' : 'text-gray-800 dark:text-slate-100'}`}>
-                    {formatTime(timerSeconds)}
-                  </span>
-                  <p className="text-xs text-gray-400 dark:text-slate-600 mt-1">
-                    {formatDuration(sessionDuration)} session
-                  </p>
-                </div>
-              </div>
-
-              {/* Timer controls */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={resetTimer}
-                  className="p-2.5 rounded-full border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                  title="Reset"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
-
-                {!timerRunning ? (
-                  <button
-                    onClick={startTimer}
-                    className="px-8 py-3 rounded-full font-semibold text-white text-sm shadow-md hover:shadow-lg transition-all active:scale-95"
-                    style={{ backgroundColor: examColor === 'rgb(253, 231, 76)' ? 'rgb(180, 160, 30)' : examColor }}
-                  >
-                    {timerFinished ? 'Restart' : timerSeconds < sessionDuration * 60 ? 'Resume' : 'Start'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={pauseTimer}
-                    className="px-8 py-3 rounded-full font-semibold text-white text-sm bg-amber-500 hover:bg-amber-600 shadow-md hover:shadow-lg transition-all active:scale-95"
-                  >
-                    Pause
-                  </button>
-                )}
-
-                {/* Mark done button */}
-                <button
-                  onClick={markComplete}
-                  disabled={selectedSession.isCompleted}
-                  title={selectedSession.isCompleted ? 'Already completed' : 'Mark as done'}
-                  className={`p-2.5 rounded-full border transition-colors ${
-                    selectedSession.isCompleted
-                      ? 'border-green-300 dark:border-green-800 text-green-500 dark:text-green-400 cursor-default'
-                      : 'border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 hover:text-green-500'
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </button>
-              </div>
-
-              {timerFinished && !selectedSession.isCompleted && (
-                <div className="text-center animate-in fade-in duration-500">
-                  <p className="text-sm text-green-600 dark:text-green-400 font-medium">⏱ Time's up! Great work.</p>
-                  <button
-                    onClick={markComplete}
-                    className="mt-2 px-5 py-2 rounded-full bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition-colors"
-                  >
-                    Mark as Done
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ── RIGHT: AI Chat ─────────────────────────────────────────────────── */}
-        <div className="w-80 flex-shrink-0 flex flex-col border-l border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
+        {/* ── CENTER: AI Chat ─────────────────────────────────────────────────── */}
+        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">
               AI Tutor
             </h2>
             {selectedSession?.exam && (
               <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 truncate">
-                {selectedSession.exam.subject}
+                {selectedSession.exam.subject} · "{selectedSession.title}"
               </p>
             )}
           </div>
@@ -676,31 +549,31 @@ export default function StudyHubPage() {
           <div
             ref={chatContainerRef}
             onScroll={handleChatScroll}
-            className="flex-1 overflow-y-auto px-3 py-3 space-y-3 min-h-0"
+            className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0"
           >
             {!selectedSession ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-300 dark:text-slate-700 text-center select-none">
-                <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <p className="text-sm">Select a session to chat with your AI tutor</p>
+                <p className="text-base">Select a session to chat with your AI tutor</p>
               </div>
             ) : fetchingHistory ? (
               <div className="flex justify-center py-8">
-                <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
               </div>
             ) : chatMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <div
-                  className="w-10 h-10 rounded-full mb-3 flex items-center justify-center"
+                  className="w-12 h-12 rounded-full mb-4 flex items-center justify-center"
                   style={{ backgroundColor: examColor + '33' }}
                 >
-                  <div className="w-5 h-5 rounded-full" style={{ backgroundColor: examColor }} />
+                  <div className="w-6 h-6 rounded-full" style={{ backgroundColor: examColor }} />
                 </div>
-                <p className="text-sm font-medium text-gray-600 dark:text-slate-300">
+                <p className="text-base font-medium text-gray-600 dark:text-slate-300">
                   Ready to help with {selectedSession.exam?.subject || selectedSession.subject}
                 </p>
-                <p className="text-xs text-gray-400 dark:text-slate-600 mt-1 px-4">
+                <p className="text-sm text-gray-400 dark:text-slate-600 mt-2 max-w-md">
                   Ask me anything about today's topic: "{selectedSession.title}"
                 </p>
               </div>
@@ -708,18 +581,18 @@ export default function StudyHubPage() {
               chatMessages.map(m => (
                 <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                       m.role === 'user'
                         ? 'text-white rounded-br-sm'
-                        : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 rounded-bl-sm'
+                        : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 rounded-bl-sm border border-gray-100 dark:border-slate-700 shadow-sm'
                     }`}
                     style={m.role === 'user' ? { backgroundColor: 'rgb(54, 65, 86)' } : {}}
                   >
                     {m.content === '' && m.role === 'assistant' ? (
                       <div className="flex gap-1 py-1">
-                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" />
-                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                       </div>
                     ) : (
                       <span className="whitespace-pre-wrap">{m.content}</span>
@@ -732,7 +605,7 @@ export default function StudyHubPage() {
           </div>
 
           {/* Chat input */}
-          <div className="p-3 border-t border-gray-100 dark:border-slate-800 flex-shrink-0">
+          <div className="p-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
             <div className="flex gap-2">
               <input
                 ref={chatInputRef}
@@ -747,19 +620,140 @@ export default function StudyHubPage() {
                 }}
                 placeholder={selectedSession ? `Ask about ${selectedSession.exam?.subject || selectedSession.subject}…` : 'Select a session first'}
                 disabled={!selectedSession || chatLoading}
-                className="flex-1 text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 text-sm px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 onClick={sendChatMessage}
                 disabled={!selectedSession || !chatInput.trim() || chatLoading}
-                className="p-2 rounded-xl bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                className="px-4 py-2.5 rounded-xl bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0 text-sm font-medium"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
+                Send
               </button>
             </div>
           </div>
+        </div>
+
+        {/* ── RIGHT: Timer ────────────────────────────────────────────────────── */}
+        <div className="w-72 flex-shrink-0 flex flex-col items-center justify-center border-l border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-y-auto px-6 py-8">
+          {!selectedSession ? (
+            <div className="text-center opacity-40 select-none">
+              <svg className="w-16 h-16 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm font-semibold text-gray-500 dark:text-slate-500">Select a session</p>
+              <p className="text-xs text-gray-400 dark:text-slate-600 mt-1">to start the timer</p>
+            </div>
+          ) : (
+            <div className="w-full flex flex-col items-center gap-6">
+              {/* Session info */}
+              <div className="text-center">
+                <div
+                  className="w-3 h-3 rounded-full mx-auto mb-2"
+                  style={{ backgroundColor: examColor }}
+                />
+                <h2 className="text-sm font-bold text-gray-800 dark:text-slate-100">
+                  {selectedSession.exam?.subject || selectedSession.subject}
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2">
+                  {selectedSession.title}
+                </p>
+                {selectedSession.exam?.date && (
+                  <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1">
+                    Exam in {getDaysUntil(selectedSession.exam.date)} days
+                  </p>
+                )}
+              </div>
+
+              {/* Circular timer */}
+              <div className="relative flex items-center justify-center">
+                <svg width="180" height="180" className="-rotate-90">
+                  <circle
+                    cx="90" cy="90" r="78"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="7"
+                    className="text-gray-100 dark:text-slate-800"
+                  />
+                  <circle
+                    cx="90" cy="90" r="78"
+                    fill="none"
+                    stroke={timerFinished ? '#22c55e' : examColor}
+                    strokeWidth="7"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 78}`}
+                    strokeDashoffset={`${2 * Math.PI * 78 * (1 - timerProgress / 100)}`}
+                    style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                  />
+                </svg>
+                <div className="absolute text-center">
+                  <span className={`text-3xl font-bold tabular-nums ${timerFinished ? 'text-green-500' : 'text-gray-800 dark:text-slate-100'}`}>
+                    {formatTime(timerSeconds)}
+                  </span>
+                  <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1">
+                    {formatDuration(sessionDuration)} session
+                  </p>
+                </div>
+              </div>
+
+              {/* Timer controls */}
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={resetTimer}
+                  className="p-2 rounded-full border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                  title="Reset"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+
+                {!timerRunning ? (
+                  <button
+                    onClick={startTimer}
+                    className="px-6 py-2.5 rounded-full font-semibold text-white text-sm shadow-md hover:shadow-lg transition-all active:scale-95"
+                    style={{ backgroundColor: examColor === 'rgb(253, 231, 76)' ? 'rgb(180, 160, 30)' : examColor }}
+                  >
+                    {timerFinished ? 'Restart' : timerSeconds < sessionDuration * 60 ? 'Resume' : 'Start'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={pauseTimer}
+                    className="px-6 py-2.5 rounded-full font-semibold text-white text-sm bg-amber-500 hover:bg-amber-600 shadow-md hover:shadow-lg transition-all active:scale-95"
+                  >
+                    Pause
+                  </button>
+                )}
+
+                {/* Mark done button */}
+                <button
+                  onClick={markComplete}
+                  disabled={selectedSession.isCompleted}
+                  title={selectedSession.isCompleted ? 'Already completed' : 'Mark as done'}
+                  className={`p-2 rounded-full border transition-colors ${
+                    selectedSession.isCompleted
+                      ? 'border-green-300 dark:border-green-800 text-green-500 dark:text-green-400 cursor-default'
+                      : 'border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 hover:text-green-500'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+              </div>
+
+              {timerFinished && !selectedSession.isCompleted && (
+                <div className="text-center">
+                  <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-2">⏱ Time's up! Great work.</p>
+                  <button
+                    onClick={markComplete}
+                    className="px-4 py-2 rounded-full bg-green-500 text-white text-xs font-semibold hover:bg-green-600 transition-colors"
+                  >
+                    Mark as Done
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
       </div>
