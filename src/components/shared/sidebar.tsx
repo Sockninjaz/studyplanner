@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
-import ExamModal from '@/components/exams/exam-modal';
 import { useRouter } from 'next/navigation';
 
 interface UserPreferences {
@@ -29,9 +28,7 @@ interface SidebarProps {
 
 const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   const [exams, setExams] = useState<Exam[]>([]);
-  const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userPreferences, setUserPreferences] = useState<UserPreferences>({
     daily_study_limit: 4,
@@ -102,11 +99,6 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
     } catch (error) {
       console.error('Error fetching preferences:', error);
     }
-  };
-
-  const openExamModal = (exam: Exam) => {
-    setSelectedExam(exam);
-    setIsModalOpen(true);
   };
 
   const closeModal = () => {
@@ -288,8 +280,8 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                       return (
                         <li key={exam._id}>
                           <div className="w-full group relative flex items-center rounded-md font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10">
-                            <button
-                              onClick={() => openExamModal(exam)}
+                            <Link
+                              href={`/exams/${exam._id}`}
                               className="flex-1 flex items-center gap-2.5 py-1.5 px-2.5 text-left min-w-0 overflow-hidden"
                             >
                               <div
@@ -299,7 +291,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                               <span className="text-[13px] truncate min-w-0" title={exam.subject}>
                                 {exam.subject}
                               </span>
-                            </button>
+                            </Link>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();

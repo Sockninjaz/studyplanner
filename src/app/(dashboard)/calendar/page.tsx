@@ -6,7 +6,6 @@ import Calendar from '@/components/calendar/calendar';
 import CalendarListView from '@/components/calendar/calendar-list-view';
 import SessionSidebar from '@/components/calendar/session-sidebar';
 import TaskSidebar from '@/components/calendar/task-sidebar';
-import ExamModal from '@/components/exams/exam-modal';
 import AddItemModal from '@/components/calendar/add-item-modal';
 import CreateTaskModal from '@/components/calendar/create-task-modal';
 import { useSidebar } from '@/components/shared/sidebar-context';
@@ -28,7 +27,6 @@ export default function CalendarPage() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -139,7 +137,6 @@ export default function CalendarPage() {
   };
 
   const handleCloseExamModal = () => {
-    setIsExamModalOpen(false);
     setSelectedDate(undefined);
     setSelectedExamId(undefined);
     setSelectedExam(null);
@@ -167,7 +164,7 @@ export default function CalendarPage() {
         const examData = await response.json();
         setSelectedExam(examData.data);
         setSelectedExamId(examId);
-        setIsExamModalOpen(true);
+        router.push(`/exams/${data.data._id}`);
       }
     } catch (error) {
       console.error('Failed to fetch exam:', error);
@@ -354,13 +351,6 @@ export default function CalendarPage() {
       />
 
       {/* Exam Modal - View */}
-      {selectedExam && isExamModalOpen && (
-        <ExamModal
-          exam={selectedExam}
-          isOpen={isExamModalOpen}
-          onClose={handleCloseExamModal}
-        />
-      )}
 
     </>
   );
