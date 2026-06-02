@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate } from 'swr';
 import { isValidCalendarDate } from '@/lib/dateUtils';
@@ -13,7 +13,7 @@ interface UserPreferences {
   enable_daily_limits: boolean;
 }
 
-export default function CreateExamPage() {
+function CreateExamContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialDate = searchParams.get('date');
@@ -665,5 +665,13 @@ export default function CreateExamPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CreateExamPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <CreateExamContent />
+    </Suspense>
   );
 }
