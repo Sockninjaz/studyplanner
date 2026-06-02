@@ -51,6 +51,67 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [savedSessionTime, setSavedSessionTime] = useState<number | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Restore state from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('studyTimerState');
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state.activeSessionId) {
+          setActiveSessionId(state.activeSessionId);
+          setActiveSessionData(state.activeSessionData);
+          setMode(state.mode || 'idle');
+          setDuration(state.duration || 60);
+          setIsPaused(state.isPaused !== undefined ? state.isPaused : true); // default to paused if restoring
+          setSessionCount(state.sessionCount || 0);
+          setTasks(state.tasks || []);
+          setCurrentTaskId(state.currentTaskId || null);
+          setSavedSessionTime(state.savedSessionTime || null);
+
+          // Calculate new timeLeft based on endTime
+          if (state.endTime && !state.isPaused && state.mode !== 'idle') {
+            const remaining = Math.ceil((state.endTime - Date.now()) / 1000);
+            if (remaining > 0) {
+              setTimeLeft(remaining);
+              setEndTime(state.endTime);
+            } else {
+              // Timer expired while away
+              setTimeLeft(0);
+              setEndTime(null);
+            }
+          } else {
+            setTimeLeft(state.timeLeft || 25 * 60);
+            setEndTime(null); // Clear endTime if paused so it recalculates on resume
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to restore timer state', e);
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // Save state to localStorage whenever important fields change
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    const state = {
+      activeSessionId,
+      activeSessionData,
+      mode,
+      timeLeft,
+      isPaused,
+      sessionCount,
+      tasks,
+      currentTaskId,
+      endTime,
+      duration,
+      savedSessionTime
+    };
+    localStorage.setItem('studyTimerState', JSON.stringify(state));
+  }, [isInitialized, activeSessionId, activeSessionData, mode, timeLeft, isPaused, sessionCount, tasks, currentTaskId, endTime, duration, savedSessionTime]);
 
   // Core ticker logic
   useEffect(() => {
