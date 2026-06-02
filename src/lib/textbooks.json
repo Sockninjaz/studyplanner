@@ -247,5 +247,41 @@
       "H14 Nieuwe materialen",
       "H15 Groene chemie"
     ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde A 12e editie",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Getallen en variabelen",
+      "H2 Combinatoriek",
+      "H3 Verbanden en grafieken",
+      "H4 Handig tellen",
+      "H5 Lineaire verbanden",
+      "H6 Machtsverbanden",
+      "H7 Kansrekening",
+      "H8 Rijen en veranderingen"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde A 12e editie",
+    "track": "VWO 5",
+    "chapters": [
+      "H9 Kansverdelingen",
+      "H10 Differentiëren",
+      "H11 Het toetsen van hypothesen"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde A 12e editie",
+    "track": "VWO 6",
+    "chapters": [
+      "H12 Rijen",
+      "H13 Allerlei formules",
+      "H14 Toepassingen van de differentiaalrekening",
+      "H15 Examentraining"
+    ]
   }
 ]
