@@ -275,6 +275,7 @@ export default function CreateExamPage() {
 
   const finishAndRedirect = () => {
     mutate('/api/exams');
+    mutate('/api/calendar/events'); // Global mutation to clear SWR cache before navigation
     if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('calendarUpdated'));
     router.push('/calendar');
   };
