@@ -2,6 +2,8 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
+import { useEffect } from 'react';
+import { useTimer } from '@/components/session/timer-context';
 import Timer from '@/components/session/timer';
 import StudyItemChecklist from '@/components/session/study-item-checklist';
 import StudyMaterialsDisplay from '@/components/session/study-materials-display';
@@ -37,6 +39,15 @@ export default function SessionExecutionPage() {
   const duration = session.startTime && session.endTime 
     ? Math.round((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60))
     : 60; // Default to 60 minutes
+
+  const { initializeSession } = useTimer();
+
+  useEffect(() => {
+    if (session && id) {
+      initializeSession(id as string, session, duration);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, id, duration]);
 
   const handleToggleComplete = async () => {
     await fetch(`/api/sessions/${id}`,
