@@ -164,7 +164,7 @@ export default function CalendarPage() {
         const examData = await response.json();
         setSelectedExam(examData.data);
         setSelectedExamId(examId);
-        router.push(`/exams/${data.data._id}`);
+        router.push(`/exams/${examData.data._id}`);
       }
     } catch (error) {
       console.error('Failed to fetch exam:', error);

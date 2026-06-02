@@ -159,7 +159,7 @@ export async function PUT(
 
     // Unified AI Schedule Regeneration
     let overloadWarning = null;
-    let overloadedDays = [];
+    let overloadedDays: string[] = [];
 
     if (requiresRegeneration) {
       console.log('Exam details changed significantly, regenerating schedule...');
