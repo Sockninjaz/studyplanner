@@ -101,10 +101,6 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
     }
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedExam(null);
-  };
 
   const openCreateModal = () => {
     router.push('/exams/create');
@@ -337,11 +333,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
         </div>
       </aside>
 
-      <ExamModal
-        exam={selectedExam}
-        isOpen={isModalOpen}
-        onClose={closeModal}
-      />
+
     </>
   );
 };
