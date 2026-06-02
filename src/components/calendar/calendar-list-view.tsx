@@ -360,7 +360,7 @@ export default function CalendarListView({
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                    <h3 className="text-sm font-medium text-[#4a4a4a] dark:text-slate-200">{formatDate(date)}</h3>
+                    <h3 className="text-sm font-medium text-[#4a4a4a] dark:text-slate-200" suppressHydrationWarning>{formatDate(date)}</h3>
                     {events.length > 0 && (
                       <span className="text-xs text-[#4a4a4a] dark:text-slate-400 opacity-50">
                         {events.length} {events.length === 1 ? 'item' : 'items'}

@@ -99,9 +99,9 @@ export default function ExamDetailPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-slate-100 mb-1.5">{exam.subject}</h1>
-            <p className="text-gray-500 dark:text-slate-400 text-sm md:text-base">
+            <div className="text-gray-500 dark:text-slate-400 text-sm md:text-base" suppressHydrationWarning>
               Scheduled for {new Date(exam.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
+            </div>
           </div>
           
           <div className="flex items-center gap-2 shrink-0">
@@ -247,11 +247,11 @@ export default function ExamDetailPage() {
                       <div>
                         <h4 className="font-semibold text-gray-900 dark:text-slate-100 text-base leading-tight mb-1.5">{session.title}</h4>
                         <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded-md">
+                          <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded-md" suppressHydrationWarning>
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                             {new Date(session.startTime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                           </span>
-                          <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded-md">
+                          <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded-md" suppressHydrationWarning>
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             {' - '}

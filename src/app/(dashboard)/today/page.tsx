@@ -385,7 +385,7 @@ export default function StudyHubPage() {
       <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex-shrink-0">
         <div>
           <h1 className="text-xl font-bold text-gray-800 dark:text-slate-100">Study Hub</h1>
-          <p className="text-xs text-gray-500 dark:text-slate-400">{today}</p>
+          <p className="text-xs text-gray-500 dark:text-slate-400" suppressHydrationWarning>{today}</p>
         </div>
         {selectedSession && (
           <div className="flex items-center gap-3">

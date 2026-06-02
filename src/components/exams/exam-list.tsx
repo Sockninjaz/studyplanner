@@ -31,7 +31,7 @@ export default function ExamList() {
                   <div>
                     <h3 className="text-lg font-semibold dark:text-slate-100">{exam.title}</h3>
                     <p className="text-gray-600 dark:text-slate-400">{exam.subject}</p>
-                    <p className="text-sm text-gray-500 dark:text-slate-400">
+                    <p className="text-sm text-gray-500 dark:text-slate-400" suppressHydrationWarning>
                       {new Date(exam.date).toLocaleDateString()}
                     </p>
                   </div>

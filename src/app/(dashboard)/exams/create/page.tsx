@@ -647,7 +647,7 @@ function CreateExamContent() {
               <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 max-h-40 overflow-y-auto">
                 {overloadWarning.overloadedDays.map((day: any) => (
                   <div key={day.date} className="flex justify-between items-center py-1">
-                    <span className="text-slate-600 dark:text-slate-400 text-sm font-medium">{new Date(day.date).toLocaleDateString()}</span>
+                    <span className="text-slate-600 dark:text-slate-400 text-sm font-medium" suppressHydrationWarning>{new Date(day.date).toLocaleDateString()}</span>
                     <span className="text-red-600 dark:text-red-400 font-bold bg-red-100 dark:bg-red-900/40 px-2 py-0.5 rounded-md text-xs">{day.sessions} / {day.limit}</span>
                   </div>
                 ))}
