@@ -478,13 +478,21 @@ export default function CreateExamPage() {
                   </div>
 
                   <div className="w-full mt-4 space-y-2 shrink-0">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Or manually specify material:</p>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Of specificeer je materiaal (bijv. uit een boek):</p>
                     <textarea
                       value={rawTextInput}
                       onChange={(e) => setRawTextInput(e.target.value)}
-                      placeholder={uploadedFiles.length > 0 ? "Add optional instructions..." : "e.g. 'Chemie Overal VWO 5, Chapters 1 to 4'"}
+                      placeholder={uploadedFiles.length > 0 ? "Optionele instructies..." : "Bijv. 'Chemie Overal 7e editie VWO 5, Hfst 1 t/m 4'"}
                       className="w-full h-16 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
                     />
+                    {!uploadedFiles.length && (
+                      <div className="flex items-start gap-1.5 mt-1">
+                        <svg className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p className="text-[11px] leading-tight text-slate-500 dark:text-slate-400 italic">
+                          <strong>Tip:</strong> Gebruik je een schoolboek? Noem dan <strong>altijd</strong> de exacte editie en het deel (bijv. "12e editie", "Deel 3" of "VWO 5") zodat de AI precies de juiste hoofdstukken voor je kan inladen!
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <button 
