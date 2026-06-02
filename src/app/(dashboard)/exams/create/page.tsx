@@ -44,6 +44,8 @@ export default function CreateExamPage() {
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [rawTextInput, setRawTextInput] = useState('');
+  const [bookTitle, setBookTitle] = useState('');
+  const [bookEdition, setBookEdition] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [rawMaterialText, setRawMaterialText] = useState<string>('');
@@ -236,9 +238,15 @@ export default function CreateExamPage() {
       const formData = new FormData();
       uploadedFiles.forEach(f => formData.append('files', f));
       
-      if (rawTextInput) {
-        if (uploadedFiles.length > 0) formData.append('specialInstructions', rawTextInput.trim());
-        else formData.append('rawText', rawTextInput);
+      if (rawTextInput || bookTitle || bookEdition) {
+        const combinedText = [
+          bookTitle ? `Book: ${bookTitle}` : '',
+          bookEdition ? `Edition/Level: ${bookEdition}` : '',
+          rawTextInput
+        ].filter(Boolean).join('\n');
+        
+        if (uploadedFiles.length > 0) formData.append('specialInstructions', combinedText.trim());
+        else formData.append('rawText', combinedText);
       }
       formData.append('subjectName', subject || 'Unknown Subject');
       formData.append('examDate', date);
@@ -477,22 +485,46 @@ export default function CreateExamPage() {
                   )}
                   </div>
 
-                  <div className="w-full mt-4 space-y-2 shrink-0">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Of specificeer je materiaal (bijv. uit een boek):</p>
-                    <textarea
-                      value={rawTextInput}
-                      onChange={(e) => setRawTextInput(e.target.value)}
-                      placeholder={uploadedFiles.length > 0 ? "Optionele instructies..." : "Bijv. 'Chemie Overal 7e editie VWO 5, Hfst 1 t/m 4'"}
-                      className="w-full h-16 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
-                    />
-                    {!uploadedFiles.length && (
-                      <div className="flex items-start gap-1.5 mt-1">
-                        <svg className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <p className="text-[11px] leading-tight text-slate-500 dark:text-slate-400 italic">
-                          <strong>Tip:</strong> Gebruik je een schoolboek? Noem dan <strong>altijd</strong> de exacte editie en het deel (bijv. "12e editie", "Deel 3" of "VWO 5") zodat de AI precies de juiste hoofdstukken voor je kan inladen!
-                        </p>
+                  <div className="w-full mt-4 space-y-3 shrink-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                        Gebruik je een schoolboek?
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Methode / Boektitel</label>
+                        <input
+                          type="text"
+                          value={bookTitle}
+                          onChange={(e) => setBookTitle(e.target.value)}
+                          placeholder="Bijv. Chemie Overal"
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
+                        />
                       </div>
-                    )}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Editie & Niveau (Belangrijk!)</label>
+                        <input
+                          type="text"
+                          value={bookEdition}
+                          onChange={(e) => setBookEdition(e.target.value)}
+                          placeholder="Bijv. 7e editie VWO 5"
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Welke hoofdstukken of onderwerpen?</label>
+                      <textarea
+                        value={rawTextInput}
+                        onChange={(e) => setRawTextInput(e.target.value)}
+                        placeholder="Bijv. Hoofdstuk 1 t/m 4, of plak hier je hele studiewijzer..."
+                        className="w-full h-16 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
+                      />
+                    </div>
                   </div>
 
                   <button 
