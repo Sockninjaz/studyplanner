@@ -2,7 +2,6 @@
 
 import Sidebar from "@/components/shared/sidebar";
 import { SidebarProvider, useSidebar } from "@/components/shared/sidebar-context";
-import { TimerProvider } from "@/components/session/timer-context";
 import GlobalTimerWidget from "@/components/session/global-timer-widget";
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
@@ -27,12 +26,10 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      <TimerProvider>
-        <DashboardLayoutInner>
-          {children}
-          <GlobalTimerWidget />
-        </DashboardLayoutInner>
-      </TimerProvider>
+      <DashboardLayoutInner>
+        {children}
+        <GlobalTimerWidget />
+      </DashboardLayoutInner>
     </SidebarProvider>
   );
 }
