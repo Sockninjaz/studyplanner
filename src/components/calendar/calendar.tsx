@@ -102,7 +102,7 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
         editable={true}
         eventDrop={handleEventDrop}
         height="100%"
-        dayMaxEvents={3}
+        dayMaxEvents={5}
         datesSet={onDatesSet}
         eventTimeFormat={{
           hour: 'numeric',
@@ -168,17 +168,19 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
         }}
         eventDidMount={(info) => {
           const event = info.event;
+          info.el.style.cursor = 'pointer';
+          
           if (event.extendedProps?.type === 'exam') {
-            info.el.style.cursor = 'pointer';
-            info.el.style.textDecoration = 'underline';
-          } else if (event.extendedProps?.type === 'session') {
-            info.el.style.cursor = 'pointer';
             if (event.extendedProps?.isCompleted) {
-              const titleElement = info.el.querySelector('.fc-event-title') as HTMLElement;
-              if (titleElement) {
-                titleElement.style.textDecoration = 'line-through';
-                titleElement.style.opacity = '0.7';
-              }
+              info.el.style.textDecoration = 'line-through';
+              info.el.style.opacity = '0.7';
+            } else {
+              info.el.style.textDecoration = 'underline';
+            }
+          } else if (event.extendedProps?.type === 'session') {
+            if (event.extendedProps?.isCompleted) {
+              info.el.style.textDecoration = 'line-through';
+              info.el.style.opacity = '0.7';
             }
           }
         }}
@@ -285,6 +287,30 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
           font-weight: 500;
           line-height: 1.2;
           padding: 0.5px 2px;
+        }
+        .fc-popover {
+          border-radius: 8px !important;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+          border: 1px solid #e5e7eb !important;
+          overflow: hidden !important;
+          z-index: 50 !important;
+        }
+        :global(.dark) .fc-popover {
+          background-color: #1e293b !important;
+          border-color: #334155 !important;
+        }
+        .fc-popover-header {
+          background: #f8fafc !important;
+          padding: 10px 12px !important;
+          font-weight: 600 !important;
+        }
+        :global(.dark) .fc-popover-header {
+          background: #0f172a !important;
+        }
+        .fc-popover-body {
+          padding: 8px !important;
+          max-height: 250px !important;
+          overflow-y: auto !important;
         }
       `}</style>
     </div>

@@ -14,6 +14,7 @@ interface Task {
 interface StudySession {
   _id: string;
   title: string;
+  shortTitle?: string;
   subject: string;
   startTime: string;
   endTime: string;
@@ -104,8 +105,73 @@ export default function StudyHubPage() {
   const [fetchingHistory, setFetchingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const chatInputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const userScrolledUp = useRef(false);
+
+  // ── Persist state to localStorage ─────────────────────────────────────────
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isRestored, setIsRestored] = useState(false);
+
+  // 1. Load timer state immediately
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('todayPageState');
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state.timerSeconds !== undefined) setTimerSeconds(state.timerSeconds);
+        if (state.timerRunning !== undefined) setTimerRunning(state.timerRunning);
+        if (state.timerFinished !== undefined) setTimerFinished(state.timerFinished);
+        if (state.endTime) endTimeRef.current = state.endTime;
+        
+        if (state.endTime && state.timerRunning) {
+           const remaining = Math.ceil((state.endTime - Date.now()) / 1000);
+           if (remaining > 0) {
+             setTimerSeconds(remaining);
+           } else {
+             setTimerSeconds(0);
+             setTimerRunning(false);
+             setTimerFinished(true);
+             endTimeRef.current = null;
+           }
+        }
+      }
+    } catch(e) {}
+    setIsInitialized(true);
+  }, []);
+
+  // 2. Restore selected session after sessions list is loaded
+  useEffect(() => {
+    if (!isInitialized || loadingSessions) return;
+    if (!isRestored) {
+      try {
+        const saved = localStorage.getItem('todayPageState');
+        if (saved) {
+          const state = JSON.parse(saved);
+          if (state.selectedSessionId && !selectedSession && typeof window !== 'undefined' && !window.location.search.includes('session=')) {
+            const found = sessions.find(s => s._id === state.selectedSessionId);
+            if (found) {
+              setSelectedSession(found);
+              setTasks(found.tasks || []);
+            }
+          }
+        }
+      } catch(e) {}
+      setIsRestored(true);
+    }
+  }, [isInitialized, loadingSessions, sessions, selectedSession, isRestored]);
+
+  // 3. Save state only after restore phase is complete
+  useEffect(() => {
+    if (!isRestored) return;
+    localStorage.setItem('todayPageState', JSON.stringify({
+      selectedSessionId: selectedSession?._id || null,
+      timerSeconds,
+      timerRunning,
+      timerFinished,
+      endTime: endTimeRef.current
+    }));
+  }, [isRestored, selectedSession, timerSeconds, timerRunning, timerFinished]);
 
   // ── Fetch today's sessions ──────────────────────────────────────────────────
 
@@ -143,13 +209,94 @@ export default function StudyHubPage() {
       } catch {}
     };
     loadPrefs();
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session');
+      if (sessionId) {
+        const fetchSpecificSession = async () => {
+          try {
+            const res = await fetch(`/api/sessions/${sessionId}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.data) {
+                // To avoid dependency cycle, we set it directly if possible, or wait for handleSelectSession
+                setSelectedSession(data.data);
+                setTasks(data.data.tasks || []);
+                
+                // Initialize timer using localStorage fallback if state isn't ready
+                let duration = 30;
+                if (data.data.startTime && data.data.endTime) {
+                  duration = Math.round((new Date(data.data.endTime).getTime() - new Date(data.data.startTime).getTime()) / (1000 * 60));
+                  if (duration <= 0) duration = 30;
+                } else {
+                  try {
+                    const saved = localStorage.getItem('userPreferences');
+                    if (saved) {
+                      const p = JSON.parse(saved);
+                      if (p.session_duration) duration = p.session_duration;
+                    }
+                  } catch {}
+                }
+                setTimerSeconds(duration * 60);
+                setTimerRunning(false);
+                setTimerFinished(false);
+                endTimeRef.current = null;
+
+                // Load chat history for this exam
+                if (data.data.exam?._id) {
+                  setFetchingHistory(true);
+                  setChatMessages([]);
+                  try {
+                    const chatRes = await fetch(`/api/chat/history?examId=${data.data.exam._id.toString()}`);
+                    if (chatRes.ok) {
+                      const chatData = await chatRes.json();
+                      if (chatData.messages) {
+                        const formatted = chatData.messages
+                          .filter((m: any) => m.role === 'user' || m.role === 'assistant')
+                          .map((m: any, i: number) => ({
+                            id: m.id || i.toString(),
+                            role: m.role,
+                            content: m.content
+                          }));
+                        setChatMessages(formatted);
+                      }
+                    }
+                  } catch (e) {
+                    console.error('Failed to fetch chat history', e);
+                  } finally {
+                    setFetchingHistory(false);
+                    setTimeout(() => {
+                      if (chatContainerRef.current) {
+                        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                      }
+                    }, 100);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to auto-select session', e);
+          }
+        };
+        fetchSpecificSession();
+      }
+    }
   }, [fetchSessions]);
 
   // ── Select a session ────────────────────────────────────────────────────────
 
   const handleSelectSession = useCallback(async (session: StudySession) => {
     setSelectedSession(session);
-    setTimerSeconds(sessionDuration * 60);
+    
+    // Calculate real session duration from start and end times
+    let actualDuration = sessionDuration;
+    if (session.startTime && session.endTime) {
+      actualDuration = Math.round((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60));
+      if (actualDuration <= 0) actualDuration = sessionDuration;
+    }
+    
+    setTimerSeconds(actualDuration * 60);
     setTimerRunning(false);
     setTimerFinished(false);
     endTimeRef.current = null;
@@ -217,9 +364,13 @@ export default function StudyHubPage() {
     return () => clearInterval(interval);
   }, [timerRunning]);
 
+  const currentActualDuration = selectedSession?.startTime && selectedSession?.endTime 
+    ? Math.max(1, Math.round((new Date(selectedSession.endTime).getTime() - new Date(selectedSession.startTime).getTime()) / (1000 * 60)))
+    : sessionDuration;
+
   const startTimer = () => {
     if (timerFinished) {
-      setTimerSeconds(sessionDuration * 60);
+      setTimerSeconds(currentActualDuration * 60);
       setTimerFinished(false);
     }
     endTimeRef.current = Date.now() + timerSeconds * 1000;
@@ -235,31 +386,52 @@ export default function StudyHubPage() {
     setTimerRunning(false);
     setTimerFinished(false);
     endTimeRef.current = null;
-    setTimerSeconds(sessionDuration * 60);
+    setTimerSeconds(currentActualDuration * 60);
   };
 
   const timerProgress = selectedSession
-    ? ((sessionDuration * 60 - timerSeconds) / (sessionDuration * 60)) * 100
+    ? ((currentActualDuration * 60 - timerSeconds) / (currentActualDuration * 60)) * 100
     : 0;
 
   // ── Mark session complete ───────────────────────────────────────────────────
 
-  const markComplete = useCallback(async () => {
+  const toggleComplete = useCallback(async () => {
     if (!selectedSession) return;
+    
+    const newCompletedStatus = !selectedSession.isCompleted;
+    
+    // Optimistic update for instant feedback
+    setSelectedSession(prev => prev ? { ...prev, isCompleted: newCompletedStatus } : null);
+    setSessions(prev =>
+      prev.map(s => s._id === selectedSession._id ? { ...s, isCompleted: newCompletedStatus } : s)
+    );
+    if (newCompletedStatus) {
+      setTimerRunning(false);
+      setTimerFinished(true);
+    }
+    
     try {
       const res = await fetch(`/api/sessions/${selectedSession._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isCompleted: true }),
+        body: JSON.stringify({ isCompleted: newCompletedStatus }),
       });
-      if (res.ok) {
-        setSelectedSession(prev => prev ? { ...prev, isCompleted: true } : null);
+      if (!res.ok) {
+        // Revert on failure
+        setSelectedSession(prev => prev ? { ...prev, isCompleted: !newCompletedStatus } : null);
         setSessions(prev =>
-          prev.map(s => s._id === selectedSession._id ? { ...s, isCompleted: true } : s)
+          prev.map(s => s._id === selectedSession._id ? { ...s, isCompleted: !newCompletedStatus } : s)
         );
+        if (newCompletedStatus) setTimerFinished(false);
       }
     } catch (e) {
-      console.error('Failed to mark complete', e);
+      console.error('Failed to toggle complete', e);
+      // Revert on failure
+      setSelectedSession(prev => prev ? { ...prev, isCompleted: !newCompletedStatus } : null);
+      setSessions(prev =>
+        prev.map(s => s._id === selectedSession._id ? { ...s, isCompleted: !newCompletedStatus } : s)
+      );
+      if (newCompletedStatus) setTimerFinished(false);
     }
   }, [selectedSession]);
 
@@ -319,7 +491,9 @@ export default function StudyHubPage() {
   const handleChatScroll = () => {
     const el = chatContainerRef.current;
     if (!el) return;
-    userScrolledUp.current = el.scrollHeight - el.scrollTop - el.clientHeight > 100;
+    // Tighter tolerance for being at the bottom to properly detect manual scroll up
+    const isAtBottom = Math.abs(el.scrollHeight - el.scrollTop - el.clientHeight) < 10;
+    userScrolledUp.current = !isAtBottom;
   };
 
   const sendChatMessage = async () => {
@@ -335,6 +509,8 @@ export default function StudyHubPage() {
     const assistantId = (Date.now() + 1).toString();
     setChatMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
+    abortControllerRef.current = new AbortController();
+
     try {
       const allMessages = [...chatMessages, userMsg].map(m => ({ role: m.role, content: m.content }));
       const res = await fetch('/api/chat', {
@@ -343,8 +519,10 @@ export default function StudyHubPage() {
         body: JSON.stringify({
           messages: allMessages,
           examId: selectedSession.exam._id.toString(),
+          sessionId: selectedSession._id.toString(),
           aiIntegration: 'gpt-4o-mini',
         }),
+        signal: abortControllerRef.current.signal,
       });
 
       if (!res.ok || !res.body) throw new Error('Chat failed');
@@ -361,14 +539,27 @@ export default function StudyHubPage() {
           prev.map(m => m.id === assistantId ? { ...m, content: text } : m)
         );
       }
-    } catch {
-      setChatMessages(prev =>
-        prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.' } : m)
-      );
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Generation stopped by user');
+      } else {
+        setChatMessages(prev =>
+          prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.' } : m)
+        );
+      }
     } finally {
+      abortControllerRef.current = null;
       setChatLoading(false);
       chatInputRef.current?.focus();
     }
+  };
+
+  const stopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setChatLoading(false);
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -381,39 +572,37 @@ export default function StudyHubPage() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex-shrink-0">
-        <div>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-slate-100">Study Hub</h1>
-          <p className="text-xs text-gray-500 dark:text-slate-400" suppressHydrationWarning>{today}</p>
-        </div>
-        {selectedSession && (
-          <div className="flex items-center gap-3">
-            <div
-              className="w-3 h-3 rounded-full flex-shrink-0"
-              style={{ backgroundColor: examColor }}
-            />
-            <span className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-              {selectedSession.exam?.subject || selectedSession.subject}
-            </span>
-            <span className="text-xs text-gray-400 dark:text-slate-500">·</span>
-            <span className="text-xs text-gray-500 dark:text-slate-400 max-w-xs truncate">
-              {selectedSession.title}
-            </span>
-          </div>
-        )}
-      </div>
-
       {/* 3-column layout */}
       <div className="flex flex-1 min-h-0 gap-0">
 
-        {/* ── LEFT: Today's Sessions + Tasks ─────────────────────────────────── */}
+        {/* ── LEFT: Today's Sessions + Tasks + Timer ─────────────────────────── */}
         <div className="w-72 flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">
-              Today's Sessions
-            </h2>
+            {selectedSession ? (
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.location.search.includes('session=')) {
+                     window.history.back();
+                  } else {
+                     setSelectedSession(null);
+                     if (typeof window !== 'undefined') {
+                       window.history.replaceState({}, '', '/today');
+                     }
+                  }
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 whitespace-nowrap transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                Back
+              </button>
+            ) : (
+              <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">
+                Today's Sessions
+              </h2>
+            )}
           </div>
+          {!selectedSession ? (
+            <>
 
           {/* Session list */}
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5 min-h-0">
@@ -431,7 +620,7 @@ export default function StudyHubPage() {
             ) : (
               sessions.map(s => {
                 const color = getExamColor(s.exam);
-                const isSelected = selectedSession?._id === s._id;
+                const isSelected = false;
                 return (
                   <button
                     key={s._id}
@@ -453,11 +642,11 @@ export default function StudyHubPage() {
                             {s.exam?.subject || s.subject}
                           </span>
                           <span className="text-[10px] text-gray-400 dark:text-slate-600 flex-shrink-0">
-                            {formatDuration(sessionDuration)}
+                            {formatDuration(s.startTime && s.endTime ? Math.max(1, Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / (1000 * 60))) : sessionDuration)}
                           </span>
                         </div>
                         <p className={`text-sm text-gray-800 dark:text-slate-200 leading-snug mt-0.5 ${s.isCompleted ? 'line-through text-gray-400 dark:text-slate-600' : ''}`}>
-                          {s.title}
+                          {(s as any).shortTitle || s.title}
                         </p>
                         {s.isCompleted && (
                           <span className="inline-block mt-1 text-[10px] font-medium text-green-600 dark:text-green-400">
@@ -472,10 +661,120 @@ export default function StudyHubPage() {
             )}
           </div>
 
-          {/* Tasks section */}
-          {selectedSession && (
-            <div className="border-t border-gray-100 dark:border-slate-800 flex-shrink-0">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+            </>
+          ) : (
+            <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
+              <div className="flex-shrink-0 flex flex-col items-center justify-center px-4 py-6 border-b border-gray-100 dark:border-slate-800">
+                <div className="w-full flex flex-col items-center gap-6">
+                  {/* Session info */}
+                  <div className="text-center">
+                    <div
+                      className="w-3 h-3 rounded-full mx-auto mb-2"
+                      style={{ backgroundColor: examColor }}
+                    />
+                    <h2 className={`text-sm font-bold text-gray-800 dark:text-slate-100 ${selectedSession.isCompleted ? 'line-through opacity-50' : ''}`}>
+                      {selectedSession.exam?.subject || selectedSession.subject}
+                    </h2>
+                    <p className={`text-xs mt-0.5 leading-snug line-clamp-3 ${selectedSession.isCompleted ? 'line-through text-gray-400 dark:text-slate-600' : 'text-gray-500 dark:text-slate-400'}`}>
+                      {selectedSession.title}
+                    </p>
+                    {selectedSession.exam?.date && (
+                      <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1">
+                        Exam in {getDaysUntil(selectedSession.exam.date)} days
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Circular timer */}
+                  <div className="relative flex items-center justify-center">
+                    <svg width="180" height="180" className="-rotate-90">
+                      <circle
+                        cx="90" cy="90" r="78"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="7"
+                        className="text-gray-100 dark:text-slate-800"
+                      />
+                      <circle
+                        cx="90" cy="90" r="78"
+                        fill="none"
+                        stroke={examColor}
+                        strokeWidth="7"
+                        strokeLinecap="round"
+                        strokeDasharray={`${2 * Math.PI * 78}`}
+                        strokeDashoffset={`${2 * Math.PI * 78 * (1 - timerProgress / 100)}`}
+                        style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                      />
+                    </svg>
+                    <div className="absolute text-center">
+                      <span className="text-3xl font-bold tabular-nums text-gray-800 dark:text-slate-100">
+                        {formatTime(timerSeconds)}
+                      </span>
+                      <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1">
+                        {formatDuration(currentActualDuration)} session
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Timer controls */}
+                  <div className="flex items-center justify-center gap-2.5 mt-2">
+                    <button
+                      onClick={resetTimer}
+                      className="p-2 rounded-full border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                      title="Reset"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+
+                    {!timerRunning ? (
+                      <button
+                        onClick={startTimer}
+                        className="px-6 py-2.5 rounded-full font-semibold text-white text-sm shadow-md hover:shadow-lg transition-all active:scale-95"
+                        style={{ backgroundColor: examColor === 'rgb(253, 231, 76)' ? 'rgb(180, 160, 30)' : examColor }}
+                      >
+                        {timerFinished ? 'Restart' : timerSeconds < currentActualDuration * 60 ? 'Resume' : 'Start'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={pauseTimer}
+                        className="px-6 py-2.5 rounded-full font-semibold text-white text-sm bg-amber-500 hover:bg-amber-600 shadow-md hover:shadow-lg transition-all active:scale-95"
+                      >
+                        Pause
+                      </button>
+                    )}
+
+                    {/* Round Green Toggle Button */}
+                    <button
+                      onClick={toggleComplete}
+                      title={selectedSession.isCompleted ? 'Mark as undone' : 'Mark as done'}
+                      className={`p-2 rounded-full border transition-all flex items-center justify-center w-10 h-10 ${
+                        selectedSession.isCompleted
+                          ? 'border-green-500 bg-green-500 text-white hover:bg-green-600 hover:border-green-600 shadow-sm'
+                          : 'border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 hover:text-green-500'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={selectedSession.isCompleted ? 3 : 2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="text-center mt-4 h-8">
+                    {selectedSession.isCompleted ? (
+                      <p className="text-sm text-green-600 dark:text-green-400 font-bold animate-pulse">
+                        ✅ Session Complete!
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tasks section */}
+              <div className="flex-shrink-0">
+                <div className="border-t border-gray-100 dark:border-slate-800 flex-shrink-0">
+                  <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">
                   Tasks
                 </h2>
@@ -533,6 +832,8 @@ export default function StudyHubPage() {
                 </button>
               </div>
             </div>
+            </div>
+            </div>
           )}
         </div>
 
@@ -578,7 +879,7 @@ export default function StudyHubPage() {
                   Ready to help with {selectedSession.exam?.subject || selectedSession.subject}
                 </p>
                 <p className="text-sm text-gray-400 dark:text-slate-600 mt-2 max-w-md">
-                  Ask me anything about today's topic: "{selectedSession.title}"
+                  Ask me anything about this session: "{selectedSession.title}"
                 </p>
               </div>
             ) : (
@@ -609,156 +910,63 @@ export default function StudyHubPage() {
           </div>
 
           {/* Chat input */}
-          <div className="p-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
-            <div className="flex gap-2">
-              <input
+          <div className="px-5 pb-5 pt-2 flex-shrink-0">
+            <div className="relative flex items-center">
+              <textarea
                 ref={chatInputRef}
-                type="text"
                 value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
+                onChange={e => {
+                  setChatInput(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                }}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    sendChatMessage();
+                    if (!chatLoading) {
+                      sendChatMessage();
+                      // Reset height after sending
+                      if (chatInputRef.current) {
+                        chatInputRef.current.style.height = 'auto';
+                      }
+                    }
                   }
                 }}
+                rows={1}
                 placeholder={selectedSession ? `Ask about ${selectedSession.exam?.subject || selectedSession.subject}…` : 'Select a session first'}
-                disabled={!selectedSession || chatLoading}
-                className="flex-1 text-sm px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!selectedSession}
+                className="w-full bg-gray-50 dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-[20px] py-2.5 pl-4 pr-12 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed resize-none overflow-y-auto transition-all shadow-sm"
+                style={{ minHeight: '44px', maxHeight: '200px' }}
               />
-              <button
-                onClick={sendChatMessage}
-                disabled={!selectedSession || !chatInput.trim() || chatLoading}
-                className="px-4 py-2.5 rounded-xl bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0 text-sm font-medium"
-              >
-                Send
-              </button>
+              {chatLoading ? (
+                <button
+                  onClick={stopGeneration}
+                  className="absolute right-1.5 bottom-1.5 p-1.5 bg-slate-500 text-white rounded-full hover:bg-slate-600 transition-colors flex-shrink-0 shadow-md"
+                  title="Stop generating"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    sendChatMessage();
+                    if (chatInputRef.current) chatInputRef.current.style.height = 'auto';
+                  }}
+                  disabled={!selectedSession || !chatInput.trim()}
+                  className="absolute right-1.5 bottom-1.5 p-1.5 bg-slate-700 text-white rounded-full hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0 shadow-md"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ── RIGHT: Timer ────────────────────────────────────────────────────── */}
-        <div className="w-72 flex-shrink-0 flex flex-col items-center justify-center border-l border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-y-auto px-6 py-8">
-          {!selectedSession ? (
-            <div className="text-center opacity-40 select-none">
-              <svg className="w-16 h-16 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-sm font-semibold text-gray-500 dark:text-slate-500">Select a session</p>
-              <p className="text-xs text-gray-400 dark:text-slate-600 mt-1">to start the timer</p>
-            </div>
-          ) : (
-            <div className="w-full flex flex-col items-center gap-6">
-              {/* Session info */}
-              <div className="text-center">
-                <div
-                  className="w-3 h-3 rounded-full mx-auto mb-2"
-                  style={{ backgroundColor: examColor }}
-                />
-                <h2 className="text-sm font-bold text-gray-800 dark:text-slate-100">
-                  {selectedSession.exam?.subject || selectedSession.subject}
-                </h2>
-                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2">
-                  {selectedSession.title}
-                </p>
-                {selectedSession.exam?.date && (
-                  <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1">
-                    Exam in {getDaysUntil(selectedSession.exam.date)} days
-                  </p>
-                )}
-              </div>
 
-              {/* Circular timer */}
-              <div className="relative flex items-center justify-center">
-                <svg width="180" height="180" className="-rotate-90">
-                  <circle
-                    cx="90" cy="90" r="78"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="7"
-                    className="text-gray-100 dark:text-slate-800"
-                  />
-                  <circle
-                    cx="90" cy="90" r="78"
-                    fill="none"
-                    stroke={timerFinished ? '#22c55e' : examColor}
-                    strokeWidth="7"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 78}`}
-                    strokeDashoffset={`${2 * Math.PI * 78 * (1 - timerProgress / 100)}`}
-                    style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-                  />
-                </svg>
-                <div className="absolute text-center">
-                  <span className={`text-3xl font-bold tabular-nums ${timerFinished ? 'text-green-500' : 'text-gray-800 dark:text-slate-100'}`}>
-                    {formatTime(timerSeconds)}
-                  </span>
-                  <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1">
-                    {formatDuration(sessionDuration)} session
-                  </p>
-                </div>
-              </div>
-
-              {/* Timer controls */}
-              <div className="flex items-center gap-2.5">
-                <button
-                  onClick={resetTimer}
-                  className="p-2 rounded-full border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                  title="Reset"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
-
-                {!timerRunning ? (
-                  <button
-                    onClick={startTimer}
-                    className="px-6 py-2.5 rounded-full font-semibold text-white text-sm shadow-md hover:shadow-lg transition-all active:scale-95"
-                    style={{ backgroundColor: examColor === 'rgb(253, 231, 76)' ? 'rgb(180, 160, 30)' : examColor }}
-                  >
-                    {timerFinished ? 'Restart' : timerSeconds < sessionDuration * 60 ? 'Resume' : 'Start'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={pauseTimer}
-                    className="px-6 py-2.5 rounded-full font-semibold text-white text-sm bg-amber-500 hover:bg-amber-600 shadow-md hover:shadow-lg transition-all active:scale-95"
-                  >
-                    Pause
-                  </button>
-                )}
-
-                {/* Mark done button */}
-                <button
-                  onClick={markComplete}
-                  disabled={selectedSession.isCompleted}
-                  title={selectedSession.isCompleted ? 'Already completed' : 'Mark as done'}
-                  className={`p-2 rounded-full border transition-colors ${
-                    selectedSession.isCompleted
-                      ? 'border-green-300 dark:border-green-800 text-green-500 dark:text-green-400 cursor-default'
-                      : 'border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 hover:text-green-500'
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </button>
-              </div>
-
-              {timerFinished && !selectedSession.isCompleted && (
-                <div className="text-center">
-                  <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-2">⏱ Time's up! Great work.</p>
-                  <button
-                    onClick={markComplete}
-                    className="px-4 py-2 rounded-full bg-green-500 text-white text-xs font-semibold hover:bg-green-600 transition-colors"
-                  >
-                    Mark as Done
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
 
       </div>
     </div>

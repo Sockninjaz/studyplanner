@@ -37,8 +37,13 @@ export async function parseDocument(buffer: Buffer, fileName: string): Promise<P
       return parseJson(buffer, fileName);
     case 'zip':
       return parseZip(buffer, fileName);
+    case 'png':
+    case 'jpg':
+    case 'jpeg':
+      // Return empty text so the fallback OCR in the analyze route can pick it up
+      return { text: '', fileName, fileType: ext };
     default:
-      throw new Error(`Unsupported file type: .${ext}. Supported: .pdf, .docx, .pptx, .txt, .md, .html, .json, .zip`);
+      throw new Error(`Unsupported file type: .${ext}. Supported: .pdf, .docx, .pptx, .txt, .md, .html, .json, .zip, .png, .jpg`);
   }
 }
 

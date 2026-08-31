@@ -78,6 +78,27 @@ export async function PUT(
     if (body.subject && exam.subject !== body.subject) {
       exam.subject = body.subject;
     }
+
+    if (body.isCompleted !== undefined) {
+      exam.isCompleted = body.isCompleted;
+      requiresRegeneration = true;
+      if (body.isCompleted === true) {
+        exam.completedAt = new Date();
+        await StudySession.updateMany(
+          { user: user._id, exam: exam._id },
+          { $set: { isCompleted: true } }
+        );
+      } else {
+        exam.completedAt = undefined;
+        // Un-complete future and today's sessions so they can be rescheduled
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        await StudySession.updateMany(
+          { user: user._id, exam: exam._id, startTime: { $gte: startOfToday } },
+          { $set: { isCompleted: false } }
+        );
+      }
+    }
     
     if (body.date) {
       const newDate = new Date(body.date);
@@ -90,8 +111,8 @@ export async function PUT(
     if (body.studyMaterials) {
       const newMaterials = body.studyMaterials.map((m: any) => ({
         chapter: m.chapter,
-        difficulty: parseInt(m.difficulty.toString()),
-        confidence: parseInt(m.confidence.toString()),
+        difficulty: m.difficulty ? parseInt(m.difficulty.toString()) : 3,
+        confidence: m.confidence ? parseInt(m.confidence.toString()) : 3,
         user_estimated_total_hours: m.user_estimated_total_hours || 5,
         completed: m.completed || false,
       }));
@@ -121,6 +142,9 @@ export async function PUT(
     }
 
     if (body.rawMaterialText !== undefined) {
+      if (exam.rawMaterialText !== body.rawMaterialText) {
+        requiresRegeneration = true;
+      }
       exam.rawMaterialText = body.rawMaterialText;
       const textLength = body.rawMaterialText?.length || 0;
       exam.useRag = textLength > 400000;
@@ -136,6 +160,29 @@ export async function PUT(
             console.error('[RAG] Failed to generate embeddings:', err);
           }
         })();
+      }
+    }
+
+    if (body.studyMaterials && requiresRegeneration) {
+      // Clean up orphaned completed sessions whose topics no longer exist in the new materials
+      const completedSessions = await StudySession.find({ user: user._id, exam: exam._id, isCompleted: true });
+      const validChapters = exam.studyMaterials.map((m: any) => m.chapter.toLowerCase());
+      
+      const sessionsToDelete = [];
+      for (const s of completedSessions) {
+        const titleLower = s.title.toLowerCase();
+        // If the session title doesn't match any of the valid chapters, it's an orphan
+        const matches = validChapters.some((ch: string) => titleLower.includes(ch) || ch.includes(titleLower.replace(/^(study: )?(.*?)( \- )?/, '').trim()));
+        
+        // Also keep generic review sessions
+        if (!matches && !titleLower.includes('review')) {
+          sessionsToDelete.push(s._id);
+        }
+      }
+      
+      if (sessionsToDelete.length > 0) {
+        await StudySession.deleteMany({ _id: { $in: sessionsToDelete } });
+        console.log(`Deleted ${sessionsToDelete.length} orphaned completed sessions after material update.`);
       }
     }
 
@@ -162,14 +209,27 @@ export async function PUT(
     let overloadedDays: any[] = [];
 
     if (requiresRegeneration) {
-      console.log('Exam details changed significantly, regenerating schedule...');
+      console.log('Exam details changed significantly, checking schedule overload...');
       const overridePrefs = {
         daily_max_hours: body.daily_max_hours,
         soft_daily_limit: body.soft_daily_limit,
         adjustment_percentage: body.adjustment_percentage,
         session_duration: body.session_duration,
       };
-      const scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString());
+
+      let scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString(), 'check');
+
+      if (scheduleResult.requiresDecision) {
+        return NextResponse.json({
+          data: {
+            exam,
+            requiresDecision: true,
+            overloadedDays: scheduleResult.overloadedDays
+          }
+        }, { status: 200 });
+      }
+
+      scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString(), 'compress');
       overloadWarning = scheduleResult.overloadWarning;
       overloadedDays = scheduleResult.overloadedDays || [];
     } else {
@@ -235,10 +295,9 @@ export async function DELETE(
     const remainingExams = await Exam.find({ user: user._id });
     console.log(`Found ${remainingExams.length} remaining exams`);
 
-    // If there are remaining exams, regenerate the schedule natively via AI
-    if (remainingExams.length > 0) {
-      await regenerateSchedule(user);
-    }
+    // If there are remaining exams, regenerate the schedule natively via AI.
+    // If there are 0 remaining exams, this will still run and cleanly wipe out any ghost sessions.
+    await regenerateSchedule(user);
 
     return NextResponse.json({ message: 'Exam deleted and schedule regenerated for remaining exams' }, { status: 200 });
   } catch (error) {

@@ -23,7 +23,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const exams = await Exam.find({ user: user._id }).sort({ date: 1 });
+    const exams = await Exam.find({ user: user._id }).sort({ date: 1 }).lean();
+    
+    // Attach progress based on sessions
+    for (let exam of exams) {
+       const sessions = await StudySession.find({ examId: exam._id }).lean();
+       const totalSessions = sessions.length;
+       const completedSessions = sessions.filter((s: any) => s.isCompleted).length;
+       (exam as any).progressPercentage = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+    }
+    
     return NextResponse.json({ data: exams }, { status: 200 });
   } catch (error) {
     console.error('Error fetching exams:', error);
@@ -65,9 +74,10 @@ export async function POST(request: Request) {
 
     const studyMaterials = studyMaterialsData.map((material: any) => ({
       chapter: material.chapter,
-      difficulty: parseInt(material.difficulty.toString()),
-      confidence: parseInt(material.confidence.toString()),
+      difficulty: material.difficulty ? parseInt(material.difficulty.toString()) : 3,
+      confidence: material.confidence ? parseInt(material.confidence.toString()) : 3,
       user_estimated_total_hours: material.user_estimated_total_hours || 5, // Default to 5 hours instead of 10
+      formulas: material.formulas || [],
       completed: false,
     }));
 
@@ -177,20 +187,28 @@ export async function POST(request: Request) {
       enable_daily_limits: body.enable_daily_limits
     };
 
-    const scheduleResult = await regenerateSchedule(user, overridePrefs);
+    let scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString(), 'check');
+    
+    if (!scheduleResult.requiresDecision) {
+      // It fits perfectly! Go ahead and save the generated sessions.
+      scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString(), 'compress');
+    }
 
     return NextResponse.json({
       data: {
         exam,
         sessions: scheduleResult.sessionsToSave || [],
-        message: `Created exam and ${scheduleResult.sessionsLength || 0} study sessions`,
-        overloadWarning: scheduleResult.overloadWarning,
+        message: scheduleResult.requiresDecision ? 'Exam created, but schedule overloaded.' : `Created exam and ${scheduleResult.sessionsLength || 0} study sessions`,
+        requiresDecision: scheduleResult.requiresDecision,
         overloadedDays: scheduleResult.overloadedDays || []
       },
       status: 201
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in POST /api/exams:', error);
-    return NextResponse.json({ error: 'Error creating exam' }, { status: 500 });
+    try {
+      require('fs').writeFileSync('/tmp/exam_error.log', error.stack || error.toString());
+    } catch (e) {}
+    return NextResponse.json({ error: error.message || 'Error creating exam' }, { status: 500 });
   }
 }

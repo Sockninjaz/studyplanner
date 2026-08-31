@@ -21,20 +21,31 @@ For each topic:
 3. Rate expected student confidence from 1-5 (3=neutral)
 4. Assign study hours from your global budget (the sum of all chapters MUST equal totalEstimatedHours)
 
+HOUR ROUNDING RULE: All hour estimates (both per-chapter user_estimated_total_hours and totalEstimatedHours) MUST be cleanly rounded to 0.5 hour increments (e.g. 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0). NEVER output unrounded decimals like 6.1, 6.2, or 4.13.
+
 Guidelines:
 - Aim for 3-10 meaningful chapters. If the material is extremely long and covers many topics, adjust expectations: not everything requires super in-depth knowledge.
 - You CAN assign fractional hours (e.g., 0.25, 0.5) for short or overview chapters. A chapter does NOT need to take 1 hour if it is brief.
 - Do NOT artificially inflate the total hours just because there are many chapters. Group them logically and assign realistic fractional hours if needed.
+- SYLLABUS TITLE RULE: If the material has a clear title or header (e.g. in a syllabus), use it to identify the main academic topic and group the material logically under that overarching concept.
+- FORMULA EXTRACTION: If there are specific formulas, equations, or laws given in the text, you MUST extract them and include them in the "formulas" array for the relevant chapter so the student can study them.
 - If material is a syllabus/outline, use section headers as natural boundaries
 - If raw notes/textbook, group by conceptual themes
 - STRICT PRACTICE QUESTIONS RULE: If the material contains practice questions, past exams, or exercises, you MUST completely abstract away from the specific questions. 
-  * NEVER use story titles or specific applications as chapter names (e.g. NEVER output "Wijnfraude opsporen", "Geïoniseerd helium", "Emissienevel", "Echografie", "The boy at the store").
-  * Instead, you MUST identify the broad national curriculum domain being tested and use THAT as the chapter name (e.g. "Straling en Gezondheid" (Radiation & Health), "Atoomfysica" (Atomic Physics), "Mechanica", "Stoichiometry").
-  * Treat the questions merely as a diagnostic tool to figure out which high-level syllabus topics the student needs to learn. Output ONLY those high-level academic concepts.
+  * NEVER use the story context or specific applications as chapter names (e.g. NEVER output "Wine fraud", "Helium spectrum", "The boy at the store").
+  * Instead, you MUST identify the underlying academic theory, physics/math concept, or broad curriculum domain (e.g. "Radioactive Decay", "Quantum Mechanics", "Newton's Laws") and use THAT as the chapter name.
+  * EXAMPLE BAD OUTPUT: "Question 4: Wine fraud", "Assignment 3: The red car", "Echography"
+  * EXAMPLE GOOD OUTPUT: "Isotopes and Decay", "Kinematics", "Sound Waves and Reflection"
+- EXACT TITLES RULE (CRITICAL): If the material explicitly provides textbook chapter titles, table of contents, or themes (e.g., "Voortplanting", "Planten"), you MUST use EXACTLY those names word-for-word. Do NOT rephrase them. Do NOT translate them. Do NOT try to make them sound more academic. Do NOT mix them with international curriculum standards. If the user provides a table of contents or one is found in the database, your output chapters MUST mirror it perfectly. If the user provides a sparse list of chapter numbers (e.g., "H11 10 9 4"), treat EVERY standalone number as a separate chapter request (Chapter 11, Chapter 10, Chapter 9, Chapter 4) and extract their names from the database or provided context.
+- GROUPING SUBTOPICS RULE: If the provided text contains high-level Themes/Chapters with many sub-bullet points underneath them, YOU MUST GROUP THEM. Create exactly ONE chapter for the main Theme (e.g., "Thema: Genetica") and absorb all the sub-bullet points into the chapter's "summary" field. NEVER turn every single bullet point or subtopic into its own standalone chapter.
 IMPORTANT LANGUAGE RULE: You MUST output all chapter names and summaries in the EXACT SAME LANGUAGE as the provided study material. Do not translate the material to English unless the original material is in English.
 
-A. PACING / ESTIMATED HOURS RULE:
-Scale the \`totalEstimatedHours\` using an implicit friction multiplier tied to the student's academic level (if provided in their Academic Profile). Younger students or high-stakes tracks (e.g., Dutch VWO Upper Years, German Abitur, UK A-Levels) must receive a higher baseline allocation of study hours broken down into smaller, highly actionable focus chunks than a university senior processing the same density of text.
+A. PACING / ESTIMATED HOURS RULE (CRITICAL):
+You MUST heavily rely on the STUDENT ACADEMIC PROFILE (if provided) to calculate the \`totalEstimatedHours\`. 
+- DO NOT blindly assign massive hours (e.g., 10-15 hours) just because a document has a lot of words or questions.
+- Ask yourself: "How long does a typical student at exactly THIS grade level (e.g., 5 VWO in the Netherlands, or a University Senior) realistically take to process this specific type of document?"
+- For example: A 5 VWO student doing a single physics past exam paper takes about 2 to 4 hours maximum to complete and review. A 15-hour estimate for a single exam paper is an absurd hallucination.
+- You MUST anchor your time estimates in the realistic study speed and attention span of a typical student in that exact country and grade level.
 
 B. SPARSE INPUT HANDLING (No Blind Hallucinations):
 You must output a boolean field: \`isSuggestedFallback\`.
@@ -87,11 +98,23 @@ export function buildMaterialAnalysisMessage(
     ? text.substring(0, maxChars) + '\n\n[... text truncated for analysis ...]'
     : text;
 
+  // Calculate days remaining to enforce realistic time constraints
+  const parsedExamDate = new Date(examDate);
+  const diffDays = Math.ceil((parsedExamDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  
+  let timeConstraintStr = '';
+  if (diffDays <= 1) {
+    timeConstraintStr = `\nCRITICAL TIME CONSTRAINT: The exam is literally TOMORROW (1 day away). You MUST NOT bombard the student with an impossible task. Cap the TOTAL realistic study hours at an absolute maximum of 4 to 6 hours. Condense the topics into only the most critical, high-yield review elements.`;
+  } else if (diffDays <= 3) {
+    timeConstraintStr = `\nCRITICAL TIME CONSTRAINT: The exam is very soon (${diffDays} days away). Cap the TOTAL realistic study hours at a maximum of ${diffDays * 3} hours. Be extremely concise.`;
+  }
+
   return `Analyze the following study material for the subject "${subjectName}" (exam date: ${examDate}).
 
 First estimate the TOTAL realistic study hours for the whole document, then divide into chapters.
 The sum of all chapter hours MUST equal the totalEstimatedHours.
-Be highly realistic and do not overestimate. Most single documents only take 1-5 hours to study.
+Be highly realistic and do not overestimate. Use the STUDENT ACADEMIC PROFILE below to ground your time estimates. (e.g. How long does a single test paper take for a 5 VWO student? Not 15 hours. Usually 2-4 hours).
+${timeConstraintStr}
 
 ${specialInstructions ? `### USER SPECIAL INSTRUCTIONS ###\nIMPORTANT: The user has provided the following special instructions. You MUST follow them strictly. If they tell you to focus on specific chapters or ignore parts of the material, adapt your chapters and hour estimates accordingly:\n"${specialInstructions}"\n` : ''}
 

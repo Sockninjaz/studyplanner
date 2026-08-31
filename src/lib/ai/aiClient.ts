@@ -26,6 +26,7 @@ export async function generateStructuredOutput<T>(
     schemaName,
     system: systemPrompt,
     prompt: userMessage,
+    temperature: 0.1,
   });
 
   return result.object;
@@ -59,7 +60,8 @@ export async function extractTextFromMultimodal(
   });
 
   // 2. Write buffer to a temporary file because File API requires a path
-  const tempFilePath = path.join(os.tmpdir(), `${crypto.randomUUID()}.pdf`);
+  const ext = mimeType.split('/')[1] || 'pdf';
+  const tempFilePath = path.join(os.tmpdir(), `${crypto.randomUUID()}.${ext}`);
   await fs.writeFile(tempFilePath, fileBuffer);
 
   let rawTextOutput = '';
@@ -97,7 +99,8 @@ export async function extractTextFromMultimodal(
     // 4. Perform native multimodal generation using the File URI
     const prompt = `Extract a comprehensive, highly detailed outline of all the educational content, chapters, sub-chapters, and topics in this document. 
     
-    CRITICAL INSTRUCTION: Do NOT transcribe or quote verbatim text. You MUST heavily paraphrase and summarize the key concepts to completely avoid copyright recitation filters. 
+    CRITICAL INSTRUCTION 1: If the document explicitly lists a Table of Contents, Chapter Titles, or Syllabus Themes (e.g. "Voortplanting", "Planten"), you MUST EXTRACT THOSE TITLES EXACTLY VERBATIM. Do not paraphrase the titles.
+    CRITICAL INSTRUCTION 2: For the body text or long paragraphs, do NOT transcribe or quote verbatim text. You MUST heavily paraphrase and summarize the key concepts to completely avoid copyright recitation filters. 
     
     Include enough detail so another AI can accurately estimate how many study hours this material requires.
     ${specialInstructions ? `\nUSER INSTRUCTIONS (focus on these): ${specialInstructions}` : ''}`;

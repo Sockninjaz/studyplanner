@@ -4,8 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Calendar from '@/components/calendar/calendar';
 import CalendarListView from '@/components/calendar/calendar-list-view';
-import SessionSidebar from '@/components/calendar/session-sidebar';
-import TaskSidebar from '@/components/calendar/task-sidebar';
 import AddItemModal from '@/components/calendar/add-item-modal';
 import CreateTaskModal from '@/components/calendar/create-task-modal';
 import { useSidebar } from '@/components/shared/sidebar-context';
@@ -101,21 +99,12 @@ export default function CalendarPage() {
   };
 
   const handleSessionClick = (sessionId: string) => {
-    setSelectedSessionId(sessionId);
-    setSelectedTaskId(null);
-    setIsSidebarOpen(true);
+    router.push(`/today?session=${sessionId}`);
   };
 
   const handleTaskClick = (taskId: string) => {
-    setSelectedTaskId(taskId);
-    setSelectedSessionId(null);
-    setIsSidebarOpen(true);
-  };
-
-  const handleCloseSidebar = () => {
-    setIsSidebarOpen(false);
-    setSelectedSessionId(null);
-    setSelectedTaskId(null);
+    // If you want tasks to also route somewhere or just do nothing for now
+    // We'll leave it empty since tasks can be edited via the 3-dots menu in list view
   };
 
   const handleAddItemClick = (date?: string) => {
@@ -181,25 +170,50 @@ export default function CalendarPage() {
     setIsTaskModalOpen(true);
   };
 
+  const [showOverloadModal, setShowOverloadModal] = useState(false);
+
   const handleRegenerateSchedule = async () => {
     try {
       setIsRegenerating(true);
       const res = await fetch('/api/calendar/regenerate', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'check' })
       });
-      if (!res.ok) throw new Error('Failed to regenerate');
+      if (!res.ok) throw new Error('Failed to check regeneration');
 
       const data = await res.json();
-      if (data.overloadWarning) {
-        alert("Schedule regenerated, but " + data.overloadWarning);
+      if (data.requiresDecision) {
+        setShowOverloadModal(true);
+        setIsRegenerating(false);
+        return;
       }
+      
+      // If no decision required, it fits safely. Run the actual save action.
+      await submitRegenerateAction('compress');
 
-      // Refresh the page to show the new schedule
-      window.location.reload();
     } catch (error) {
       console.error(error);
       alert('Error regenerating schedule');
-    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const submitRegenerateAction = async (action: 'compress' | 'allowOverload') => {
+    try {
+      setIsRegenerating(true);
+      setShowOverloadModal(false);
+      const res = await fetch('/api/calendar/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+      if (!res.ok) throw new Error('Failed to regenerate');
+      
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert('Error saving schedule');
       setIsRegenerating(false);
     }
   };
@@ -209,7 +223,7 @@ export default function CalendarPage() {
       <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-slate-900">
         {/* Main Content Area */}
         <div className="flex-1 flex flex-row overflow-hidden">
-          <div className={`transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-[calc(100%-280px)]' : 'w-full'}`}>
+          <div className="transition-all duration-300 flex flex-col w-full">
             {/* View Toggle and Header - Clean, no borders */}
             <div className="bg-[#ffff] dark:bg-slate-900 px-3 py-2 flex items-center justify-between h-14 flex-shrink-0 border-b border-gray-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
@@ -271,7 +285,7 @@ export default function CalendarPage() {
                   {isRegenerating ? 'Regenerating...' : 'Regenerate'}
                 </button>
                 <button
-                  onClick={() => setIsAddItemModalOpen(true)}
+                  onClick={() => router.push('/exams/create')}
                   className="bg-[rgb(54,65,86)] text-white px-3 py-1 rounded hover:bg-opacity-90 transition-colors flex items-center gap-1.5 shadow-sm text-xs font-medium"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,7 +306,7 @@ export default function CalendarPage() {
                     onAddItemClick={handleAddItemClick}
                     onExamView={handleExamView}
                     onExamEdit={handleExamEdit}
-                    sidebarOpen={isSidebarOpen}
+                    sidebarOpen={false}
                     sidebarCollapsed={isSidebarCollapsed}
                   />
                 </div>
@@ -302,7 +316,7 @@ export default function CalendarPage() {
                     ref={calendarRef}
                     onSessionClick={handleSessionClick}
                     onAddItemClick={handleAddItemClick}
-                    sidebarOpen={isSidebarOpen}
+                    sidebarOpen={false}
                     sidebarCollapsed={isSidebarCollapsed}
                     onDatesSet={handleDatesSet}
                   />
@@ -311,24 +325,7 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {/* Sidebar - Session or Task */}
-          {isSidebarOpen && (
-            <div className="w-[280px] flex-shrink-0 transition-all duration-300 flex flex-col border-l border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-              <div className="flex-1 overflow-hidden">
-                {selectedSessionId ? (
-                  <SessionSidebar
-                    sessionId={selectedSessionId}
-                    onClose={handleCloseSidebar}
-                  />
-                ) : selectedTaskId ? (
-                  <TaskSidebar
-                    taskId={selectedTaskId}
-                    onClose={handleCloseSidebar}
-                  />
-                ) : null}
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
 
@@ -351,6 +348,60 @@ export default function CalendarPage() {
       />
 
       {/* Exam Modal - View */}
+
+      {/* Overload Decision Modal */}
+      {showOverloadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Schedule Overload Warning</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">
+                Your remaining study material is too dense to fit into your available days without exceeding your daily maximum limit. How would you like to handle the overflow?
+              </p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => submitRegenerateAction('compress')}
+                  disabled={isRegenerating}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-left"
+                >
+                  <div>
+                    <div className="font-bold">Compress Chapters to Fit</div>
+                    <div className="text-xs mt-1 opacity-80">Sessions over your daily limit are merged into combined topics (e.g. "Chapter 5 &amp; Chapter 6") at the cost of less in-depth coverage.</div>
+                  </div>
+                  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+
+                <button
+                  onClick={() => submitRegenerateAction('allowOverload')}
+                  disabled={isRegenerating}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left"
+                >
+                  <div>
+                    <div className="font-bold">Keep All Sessions</div>
+                    <div className="text-xs mt-1 opacity-80">Place all sessions anyway, allowing your schedule to exceed the daily limit.</div>
+                  </div>
+                  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+              <button
+                onClick={() => setShowOverloadModal(false)}
+                disabled={isRegenerating}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </>
   );

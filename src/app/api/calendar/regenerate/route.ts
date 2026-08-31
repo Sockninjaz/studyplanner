@@ -17,10 +17,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const result = await regenerateSchedule(user);
+        const body = await request.json().catch(() => ({}));
+        const action = body.action as 'check' | 'compress' | 'allowOverload' | undefined;
+        const forceRegenerateExamId = body.examId as string | undefined;
+
+        const result = await regenerateSchedule(user, {}, forceRegenerateExamId, action);
 
         return NextResponse.json({
             message: result.message || 'Schedule regenerated successfully',
+            requiresDecision: result.requiresDecision,
             overloadWarning: result.overloadWarning,
             overloadedDays: result.overloadedDays
         }, { status: 200 });

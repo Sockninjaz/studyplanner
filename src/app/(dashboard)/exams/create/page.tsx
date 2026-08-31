@@ -69,6 +69,29 @@ function CreateExamContent() {
         const { data } = await res.json();
         setSubject(data.subject);
         setDate(new Date(data.date).toISOString().split('T')[0]);
+        if (data.rawMaterialText) {
+          setRawMaterialText(data.rawMaterialText);
+          
+          let text = data.rawMaterialText;
+          let parsedBookTitle = '';
+          let parsedBookEdition = '';
+
+          const lines = text.split('\n');
+          const remainingLines: string[] = [];
+          for (const line of lines) {
+            if (line.startsWith('Book: ')) {
+              parsedBookTitle = line.replace('Book: ', '').trim();
+            } else if (line.startsWith('Edition/Level: ')) {
+              parsedBookEdition = line.replace('Edition/Level: ', '').trim();
+            } else {
+              remainingLines.push(line);
+            }
+          }
+
+          if (parsedBookTitle) setBookTitle(parsedBookTitle);
+          if (parsedBookEdition) setBookEdition(parsedBookEdition);
+          setRawTextInput(remainingLines.join('\n').trim());
+        }
         // Reconstruct analysis object so they can edit
         const totalEstimated = data.studyMaterials.reduce((s: number, m: any) => s + (m.user_estimated_total_hours || 0), 0);
         const analysis = {
@@ -108,10 +131,12 @@ function CreateExamContent() {
     }
   };
 
+  const roundToHalfHour = (h: number): number => Math.max(0.5, Math.round(h * 2) / 2);
+
   const getDisplayHours = (idx: number): number => {
     const total = adjustedTotalHours ?? 0;
     const w = chapterWeights[idx] ?? 0;
-    return parseFloat((w * total).toFixed(1));
+    return roundToHalfHour(w * total);
   };
 
   const initWeights = (analysis: any) => {
@@ -129,12 +154,13 @@ function CreateExamContent() {
     const n = localChapters.length;
     const currentTotal = adjustedTotalHours ?? 1;
     const avgHours = n > 0 ? currentTotal / n : 1;
-    const newTotal = currentTotal + avgHours;
+    let newTotal = currentTotal + avgHours;
+    newTotal = roundToHalfHour(newTotal);
 
     const scaledWeights = chapterWeights.map(w => w * currentTotal / newTotal);
     const newWeight = avgHours / newTotal;
     setChapterWeights([...scaledWeights, newWeight]);
-    setAdjustedTotalHours(parseFloat(newTotal.toFixed(1)));
+    setAdjustedTotalHours(newTotal);
     setLocalChapters(prev => [...prev, {
       chapter: name,
       difficulty: 3,
@@ -150,7 +176,9 @@ function CreateExamContent() {
     const sum = newWeights.reduce((s, w) => s + w, 0);
     const normalized = sum > 0 ? newWeights.map(w => w / sum) : newWeights.map(() => 1 / newWeights.length);
     const removedHours = getDisplayHours(idx);
-    setAdjustedTotalHours(prev => parseFloat(Math.max(1, (prev ?? 0) - removedHours).toFixed(1)));
+    let newTotal = Math.max(1, (adjustedTotalHours ?? 0) - removedHours);
+    newTotal = roundToHalfHour(newTotal);
+    setAdjustedTotalHours(newTotal);
     setChapterWeights(normalized);
     setLocalChapters(newChapters);
   };
@@ -161,7 +189,7 @@ function CreateExamContent() {
 
   const handleGlobalHoursChange = (newTotal: number) => {
     if (newTotal <= 0) return;
-    setAdjustedTotalHours(parseFloat(newTotal.toFixed(1)));
+    setAdjustedTotalHours(roundToHalfHour(newTotal));
   };
 
   const handleChapterWeightChange = (idx: number, direction: 1 | -1) => {
@@ -194,7 +222,7 @@ function CreateExamContent() {
   };
 
   const handleFileSelect = (files: FileList | File[]) => {
-    const allowedExtensions = ['pdf', 'docx', 'pptx', 'txt', 'md', 'html', 'htm', 'json', 'zip'];
+    const allowedExtensions = ['pdf', 'docx', 'pptx', 'txt', 'md', 'html', 'htm', 'json', 'zip', 'png', 'jpg', 'jpeg'];
     const newFiles: File[] = [];
     let hasError = false;
 
@@ -202,7 +230,7 @@ function CreateExamContent() {
       const hasExtension = file.name.includes('.');
       const ext = hasExtension ? file.name.toLowerCase().split('.').pop() || '' : '';
       const isAllowedExt = hasExtension && allowedExtensions.includes(ext);
-      const isAllowedType = file.type === 'application/pdf' || file.type.includes('word') || file.type.includes('presentation') || file.type.includes('text') || file.type.includes('json') || file.type.includes('zip');
+      const isAllowedType = file.type === 'application/pdf' || file.type.includes('word') || file.type.includes('presentation') || file.type.includes('text') || file.type.includes('json') || file.type.includes('zip') || file.type.startsWith('image/');
       
       if (!isAllowedExt && !isAllowedType && !(!hasExtension && !file.type)) {
         hasError = true;
@@ -212,7 +240,7 @@ function CreateExamContent() {
     });
 
     if (hasError) {
-      setAiError(`Some files were unsupported. Use: .pdf, .docx, .pptx, .txt, .md, .html, .json, .zip`);
+      setAiError(`Some files were unsupported. Use: .pdf, .docx, .pptx, .txt, .md, .html, .json, .zip, .png, .jpg`);
     } else {
       setAiError(null);
     }
@@ -221,6 +249,17 @@ function CreateExamContent() {
 
   const removeFile = (idx: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleDifficultyChange = (newDifficulty: number) => {
+    setDifficulty(newDifficulty);
+    if (aiAnalysis) {
+      const actualSum = aiAnalysis.chapters.reduce((sum: number, c: any) => sum + (c.user_estimated_total_hours || 0), 0);
+      let base = actualSum > 0 ? actualSum : aiAnalysis.totalEstimatedHours;
+      const multiplier = 1 + (newDifficulty - 3) * 0.125;
+      base *= multiplier;
+      setAdjustedTotalHours(roundToHalfHour(base));
+    }
   };
 
   const handleAnalyze = async () => {
@@ -272,7 +311,7 @@ function CreateExamContent() {
       const multiplier = 1 + (difficulty - 3) * 0.125;
       base *= multiplier;
       
-      setAdjustedTotalHours(parseFloat(base.toFixed(1)));
+      setAdjustedTotalHours(roundToHalfHour(base));
       initWeights(data.analysis);
     } catch (error: any) {
       setAiError(error.message || 'Failed to analyze material');
@@ -297,12 +336,9 @@ function CreateExamContent() {
     setIsSubmitting(true);
     try {
       const total = adjustedTotalHours ?? aiAnalysis.totalEstimatedHours;
-      const sessionHours = userPreferences.session_duration / 60;
 
       const rawHours = localChapters.map((_ch: any, idx: number) => {
-        const raw = (chapterWeights[idx] ?? (1 / localChapters.length)) * total;
-        const sessions = Math.max(1, Math.round(raw / sessionHours));
-        return sessions * sessionHours;
+        return roundToHalfHour((chapterWeights[idx] ?? (1 / localChapters.length)) * total);
       });
 
       const finalChapters = localChapters.map((ch: any, idx: number) => ({
@@ -332,10 +368,9 @@ function CreateExamContent() {
       const responseData = await res.json();
       if (!res.ok) throw new Error(responseData.error || 'Failed to create exam');
 
-      if (responseData.data?.overloadWarning) {
+      if (responseData.data?.requiresDecision) {
         setOverloadWarning({
           examId: responseData.data.exam._id,
-          warning: responseData.data.overloadWarning,
           overloadedDays: responseData.data.overloadedDays,
         });
         return;
@@ -364,9 +399,25 @@ function CreateExamContent() {
     }
   };
 
+  const submitRegenerateAction = async (action: 'compress' | 'allowOverload') => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/calendar/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, examId: overloadWarning?.examId || editId }),
+      });
+      if (!res.ok) throw new Error('Failed to apply decision');
+      finishAndRedirect();
+    } catch (error) {
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="h-full overflow-y-auto bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 flex flex-col">
-      <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col">
+    <div className="h-full overflow-hidden bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 flex flex-col">
+      <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col min-h-0">
         <div className="mb-4 flex items-center justify-between shrink-0">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{editId ? 'Edit Exam' : 'Create New Exam'}</h1>
@@ -378,8 +429,8 @@ function CreateExamContent() {
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700 flex-1 flex flex-col min-h-0 overflow-hidden">
-          <form id="exam-form" onSubmit={handleSubmit} className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          <form id="exam-form" onSubmit={handleSubmit} className="flex flex-col h-full min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 h-full">
                 {/* Basics Section */}
                 <section className="space-y-4 flex flex-col">
@@ -426,7 +477,7 @@ function CreateExamContent() {
                       max="5"
                       step="1"
                       value={difficulty}
-                      onChange={(e) => setDifficulty(parseInt(e.target.value))}
+                      onChange={(e) => handleDifficultyChange(parseInt(e.target.value))}
                       className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 accent-blue-600"
                     />
                     <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">
@@ -558,7 +609,10 @@ function CreateExamContent() {
                       </h3>
                       <p className="text-xs text-green-700 dark:text-green-500 mt-0.5">Review and tweak recommendations.</p>
                     </div>
-                    <button type="button" onClick={() => { setAiAnalysis(null); setUploadedFiles([]); }} className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg shadow-sm">Reset</button>
+                    <button type="button" onClick={() => setAiAnalysis(null)} className="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800/50 px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      Edit Material
+                    </button>
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-xl p-2.5 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
@@ -582,7 +636,7 @@ function CreateExamContent() {
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto pr-2 space-y-2">
+                  <div className="flex-1 overflow-y-auto pr-2 space-y-2 max-h-[40vh]">
                     <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Chapter Breakdown</p>
                     <div className="grid gap-1.5">
                       {localChapters.map((ch: any, idx: number) => {
@@ -597,7 +651,7 @@ function CreateExamContent() {
                             />
                             <div className="flex items-center gap-1 shrink-0 bg-slate-50 dark:bg-slate-900 rounded-md p-0.5 border border-slate-100 dark:border-slate-700">
                               <button type="button" onClick={() => handleChapterWeightChange(idx, -1)} className="w-5 h-5 rounded hover:bg-white dark:hover:bg-slate-700 shadow-sm flex items-center justify-center font-bold text-slate-500 text-xs">-</button>
-                              <span className="w-8 text-center font-bold text-slate-700 dark:text-slate-300 text-xs">{displayHours.toFixed(1)}h</span>
+                              <span className="w-8 text-center font-bold text-slate-700 dark:text-slate-300 text-xs">{displayHours}h</span>
                               <button type="button" onClick={() => handleChapterWeightChange(idx, 1)} className="w-5 h-5 rounded hover:bg-white dark:hover:bg-slate-700 shadow-sm flex items-center justify-center font-bold text-slate-500 text-xs">+</button>
                             </div>
                             <button type="button" onClick={() => handleDeleteChapter(idx)} className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors shrink-0">
@@ -606,6 +660,24 @@ function CreateExamContent() {
                           </div>
                         );
                       })}
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newChapterName}
+                        onChange={(e) => setNewChapterName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddChapter(); } }}
+                        placeholder="Add missing material manually..."
+                        className="flex-1 text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddChapter}
+                        disabled={!newChapterName.trim()}
+                        className="px-3 py-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold text-xs rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 disabled:opacity-50 transition-colors"
+                      >
+                        Add
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -630,35 +702,53 @@ function CreateExamContent() {
         </div>
       </div>
 
-      {/* Overload Warning Modal */}
-      {overloadWarning && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-          <div className="relative z-[60] w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
-            <div className="p-6 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/50">
-              <h2 className="text-xl font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
-                ⚠️ Daily Limit Reached
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <p className="text-slate-700 dark:text-slate-300 font-medium">
-                {overloadWarning.overloadedDays.length} day(s) exceed your limit of {overloadWarning.overloadedDays[0]?.limit} sessions.
+      {overloadWarning && overloadWarning.overloadedDays && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Schedule Overload Warning</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">
+                Your remaining study material is too dense to fit into your available days without exceeding your daily maximum limit. How would you like to handle the overflow?
               </p>
-              <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 max-h-40 overflow-y-auto">
-                {overloadWarning.overloadedDays.map((day: any) => (
-                  <div key={day.date} className="flex justify-between items-center py-1">
-                    <span className="text-slate-600 dark:text-slate-400 text-sm font-medium" suppressHydrationWarning>{new Date(day.date).toLocaleDateString()}</span>
-                    <span className="text-red-600 dark:text-red-400 font-bold bg-red-100 dark:bg-red-900/40 px-2 py-0.5 rounded-md text-xs">{day.sessions} / {day.limit}</span>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => submitRegenerateAction('compress')}
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-left"
+                >
+                  <div>
+                    <div className="font-bold">Compress Chapters to Fit</div>
+                    <div className="text-xs mt-1 opacity-80">Sessions over your daily limit are merged into combined topics (e.g. "Chapter 5 &amp; Chapter 6") at the cost of less in-depth coverage.</div>
                   </div>
-                ))}
+                  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+
+                <button
+                  onClick={() => submitRegenerateAction('allowOverload')}
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left"
+                >
+                  <div>
+                    <div className="font-bold">Keep All Sessions</div>
+                    <div className="text-xs mt-1 opacity-80">Place all sessions anyway, allowing your schedule to exceed the daily limit.</div>
+                  </div>
+                  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
               </div>
             </div>
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-4">
-              <button onClick={handleDeleteExam} disabled={isDeletingExam} className="flex-1 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                {isDeletingExam ? 'Undoing...' : 'Undo'}
-              </button>
-              <button onClick={finishAndRedirect} className="flex-1 py-2.5 bg-red-600 text-white font-bold rounded-xl shadow-md hover:bg-red-700 transition-colors">
-                Keep Anyway
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+              <button
+                onClick={handleDeleteExam}
+                disabled={isDeletingExam || isSubmitting}
+                className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                {isDeletingExam ? 'Undoing...' : 'Undo Exam Creation'}
               </button>
             </div>
           </div>

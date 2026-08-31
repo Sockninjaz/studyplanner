@@ -13,7 +13,8 @@ export interface ITask {
 }
 
 export interface IStudySession extends Document {
-  title: string;
+  title: string;        // Full descriptive title, shown in session detail
+  shortTitle?: string;  // Short display title, shown on calendar/list
   subject: string;
   startTime: Date;
   endTime: Date;
@@ -39,6 +40,7 @@ const TaskSchema: Schema = new Schema({
 
 const StudySessionSchema: Schema = new Schema({
   title: { type: String, required: true },
+  shortTitle: { type: String },
   subject: { type: String, required: true },
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },

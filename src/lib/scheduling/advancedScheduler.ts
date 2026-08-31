@@ -1327,7 +1327,7 @@ export class StudyPlannerV1 {
           const dayBeforeExam = new Date(examDateUTC.getTime() - 24 * 60 * 60 * 1000);
           const dayBeforeExamStr = dayBeforeExam.toISOString().split('T')[0];
 
-          if (overloadedDay.date === dayBeforeExamStr) {
+          if (overloadedDay.date === dayBeforeExamStr && daySchedule.get(examId)! <= 1) {
             console.log(`    SKIP: ${overloadedDay.date} is day before exam for ${exam.subject}, protecting final review session`);
             continue;
           }
@@ -1427,7 +1427,7 @@ export class StudyPlannerV1 {
           const dayBeforeExam = new Date(examDateUTC.getTime() - 24 * 60 * 60 * 1000);
           const dayBeforeExamStr = dayBeforeExam.toISOString().split('T')[0];
 
-          if (busyDay.date === dayBeforeExamStr) {
+          if (busyDay.date === dayBeforeExamStr && daySchedule.get(examId)! <= 1) {
             console.log(`    SKIP: ${busyDay.date} is day before exam for ${exam.subject}, protecting final review session`);
             continue;
           }
@@ -1533,7 +1533,7 @@ export class StudyPlannerV1 {
           const dayBeforeExam = new Date(examDateUTC.getTime() - 24 * 60 * 60 * 1000);
           const dayBeforeExamStr = dayBeforeExam.toISOString().split('T')[0];
 
-          if (heavyDay.date === dayBeforeExamStr) continue;
+          if (heavyDay.date === dayBeforeExamStr && heavySchedule.get(examId)! <= 1) continue;
 
           // Check if light day is valid for this exam
           const validSlots = this.generateValidSlotsForExam(exam);
@@ -1663,7 +1663,7 @@ export class StudyPlannerV1 {
           // Don't move final review (day before exam)
           const examDateUTC = new Date(exam.exam_date.toISOString().split('T')[0] + 'T00:00:00.000Z');
           const dayBeforeStr = new Date(examDateUTC.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          if (heaviest.date === dayBeforeStr) {
+          if (heaviest.date === dayBeforeStr && heavySchedule.get(examId)! <= 1) {
             console.log(`  Skip ${exam.subject} on ${heaviest.date}: final review day`);
             continue;
           }
@@ -2160,6 +2160,11 @@ export class StudyPlannerV1 {
     // All exams (including single) go through the unified scoring engine
     const STUDY_CHUNK_HOURS = this.inputs.session_duration / 60;
     const mergedSchedule = this.mergeExamsIntoDailyPlan();
+
+    // Balance and enforce rules on the merged schedule
+    this.addEmptyDaysToSchedule(mergedSchedule);
+    this.balanceWorkload(mergedSchedule);
+    this.enforceMaxOneDifference(mergedSchedule);
 
     // Convert merged schedule to DailySchedule format
     mergedSchedule.forEach((examSessions, dateStr) => {

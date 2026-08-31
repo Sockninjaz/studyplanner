@@ -12,25 +12,39 @@ interface Props {
 
 export default function Timer({ duration, onComplete, sessionId, session }: Props) {
   const {
-    mode,
-    timeLeft,
-    sessionCount,
+    activeSessionId,
+    mode: globalMode,
+    timeLeft: globalTimeLeft,
+    sessionCount: globalSessionCount,
+    duration: globalDuration,
     startTimer,
     pauseTimer,
     continueTimer,
     resetTimer,
     switchToBreak,
     switchToSession,
-    isPaused,
+    isPaused: globalIsPaused,
     tasks,
     addTask,
     toggleTaskComplete,
     deleteTask,
     selectTask,
-    currentTaskId
+    currentTaskId,
+    initializeSession,
+    getSessionState
   } = useTimer();
 
   const [newTaskText, setNewTaskText] = useState('');
+
+  // Determine which state to show: the active global state, or the saved paused state for this specific session
+  const isActive = !sessionId || sessionId === activeSessionId;
+  const savedState = !isActive && sessionId ? getSessionState(sessionId) : null;
+
+  const mode = isActive ? globalMode : (savedState?.mode || 'idle');
+  const currentDuration = isActive ? globalDuration : duration;
+  const timeLeft = isActive ? globalTimeLeft : (savedState?.timeLeft || currentDuration * 60);
+  const isPaused = isActive ? globalIsPaused : true; // Inactive sessions are always paused visually
+  const sessionCount = isActive ? globalSessionCount : (savedState?.sessionCount || 0);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -39,9 +53,9 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
   };
 
   const getProgressPercentage = () => {
-    const totalTime = mode === 'session' ? 25 * 60 : 5 * 60;
+    const totalTime = mode === 'session' ? currentDuration * 60 : 5 * 60;
     const elapsed = totalTime - timeLeft;
-    return (elapsed / totalTime) * 100;
+    return Math.max(0, Math.min(100, (elapsed / totalTime) * 100));
   };
 
   const handleAddTask = () => {
@@ -49,6 +63,29 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
       addTask(newTaskText.trim());
       setNewTaskText('');
     }
+  };
+
+  const handleAction = (action: () => void) => {
+    if (!isActive && sessionId) {
+      // If there's another session active, warn the user
+      if (activeSessionId) {
+        if (!window.confirm("Je hebt nog een andere sessie lopen! Wil je deze pauzeren en overschakelen naar deze sessie?")) {
+          return;
+        }
+      }
+      initializeSession(sessionId, session, duration);
+      // Wait for state to update, then perform action
+      setTimeout(action, 0);
+    } else {
+      action();
+    }
+  };
+
+  const handleStartTimer = () => {
+    handleAction(() => {
+      if (mode === 'idle') startTimer('session');
+      else continueTimer();
+    });
   };
 
   return (
@@ -82,7 +119,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
         {/* Mode Selection */}
         <div className="flex justify-center gap-2 mb-6">
           <button
-            onClick={() => mode === 'idle' ? null : switchToSession()}
+            onClick={() => mode === 'idle' ? null : handleAction(switchToSession)}
             className={`px-4 py-2 rounded-xl font-bold transition-all text-xs uppercase tracking-wide ${mode === 'idle'
               ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-50'
               : mode === 'session'
@@ -94,7 +131,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
             Session
           </button>
           <button
-            onClick={() => mode === 'idle' ? null : switchToBreak()}
+            onClick={() => mode === 'idle' ? null : handleAction(switchToBreak)}
             className={`px-4 py-2 rounded-xl font-bold transition-all text-xs uppercase tracking-wide ${mode === 'idle'
               ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-50'
               : mode === 'break'
@@ -110,7 +147,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
         {/* Action Buttons */}
         <div className="flex gap-3 justify-center items-center">
           <button
-            onClick={resetTimer}
+            onClick={() => handleAction(resetTimer)}
             className="rounded-xl bg-slate-200 dark:bg-slate-800 p-3 font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors"
             title="Reset Timer"
           >
@@ -121,7 +158,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
 
           {mode === 'idle' && (
             <button
-              onClick={() => startTimer('session')}
+              onClick={handleStartTimer}
               className="rounded-xl bg-blue-600 px-8 py-3 font-bold text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2 text-base"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -131,7 +168,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
 
           {mode !== 'idle' && isPaused && (
             <button
-              onClick={continueTimer}
+              onClick={handleStartTimer}
               className="rounded-xl bg-blue-600 px-8 py-3 font-bold text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2 text-base"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -141,7 +178,7 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
 
           {mode !== 'idle' && !isPaused && (
             <button
-              onClick={pauseTimer}
+              onClick={() => handleAction(pauseTimer)}
               className="rounded-xl bg-amber-500 px-8 py-3 font-bold text-white hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/30 flex items-center gap-2 text-base"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>

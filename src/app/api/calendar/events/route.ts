@@ -21,10 +21,42 @@ export async function GET(request: Request) {
     }
 
     // Get all exams for the user
-    const exams = await Exam.find({ user: user._id });
+    let exams = await Exam.find({ user: user._id });
 
-    // Get all study sessions for the user
-    const sessions = await StudySession.find({ user: user._id });
+    // Filter out exams completed more than 24 hours ago
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    exams = exams.filter(exam => {
+      if (exam.isCompleted) {
+        if (exam.completedAt) {
+          return new Date(exam.completedAt) >= twentyFourHoursAgo;
+        }
+        return false; // hide if completed but missing timestamp (legacy)
+      }
+      return true; // keep if not completed
+    });
+    
+    const validExamIds = new Set(exams.map(e => e._id.toString()));
+
+    // Get all study sessions for the user, but only for valid exams
+    let sessions = await StudySession.find({ user: user._id });
+    sessions = sessions.filter(session => validExamIds.has(session.exam?.toString()));
+
+    // AUTO-REGENERATE RECOVERY: If user has active exams but ZERO uncompleted sessions left,
+    // automatically trigger regenerateSchedule to restore their study/review sessions!
+    const uncompletedCount = sessions.filter(s => !s.isCompleted).length;
+    const activeExams = exams.filter(e => !e.isCompleted);
+
+    if (activeExams.length > 0 && uncompletedCount === 0) {
+      console.log('Detected active exams with 0 uncompleted sessions. Auto-regenerating schedule recovery...');
+      const { regenerateSchedule } = await import('@/lib/scheduling/regenerateSchedule');
+      await regenerateSchedule(user, {}, undefined, 'allowOverload');
+      
+      // Re-fetch regenerated sessions
+      sessions = await StudySession.find({ user: user._id });
+      sessions = sessions.filter(session => validExamIds.has(session.exam?.toString()));
+    }
 
     // Get all tasks for the user
     const tasks = await Task.find({ userId: user._id });
@@ -87,15 +119,16 @@ export async function GET(request: Request) {
         end: new Date(new Date(exam.date).getTime() + 2 * 60 * 60 * 1000), // 2 hours duration
         allDay: false,
         editable: false, // Exams cannot be dragged
-        backgroundColor: applyOpacity(color, 0.4),
-        borderColor: color,
+        backgroundColor: exam.isCompleted ? '#10b981' : applyOpacity(color, 0.4),
+        borderColor: exam.isCompleted ? '#059669' : color,
         textColor: '#ffffff',
         url: `/exams`,
         extendedProps: {
           type: 'exam',
           examId: exam._id,
           subject: exam.subject,
-          color: color
+          color: color,
+          isCompleted: exam.isCompleted
         }
       };
     });
@@ -105,9 +138,13 @@ export async function GET(request: Request) {
       const examColor = examColorMap.get(session.exam.toString()) || '#3b82f6'; // Fallback to blue
       const taskCompleted = session.isCompleted;
 
+      // Use shortTitle for the chip label (short), fall back to stripping the colon from full title
+      const displayTitle = (session as any).shortTitle
+        || (session.title.includes(':') ? session.title.split(':')[0].trim() : session.title);
+
       return {
         id: `session-${session._id}`,
-        title: session.title,
+        title: `${session.subject}: ${displayTitle}`,
         start: session.startTime,
         end: session.endTime,
         allDay: false,

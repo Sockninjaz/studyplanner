@@ -5,6 +5,7 @@ export interface IStudyMaterial {
   difficulty: number;
   confidence: number;
   user_estimated_total_hours: number;
+  formulas?: string[];
   completed: boolean;
 }
 
@@ -18,6 +19,8 @@ export interface IExam extends Document {
   rawMaterialText?: string;
   useRag: boolean;
   color?: string;
+  isCompleted?: boolean;
+  completedAt?: Date;
 }
 
 const StudyMaterialSchema = new Schema<IStudyMaterial>({
@@ -25,6 +28,7 @@ const StudyMaterialSchema = new Schema<IStudyMaterial>({
   difficulty: { type: Number, required: true, min: 1, max: 5 },
   confidence: { type: Number, required: true, min: 1, max: 5 },
   user_estimated_total_hours: { type: Number, required: true, default: 5 },
+  formulas: [{ type: String }],
   completed: { type: Boolean, default: false },
 });
 
@@ -38,6 +42,8 @@ const ExamSchema: Schema = new Schema({
   rawMaterialText: { type: String },
   useRag: { type: Boolean, default: false },
   color: { type: String },
+  isCompleted: { type: Boolean, default: false },
+  completedAt: { type: Date },
 }, { timestamps: true });
 
 if (mongoose.models.Exam) {

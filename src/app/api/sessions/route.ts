@@ -36,7 +36,19 @@ export async function GET(request: Request) {
       query.startTime = { $gte: start, $lte: end };
     }
 
-    const sessions = await StudySession.find(query).populate('exam').sort({ startTime: 1 });
+    let sessions = await StudySession.find(query).populate('exam').sort({ startTime: 1 });
+
+    if (sessions.length === 0) {
+      const Exam = (await import('@/models/Exam')).default;
+      const activeExams = await Exam.find({ user: user._id, isCompleted: { $ne: true } });
+      if (activeExams.length > 0) {
+        console.log(`Auto-healing: Regenerating schedule for user ${user._id} because an active exam has 0 sessions`);
+        const { regenerateSchedule } = await import('@/lib/scheduling/regenerateSchedule');
+        await regenerateSchedule(user, {}, undefined, 'allowOverload');
+        sessions = await StudySession.find(query).populate('exam').sort({ startTime: 1 });
+      }
+    }
+
     return NextResponse.json({ data: sessions }, { status: 200 });
   } catch (error) {
     console.error('Error fetching sessions:', error);

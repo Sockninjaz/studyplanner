@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
 import Link from 'next/link';
+import confetti from 'canvas-confetti';
 
 interface StudySession {
   _id: string;
@@ -19,6 +20,7 @@ interface Exam {
   _id: string;
   subject: string;
   date: Date;
+  isCompleted?: boolean;
   studyMaterials?: Array<{
     chapter: string;
     book: string;
@@ -98,13 +100,55 @@ export default function ExamDetailPage() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-slate-100 mb-1.5">{exam.subject}</h1>
+            <h1 className={`text-2xl md:text-3xl font-bold mb-1.5 ${exam.isCompleted ? 'text-slate-500 line-through' : 'text-gray-900 dark:text-slate-100'}`}>{exam.subject}</h1>
             <div className="text-gray-500 dark:text-slate-400 text-sm md:text-base" suppressHydrationWarning>
               Scheduled for {new Date(exam.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
           </div>
           
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/exams/${exam._id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isCompleted: !exam.isCompleted })
+                  });
+                  if (res.ok) {
+                    if (!exam.isCompleted) {
+                      confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                      });
+                    }
+                    mutate(id ? `/api/exams/${id}` : null);
+                    mutate(id ? `/api/sessions?examId=${id}` : null);
+                  }
+                } catch (e) {
+                  console.error(e);
+                  alert('Failed to update completion status');
+                }
+              }}
+              className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium transition-colors shadow-sm border ${
+                exam.isCompleted 
+                  ? 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/30' 
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              {exam.isCompleted ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Completed
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Mark as Done
+                </>
+              )}
+            </button>
             <button
               onClick={() => router.push(`/exams/create?edit=${exam._id}`)}
               className="flex items-center gap-2 px-4 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium transition-colors shadow-sm"
@@ -164,136 +208,82 @@ export default function ExamDetailPage() {
           )}
         </div>
 
-        {/* Main Content Grid: Materials & Sessions */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8">
-          {/* Study Materials Column */}
-          <div className="xl:col-span-7">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100">Study Materials</h3>
-              <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-3 py-1 rounded-full">
-                {exam.studyMaterials?.length || 0} Topics
-              </span>
-            </div>
-            
-            {(!exam.studyMaterials || exam.studyMaterials.length === 0) ? (
-              <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-dashed border-slate-300 dark:border-slate-700 text-center">
-                <p className="text-slate-500 dark:text-slate-400 text-sm">No study materials listed for this exam.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {exam.studyMaterials.map((material, index) => (
-                  <div key={index} className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700/60 p-4 rounded-xl hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="pr-2">
-                        <p className="font-semibold text-sm text-gray-900 dark:text-slate-100 leading-tight mb-1">{material.chapter}</p>
-                        <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">{material.book}</p>
-                      </div>
-                      <span className={`shrink-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md ${
-                        material.completed 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
-                          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                      }`}>
-                        {material.completed ? 'Done' : 'Pending'}
-                      </span>
-                    </div>
-                    
-                    <div className="pt-2 mt-3 border-t border-slate-100 dark:border-slate-700/50 flex flex-wrap gap-x-3 gap-y-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded">
-                        <svg className="w-3 h-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        Diff: {material.difficulty}/5
-                      </span>
-                      <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded">
-                        <svg className="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        Conf: {material.confidence}/5
-                      </span>
-                      <span className="flex items-center gap-1 ml-auto text-slate-700 dark:text-slate-300 font-bold">
-                        <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        {material.user_estimated_total_hours || material.estimatedHours || 1}h
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Main Content: Study Sessions */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100">Study Sessions</h3>
+            <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2.5 py-1 rounded-full">
+              {sessions.length || 0} Sessions
+            </span>
           </div>
 
-          {/* Study Sessions Column */}
-          <div className="xl:col-span-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100">Study Sessions</h3>
-              <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold px-2.5 py-1 rounded-full">
-                {sessions.length || 0} Sessions
-              </span>
+          {sessionsLoading ? (
+            <div className="animate-pulse grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-24 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700"></div>
+              ))}
             </div>
-
-            {sessionsLoading ? (
-              <div className="animate-pulse space-y-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-24 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700"></div>
-                ))}
+          ) : sessions.length === 0 ? (
+            <div className="text-center py-8 bg-white dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+              <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               </div>
-            ) : sessions.length === 0 ? (
-              <div className="text-center py-8 bg-white dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
-                <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                </div>
-                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">No study sessions planned yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {sessions.map((session) => (
-                  <div key={session._id} className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700/60 p-4 md:p-5 rounded-xl hover:shadow-md transition-shadow">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-slate-100 text-base leading-tight mb-1.5">{session.title}</h4>
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded-md" suppressHydrationWarning>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            {new Date(session.startTime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                          </span>
-                          <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded-md" suppressHydrationWarning>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            {' - '}
-                            {new Date(session.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">No study sessions planned yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {sessions.map((session) => (
+                <div key={session._id} className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700/60 p-4 md:p-5 rounded-xl hover:shadow-md transition-shadow">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
+                    <div>
+                      <h4 className={`font-semibold text-base leading-tight mb-1.5 ${session.isCompleted ? 'text-slate-500 line-through' : 'text-gray-900 dark:text-slate-100'}`}>{session.title}</h4>
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                        <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded-md" suppressHydrationWarning>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                          {new Date(session.startTime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                        </span>
+                        <span className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded-md" suppressHydrationWarning>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {' - '}
+                          {new Date(session.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
-                      <span className={`shrink-0 px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
-                        session.isCompleted 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                      }`}>
-                        {session.isCompleted ? 'Completed' : 'Scheduled'}
-                      </span>
                     </div>
-                    
-                    {session.checklist && session.checklist.length > 0 && (
-                      <div className="pt-3 mt-2 border-t border-slate-100 dark:border-slate-700/50">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Tasks</p>
-                        <div className="space-y-2">
-                          {session.checklist.map((item, index) => (
-                            <div key={index} className="flex items-start gap-2 text-xs">
-                              <div className={`mt-0.5 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
-                                item.completed 
-                                  ? 'bg-green-500 border-green-500 text-white' 
-                                  : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600'
-                              }`}>
-                                {item.completed && <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>}
-                              </div>
-                              <span className={`leading-relaxed ${item.completed ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200'}`}>
-                                {item.task}
-                              </span>
+                    <span className={`shrink-0 px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
+                      session.isCompleted 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                    }`}>
+                      {session.isCompleted ? 'Completed' : 'Scheduled'}
+                    </span>
+                  </div>
+                  
+                  {session.checklist && session.checklist.length > 0 && (
+                    <div className="pt-3 mt-2 border-t border-slate-100 dark:border-slate-700/50">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Tasks</p>
+                      <div className="space-y-2">
+                        {session.checklist.map((item, index) => (
+                          <div key={index} className="flex items-start gap-2 text-xs">
+                            <div className={`mt-0.5 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                              item.completed 
+                                ? 'bg-green-500 border-green-500 text-white' 
+                                : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600'
+                            }`}>
+                              {item.completed && <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>}
                             </div>
-                          ))}
-                        </div>
+                            <span className={`leading-relaxed ${item.completed ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200'}`}>
+                              {item.task}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Delete Confirmation Dialog */}

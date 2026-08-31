@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  studySession?: mongoose.Types.ObjectId;
   createdAt: Date;
 }
 
@@ -16,6 +17,7 @@ export interface IChatSession extends Document {
 const MessageSchema = new Schema<IMessage>({
   role: { type: String, enum: ['user', 'assistant', 'system'], required: true },
   content: { type: String, required: true },
+  studySession: { type: Schema.Types.ObjectId, ref: 'StudySession' },
   createdAt: { type: Date, default: Date.now },
 });
 

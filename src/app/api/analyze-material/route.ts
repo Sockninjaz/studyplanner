@@ -15,10 +15,11 @@ import path from 'path';
 // Zod schema for the AI's structured response
 const StudyMaterialSchema = z.object({
   chapters: z.array(z.object({
-    chapter: z.string().describe('Topic/chapter name'),
+    chapter: z.string().describe('The core academic concept/theory being tested (e.g. "Quantum Mechanics", "Electromagnetism"). MUST NOT be the specific story context or application of the test question.'),
     difficulty: z.number().min(1).max(5).describe('Difficulty level 1-5'),
     confidence: z.number().min(1).max(5).describe('Expected student confidence 1-5'),
     user_estimated_total_hours: z.number().min(0.25).max(100).describe('Study hours for this chapter — can be fractional (e.g. 0.5), all chapters must sum to totalEstimatedHours'),
+    formulas: z.array(z.string()).describe('Key formulas, equations, or scientific laws explicitly mentioned in the material for this chapter. Return an empty array if none.'),
   })),
   summary: z.string().describe('Brief summary of the overall material'),
   isSuggestedFallback: z.boolean().describe('True if the user provided sparse input and you are generating high-level national curriculum milestones instead of concrete text extraction. False if the provided text was rich and sufficient.'),
@@ -26,6 +27,27 @@ const StudyMaterialSchema = z.object({
 });
 
 export type MaterialAnalysisResult = z.infer<typeof StudyMaterialSchema>;
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+function levenshteinDistance(a: string, b: string): number {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+  for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+      }
+    }
+  }
+  return matrix[a.length][b.length];
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -82,12 +104,12 @@ export async function POST(request: NextRequest) {
         parsedFileInfo.pageCount += (parsed.pageCount ?? 0);
         parsedFileInfo.names.push(fileName);
         
-        // Basic OCR fallback if text is too short for a PDF
-        if (parsed.text.trim().length < 50 && file.type === 'application/pdf') {
-          console.log(`[analyze-material] PDF text extraction yielded almost nothing for ${file.name}. Attempting Gemini Multimodal OCR...`);
+        // Basic OCR fallback if text is too short for a PDF, or if it is an image
+        if (parsed.text.trim().length < 50 && (file.type === 'application/pdf' || file.type.startsWith('image/'))) {
+          console.log(`[analyze-material] Text extraction yielded almost nothing for ${file.name}. Attempting Gemini Multimodal OCR...`);
           try {
             const { extractTextFromMultimodal } = await import('@/lib/ai/aiClient');
-            const ocrText = await extractTextFromMultimodal(buffer, 'application/pdf', specialInstructions || undefined);
+            const ocrText = await extractTextFromMultimodal(buffer, file.type, specialInstructions || undefined);
             if (ocrText && ocrText.trim().length >= 50) {
               console.log(`[analyze-material] Gemini OCR successful for ${file.name}.`);
               textToAnalyze += `\n[OCR Extracted Text for ${fileName}]:\n${ocrText}`;
@@ -154,7 +176,8 @@ export async function POST(request: NextRequest) {
 
     // If input is sparse (no file, text < 200 chars), we give the AI the ability to search the web to find the TOC.
     const isSparseInputForModelSelect = files.length === 0 && textToAnalyze.trim().length < 200;
-    const modelOverride = isSparseInputForModelSelect ? 'gpt-4o' : undefined;
+    // Always use gpt-4o for analysis to ensure it perfectly respects strict negative rules and schema constraints.
+    const modelOverride = 'gpt-4o';
     
     if (isSparseInputForModelSelect) {
       console.log(`[analyze-material] Sparse input detected. Checking local textbook database...`);
@@ -167,9 +190,75 @@ export async function POST(request: NextRequest) {
           
           const searchTitle = textToAnalyze.toLowerCase();
           
-          matchedTextbooks = textbooks.filter((book: any) => {
-            return searchTitle.includes(book.title.toLowerCase());
-          });
+          // Strip punctuation so "a," becomes "a" and "book:" becomes "book"
+          const cleanSearchTitle = searchTitle.replace(/[.,:;()]/g, '');
+          const searchTerms = cleanSearchTitle.split(/\s+/).filter(Boolean);
+          
+          let bestMatch = null;
+          let bestScore = 0;
+          
+          for (const book of textbooks) {
+            const bookWords = `${book.title} ${book.track} ${book.subject}`.toLowerCase().split(/\s+/).filter(Boolean);
+            
+            let score = 0;
+            for (const term of searchTerms) {
+               if (bookWords.some((bw: string) => {
+                 if (bw === term) return true;
+                 if (bw.length >= 3 && term.length >= 3 && (bw.startsWith(term) || term.startsWith(bw))) return true;
+                 
+                 // Levenshtein fuzzy matching for typos
+                 if (bw.length >= 4 && term.length >= 4) {
+                   const distance = levenshteinDistance(bw, term);
+                   if (bw.length >= 7 && distance <= 2) return true; // Tolerate 2 typos for long words
+                   if (distance <= 1) return true; // Tolerate 1 typo for medium words
+                 }
+                 return false;
+               })) {
+                 score++;
+               }
+            }
+            
+            const coreTitleWords = book.title.toLowerCase().split(/\s+/).filter((w: string) => !w.match(/^[0-9]+e$/) && w !== 'editie');
+            const hasCoreTitle = coreTitleWords.every((w: string) => {
+               return searchTerms.some((term) => {
+                 if (w === term) return true;
+                 if (w.length >= 3 && term.length >= 3 && (w.startsWith(term) || term.startsWith(w))) return true;
+                 if (w.length >= 4 && term.length >= 4) {
+                   const distance = levenshteinDistance(w, term);
+                   if (w.length >= 7 && distance <= 2) return true;
+                   if (distance <= 1) return true;
+                 }
+                 return false;
+               });
+            });
+            if (hasCoreTitle) score += 5; 
+            
+            if (score > bestScore && score >= 2) {
+              bestScore = score;
+              bestMatch = book;
+            }
+          }
+          
+          if (bestMatch) {
+             const coreMatchTitle = bestMatch.title.toLowerCase().split(/\s+/).filter((w: string) => !w.match(/^[0-9]+e$/) && w !== 'editie').join(' ');
+             matchedTextbooks = textbooks.filter((b: any) => {
+               const bCore = b.title.toLowerCase().split(/\s+/).filter((w: string) => !w.match(/^[0-9]+e$/) && w !== 'editie').join(' ');
+               return bCore === coreMatchTitle;
+             });
+             
+             // Try to narrow down to specific track if the user provided it
+             const exactTrackMatches = matchedTextbooks.filter((b: any) => {
+                const trackWords = b.track.toLowerCase().split(/\s+/).filter(Boolean);
+                return trackWords.every((w: string) => searchTerms.includes(w));
+             });
+             
+             // Reverted track filtering as per user request
+             // if (exactTrackMatches.length > 0) {
+             //    matchedTextbooks = exactTrackMatches;
+             // }
+          } else {
+             matchedTextbooks = [];
+          }
         }
       } catch (err) {
         console.error('[analyze-material] Error reading textbooks.json', err);
@@ -180,34 +269,13 @@ export async function POST(request: NextRequest) {
         const allChapters = matchedTextbooks.map((b: any) => `--- ${b.track} ---\n${b.chapters.join('\n')}`).join('\n\n');
         
         // Add a strict instruction to ONLY use these chapters
-        textToAnalyze = `Subject: ${subjectName}\nMaterial: ${textToAnalyze}\n\nAuthentic Textbook Contents Found in Database:\n${allChapters}\n\nCRITICAL INSTRUCTION: You MUST use the exact chapter titles from the database above that match the user's requested chapters. Do NOT invent generic chemistry chapters. If the user asks for H1 to H12, pick H1 to H12 exactly as they are named above.`;
+        textToAnalyze = `Subject: ${subjectName}\nMaterial: ${textToAnalyze}\n\nAuthentic Textbook Contents Found in Database:\n${allChapters}\n\nCRITICAL INSTRUCTION: You MUST use the exact word-for-word chapter titles from the database above that match the user's requested chapters. Do NOT invent, translate, or rephrase any chapters. Do NOT mix them with international curriculum standards. If the user asks for H1 to H12, pick H1 to H12 exactly as they are named above in the provided authentic contents. IMPORTANT PARSING RULE: If the user provides a sparse list of numbers separated by spaces or commas (e.g., "11 10 9 4" or "h11, 10, 9"), you MUST treat EVERY INDIVIDUAL NUMBER as a distinct, separate chapter request (e.g., Chapter 11, Chapter 10, Chapter 9, Chapter 4) and extract ALL of them from the database. Do not skip any numbers.`;
       } else {
-        console.log(`[analyze-material] No match found in database. Relying on AI's vast internal knowledge...`);
-        let profileContext = '';
-        if (userProfile) {
-          const parts = [];
-          if (userProfile.countryName) parts.push(`Country: ${userProfile.countryName}`);
-          if (userProfile.academicTierLabel) parts.push(`Track/Tier: ${userProfile.academicTierLabel}`);
-          if (userProfile.gradeLabel) parts.push(`Grade/Year: ${userProfile.gradeLabel}`);
-          if (userProfile.examBoardLabel) parts.push(`Exam Board: ${userProfile.examBoardLabel}`);
-          if (parts.length > 0) {
-            profileContext = `The user is in:\n${parts.join(' | ')}\n\nCRITICAL: Use this information (especially Grade and Track) to find the EXACT correct edition of the book. For example, if the user is in VWO 5, find the VWO 5 edition.\n\n`;
-          }
-        }
-
-        const prompt = `You are an expert study planner assistant with vast knowledge of all major international textbooks.
-        A user has given you a brief textbook title or study material description: "${textToAnalyze}" for the subject "${subjectName}".
-        ${profileContext}
-        Your goal is to output the EXACT authentic Table of Contents for this specific book and edition from your internal knowledge so it can be used for accurate study planning.
-        Provide a highly detailed chapter list.`;
-
-        const aiResponse = await generateText({
-          model: openai(modelOverride || 'gpt-4o'),
-          messages: [{ role: 'user', content: prompt }]
-        });
-        
-        // Update textToAnalyze to the AI's authentic textbook output
-        textToAnalyze = `Subject: ${subjectName}\nMaterial: ${textToAnalyze}\n\nAuthentic Textbook Contents Found by AI:\n${aiResponse.text}`;
+        console.log(`[analyze-material] No match found in database. Returning error to avoid hallucination.`);
+        return NextResponse.json(
+          { error: `We don't have "${textToAnalyze}" in our textbook database yet. Please copy-paste your exact chapter list or upload a syllabus instead.` },
+          { status: 400 }
+        );
       }
     }
 
@@ -224,6 +292,18 @@ export async function POST(request: NextRequest) {
     );
 
     console.log(`[analyze-material] AI returned ${analysis.chapters.length} chapters, ${analysis.totalEstimatedHours}h total`);
+
+    // Guarantee clean 0.5-hour step rounding for all chapter hours and total
+    let chaptersSum = 0;
+    analysis.chapters = analysis.chapters.map((ch: any) => {
+      const rounded = Math.max(0.5, Math.round((ch.user_estimated_total_hours || 1) * 2) / 2);
+      chaptersSum += rounded;
+      return {
+        ...ch,
+        user_estimated_total_hours: rounded,
+      };
+    });
+    analysis.totalEstimatedHours = chaptersSum;
 
     return NextResponse.json({
       success: true,

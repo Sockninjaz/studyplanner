@@ -24,6 +24,7 @@ export interface IUser extends Document {
   adjustment_percentage?: number; // Max percentage adjustment for difficulty/confidence (default: 25)
   session_duration?: number; // Duration of each study session in minutes (default: 30)
   enable_daily_limits?: boolean; // Whether to enforce daily maximums (default 2)
+  openai_api_key?: string; // BYOK (Bring Your Own Key) for OpenAI
   onboardingProfile?: IOnboardingProfile;
 }
 
@@ -36,6 +37,7 @@ const UserSchema: Schema = new Schema({
   adjustment_percentage: { type: Number, default: 25, min: 0, max: 25 },
   session_duration: { type: Number, default: 30, min: 15, max: 120 },
   enable_daily_limits: { type: Boolean, default: true },
+  openai_api_key: { type: String, select: false },
   studySessions: [{ type: Schema.Types.ObjectId, ref: 'StudySession' }],
   exams: [{ type: Schema.Types.ObjectId, ref: 'Exam' }],
   onboardingProfile: {

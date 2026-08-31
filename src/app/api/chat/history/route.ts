@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const examId = searchParams.get('examId');
+  const sessionId = searchParams.get('sessionId');
 
   if (!examId) {
     return NextResponse.json({ error: 'examId is required' }, { status: 400 });
@@ -20,7 +21,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const chatSession = await ChatSession.findOne({ exam: examId }).sort({ createdAt: -1 });
-    return NextResponse.json({ messages: chatSession ? chatSession.messages : [] });
+    let messages = chatSession ? chatSession.messages : [];
+    
+    // If sessionId is provided, only return messages that belong to this session
+    // (We still return the whole chat session if they just query by examId)
+    if (sessionId) {
+      messages = messages.filter((m: any) => m.studySession && m.studySession.toString() === sessionId);
+    }
+
+    return NextResponse.json({ messages });
   } catch (error) {
     console.error('Error fetching chat history:', error);
     return NextResponse.json({ error: 'Failed to fetch chat history' }, { status: 500 });

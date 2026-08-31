@@ -18,6 +18,8 @@ export default function SessionExecutionPage() {
     fetcher
   );
 
+  const { initializeSession } = useTimer();
+
   const handleSessionComplete = async () => {
     await fetch(`/api/sessions/${id}`,
       {
@@ -39,8 +41,6 @@ export default function SessionExecutionPage() {
   const duration = session.startTime && session.endTime 
     ? Math.round((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60))
     : 60; // Default to 60 minutes
-
-  const { initializeSession } = useTimer();
 
   useEffect(() => {
     if (session && id) {

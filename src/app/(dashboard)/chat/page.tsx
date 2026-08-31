@@ -31,7 +31,8 @@ export default function ChatPage() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   // Track whether the user has manually scrolled up during generation
   const userScrolledUp = useRef(false);
 
@@ -82,9 +83,9 @@ export default function ChatPage() {
   const handleMessagesScroll = () => {
     const el = messagesContainerRef.current;
     if (!el) return;
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    // If user scrolled more than 100px from the bottom, stop auto-scrolling
-    userScrolledUp.current = distanceFromBottom > 100;
+    const distanceFromBottom = Math.abs(el.scrollHeight - el.scrollTop - el.clientHeight);
+    // Tighter tolerance for being at the bottom to properly detect manual scroll up
+    userScrolledUp.current = distanceFromBottom > 10;
   };
 
   const sendMessage = async () => {
@@ -102,6 +103,8 @@ export default function ChatPage() {
     const assistantId = (Date.now() + 1).toString();
     setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
+    abortControllerRef.current = new AbortController();
+
     try {
       const allMessages = [...messages, userMessage].map((m) => ({ role: m.role, content: m.content }));
 
@@ -113,6 +116,7 @@ export default function ChatPage() {
           examId: selectedExamId,
           aiIntegration,
         }),
+        signal: abortControllerRef.current.signal,
       });
 
       if (!res.ok) throw new Error('Failed to send message');
@@ -131,23 +135,42 @@ export default function ChatPage() {
           prev.map((m) => m.id === assistantId ? { ...m, content: assistantText } : m)
         );
       }
-    } catch (error) {
-      console.error('Chat error:', error);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId ? { ...m, content: 'Sorry, something went wrong. Please try again.' } : m
-        )
-      );
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Generation stopped by user');
+      } else {
+        console.error('Chat error:', error);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: 'Sorry, something went wrong. Please try again.' } : m
+          )
+        );
+      }
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
       inputRef.current?.focus();
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const stopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      if (!isLoading) {
+        sendMessage();
+        // Reset height after sending
+        if (inputRef.current) {
+          inputRef.current.style.height = 'auto';
+        }
+      }
     }
   };
 
@@ -266,27 +289,46 @@ export default function ChatPage() {
                 </div>
   
                 {/* Input Area */}
-                <div className="p-3 bg-white dark:bg-slate-900 border-t border-neutral-dark/5 dark:border-slate-700">
+                <div className="px-4 pb-4 pt-2">
                   <div className="relative flex items-center">
-                    <input
+                    <textarea
                       ref={inputRef}
-                      type="text"
                       value={input}
-                      onChange={(e) => setInput(e.target.value)}
+                      onChange={(e) => {
+                        setInput(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                      }}
                       onKeyDown={handleKeyDown}
+                      rows={1}
                       placeholder={`Ask a question about ${selectedExam?.subject || 'your exam'}...`}
-                      className="w-full bg-neutral-light/50 dark:bg-slate-800 border-2 border-neutral-dark/10 dark:border-slate-700 rounded-full py-2.5 pl-4 pr-12 text-sm text-neutral-dark dark:text-slate-100 focus:outline-none focus:border-primary/50 focus:bg-white dark:focus:bg-slate-700 transition-all shadow-sm"
-                      disabled={isLoading}
+                      className="w-full bg-neutral-light/50 dark:bg-slate-800 border-2 border-neutral-dark/10 dark:border-slate-700 rounded-[20px] py-2.5 pl-4 pr-12 text-sm text-neutral-dark dark:text-slate-100 focus:outline-none focus:border-primary/50 focus:bg-white dark:focus:bg-slate-700 transition-all shadow-sm resize-none overflow-y-auto"
+                      style={{ minHeight: '44px', maxHeight: '200px' }}
                     />
-                    <button
-                      onClick={sendMessage}
-                      disabled={!input.trim() || isLoading}
-                      className="absolute right-1.5 p-1.5 bg-[rgb(54,65,86)] text-white rounded-full hover:bg-opacity-90 disabled:opacity-50 transition-all shadow-md"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                    {isLoading ? (
+                      <button
+                        onClick={stopGeneration}
+                        className="absolute right-1.5 bottom-1.5 p-1.5 bg-slate-500 text-white rounded-full hover:bg-slate-600 transition-all shadow-md"
+                        title="Stop generating"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <rect x="6" y="6" width="12" height="12" rx="2" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          sendMessage();
+                          if (inputRef.current) inputRef.current.style.height = 'auto';
+                        }}
+                        disabled={!input.trim()}
+                        className="absolute right-1.5 bottom-1.5 p-1.5 bg-[rgb(54,65,86)] text-white rounded-full hover:bg-opacity-90 disabled:opacity-50 transition-all shadow-md"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               </>

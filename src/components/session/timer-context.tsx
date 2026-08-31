@@ -34,6 +34,7 @@ interface TimerContextType {
   deleteTask: (taskId: string) => void;
   selectTask: (taskId: string) => void;
   saveTasksToSession: () => Promise<void>;
+  getSessionState: (id: string) => any;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -44,7 +45,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(60);
   
   const [mode, setMode] = useState<'idle' | 'session' | 'break'>('idle');
-  const [timeLeft, setTimeLeft] = useState(25 * 60);
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [isPaused, setIsPaused] = useState(false);
   const [sessionCount, setSessionCount] = useState(0);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -52,6 +53,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   const [endTime, setEndTime] = useState<number | null>(null);
   const [savedSessionTime, setSavedSessionTime] = useState<number | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [savedSessions, setSavedSessions] = useState<Record<string, any>>({});
 
   // Restore state from localStorage on mount
   useEffect(() => {
@@ -59,6 +61,8 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem('studyTimerState');
       if (saved) {
         const state = JSON.parse(saved);
+        setSavedSessions(state.savedSessions || {});
+        
         if (state.activeSessionId) {
           setActiveSessionId(state.activeSessionId);
           setActiveSessionData(state.activeSessionData);
@@ -82,7 +86,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
               setEndTime(null);
             }
           } else {
-            setTimeLeft(state.timeLeft || 25 * 60);
+            setTimeLeft(state.timeLeft || duration * 60);
             setEndTime(null); // Clear endTime if paused so it recalculates on resume
           }
         }
@@ -108,10 +112,11 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       currentTaskId,
       endTime,
       duration,
-      savedSessionTime
+      savedSessionTime,
+      savedSessions
     };
     localStorage.setItem('studyTimerState', JSON.stringify(state));
-  }, [isInitialized, activeSessionId, activeSessionData, mode, timeLeft, isPaused, sessionCount, tasks, currentTaskId, endTime, duration, savedSessionTime]);
+  }, [isInitialized, activeSessionId, activeSessionData, mode, timeLeft, isPaused, sessionCount, tasks, currentTaskId, endTime, duration, savedSessionTime, savedSessions]);
 
   // Core ticker logic
   useEffect(() => {
@@ -139,7 +144,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
           // Optional: handle full session completion automatically
         } else {
           setMode('session');
-          setTimeLeft(25 * 60);
+          setTimeLeft(duration * 60);
           setEndTime(null);
           setIsPaused(true);
         }
@@ -166,18 +171,20 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     if (activeSessionId) {
       const saveTasks = async () => {
         try {
-          await fetch(`/api/sessions/${activeSessionId}`, {
+          const res = await fetch(`/api/sessions/${activeSessionId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tasks }),
           });
+          if (res.status === 404) {
+            setActiveSessionId(null);
+            return;
+          }
           mutate(`/api/sessions/${activeSessionId}`);
         } catch (error) {
           console.error('Failed to save tasks:', error);
         }
       };
-      // Debounce saving or just save immediately, here we do it immediately but might be noisy.
-      // Doing it immediately to preserve old behavior.
       saveTasks();
     }
   }, [tasks, activeSessionId]);
@@ -196,6 +203,13 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getSessionState = (id: string) => {
+    if (id === activeSessionId) {
+      return { mode, timeLeft, isPaused, sessionCount, duration };
+    }
+    return savedSessions[id] || null;
+  };
+
   const initializeSession = (sessionId: string, sessionData: any, sessDuration: number) => {
     if (activeSessionId === sessionId) {
       // If we re-enter the same session, update data but don't reset timer
@@ -207,13 +221,58 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // New session initialized, pause old one implicitly by overwriting
+    // Save the old session state before switching
+    if (activeSessionId) {
+      setSavedSessions(prev => ({
+        ...prev,
+        [activeSessionId]: {
+          activeSessionData,
+          mode,
+          timeLeft,
+          isPaused: true, // Auto-pause when backgrounded
+          sessionCount,
+          tasks,
+          currentTaskId,
+          endTime: null, // Cleared because it's paused
+          duration,
+          savedSessionTime
+        }
+      }));
+    }
+
+    // Restore the new session state if it exists
+    const restored = savedSessions[sessionId];
+    if (restored) {
+      setActiveSessionId(sessionId);
+      setActiveSessionData(restored.activeSessionData || sessionData);
+      setMode(restored.mode);
+      
+      // Sanity check: if we have a stale buggy duration in local storage (e.g. 60)
+      // but the database says otherwise, and the timer hasn't started yet, override it.
+      if (restored.duration && restored.duration !== sessDuration && restored.mode === 'idle') {
+        setTimeLeft(sessDuration * 60);
+        setDuration(sessDuration);
+      } else {
+        setTimeLeft(restored.timeLeft);
+        setDuration(restored.duration || sessDuration);
+      }
+      
+      setIsPaused(true); // Always paused when restored, user must click Play
+      setSessionCount(restored.sessionCount);
+      setTasks(restored.tasks || []);
+      setCurrentTaskId(restored.currentTaskId);
+      setEndTime(null);
+      setSavedSessionTime(restored.savedSessionTime);
+      return;
+    }
+
+    // New session initialized from scratch
     setActiveSessionId(sessionId);
     setActiveSessionData(sessionData);
     setDuration(sessDuration);
     setMode('idle');
-    setTimeLeft(25 * 60);
-    setIsPaused(false);
+    setTimeLeft(sessDuration * 60);
+    setIsPaused(true); // Default to paused, wait for user to click play
     setSessionCount(0);
     setEndTime(null);
     setSavedSessionTime(null);
@@ -228,7 +287,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   const startTimer = (selectedMode: 'session' | 'break' = 'session') => {
     setMode(selectedMode);
-    const seconds = selectedMode === 'session' ? 25 * 60 : 5 * 60;
+    const seconds = selectedMode === 'session' ? duration * 60 : 5 * 60;
     setTimeLeft(seconds);
     setEndTime(Date.now() + seconds * 1000);
     setIsPaused(false);
@@ -249,9 +308,9 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   const resetTimer = () => {
     setMode('idle');
-    setTimeLeft(25 * 60);
+    setTimeLeft(duration * 60);
     setEndTime(null);
-    setIsPaused(false);
+    setIsPaused(true);
     setSessionCount(0);
   };
 
@@ -267,7 +326,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   const switchToSession = () => {
     setMode('session');
-    setTimeLeft(savedSessionTime !== null ? savedSessionTime : 25 * 60);
+    setTimeLeft(savedSessionTime !== null ? savedSessionTime : duration * 60);
     setSavedSessionTime(null);
     setEndTime(null);
     setIsPaused(true);
@@ -319,6 +378,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       deleteTask,
       selectTask,
       saveTasksToSession,
+      getSessionState,
     }}>
       {children}
     </TimerContext.Provider>

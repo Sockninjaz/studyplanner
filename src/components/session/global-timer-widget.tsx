@@ -29,16 +29,16 @@ export default function GlobalTimerWidget() {
   return (
     <div 
       onClick={() => router.push(`/session/${activeSessionId}`)}
-      className={`fixed bottom-6 right-6 z-50 flex cursor-pointer items-center gap-3 rounded-full ${colorClass} ${hoverClass} px-5 py-3 text-white shadow-lg transition-all transform hover:scale-105`}
+      className={`fixed bottom-6 right-6 z-[9999] flex cursor-pointer items-center gap-2 rounded-full ${colorClass} ${hoverClass} px-3 py-1.5 text-white shadow-lg transition-all transform hover:scale-105 max-w-[180px]`}
       title="Return to Active Session"
     >
-      <div className={`h-2.5 w-2.5 rounded-full bg-white ${pulseClass}`} />
+      <div className={`h-2 w-2 flex-shrink-0 rounded-full bg-white ${pulseClass}`} />
       
-      <div className="flex flex-col">
-        <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 leading-tight">
+      <div className="flex flex-col min-w-0">
+        <span className="text-[9px] font-bold uppercase tracking-wider opacity-90 leading-tight truncate">
           {activeSessionData?.title || 'Active Session'}
         </span>
-        <span className="font-mono text-lg font-bold leading-tight">
+        <span className="font-mono text-sm font-bold leading-tight">
           {formatTime(timeLeft)}
         </span>
       </div>
