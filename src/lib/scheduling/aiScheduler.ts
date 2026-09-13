@@ -34,13 +34,17 @@ export interface SessionBlock {
 export async function generateAISchedule(
   inputs: AISchedulerInputs
 ): Promise<{ schedule: Map<string, Map<string, Array<SessionBlock>>>, wasOverloaded: boolean }> {
-  // Build available dates
+  // Build available dates (from start to last exam, excluding blocked)
   const blockedSet = new Set(inputs.blocked_days || []);
   const rawLastTime = Math.max(...inputs.exams.map(e => new Date(e.exam_date).getTime()));
-  const lastExamDate = isNaN(rawLastTime) ? new Date() : new Date(rawLastTime);
-  const startDate = isNaN(new Date(inputs.start_date).getTime()) ? new Date() : new Date(inputs.start_date);
   
+  // Truncate both to midnight UTC so the date loop is clean and inclusive
+  const lastExamDate = isNaN(rawLastTime) ? new Date() : new Date(new Date(rawLastTime).toISOString().split('T')[0] + 'T00:00:00.000Z');
+  const startDate = isNaN(new Date(inputs.start_date).getTime()) ? new Date() : new Date(new Date(inputs.start_date).toISOString().split('T')[0] + 'T00:00:00.000Z');
+
   const availableDates: string[] = [];
+  console.log("START DATE:", startDate);
+  console.log("LAST EXAM DATE:", lastExamDate);
 
   for (
     let d = new Date(startDate);
@@ -54,6 +58,7 @@ export async function generateAISchedule(
   }
 
   // ABSOLUTE GUARANTEE: availableDates must NEVER be empty.
+  console.log("AVAILABLE DATES:", availableDates);
   if (availableDates.length === 0) {
     availableDates.push(startDate.toISOString().split('T')[0]);
   }
@@ -74,12 +79,28 @@ export async function generateAISchedule(
       }
 
       if (remainingRatio > 0) {
+        const targetSessionMins = Math.min(90, Math.max(30, inputs.session_duration || 45)); // e.g. 45 or 60 min (around 1h, max 1.5h)
+
         for (const c of exam.studyMaterials) {
-          const duration = Math.max(30, Math.round((c.user_estimated_total_hours || 1) * 60 * remainingRatio));
-          blocks.push({
-            content: c.chapter,
-            durationMinutes: duration
-          });
+          const totalChapterMins = Math.max(30, Math.round((c.user_estimated_total_hours || 1) * 60 * remainingRatio));
+          
+          if (totalChapterMins <= 90) {
+            // Fits in 1 single session of 30-90 mins
+            blocks.push({
+              content: c.chapter,
+              durationMinutes: totalChapterMins
+            });
+          } else {
+            // Chapter is large (> 1.5h, e.g. 2h, 3h, 5.5h) -> split into digestible 45-60m chunks (max 90m per session)
+            const numChunks = Math.ceil(totalChapterMins / targetSessionMins);
+            const chunkDuration = Math.min(90, Math.max(30, Math.round(totalChapterMins / numChunks)));
+            for (let chunkIdx = 1; chunkIdx <= numChunks; chunkIdx++) {
+              blocks.push({
+                content: numChunks > 1 ? `${c.chapter} (Deel ${chunkIdx}/${numChunks})` : c.chapter,
+                durationMinutes: chunkDuration
+              });
+            }
+          }
         }
       }
     }
@@ -108,130 +129,91 @@ export async function generateAISchedule(
     examTopics.set(exam.id, blocks);
   }
 
-  const MAX_MINUTES_PER_DAY = inputs.daily_max_hours * 60;
-  const PREFERRED_MINUTES_PER_DAY = inputs.soft_daily_limit * 60;
+  const MAX_MINUTES_PER_DAY = inputs.allowOverload ? 24 * 60 : inputs.daily_max_hours * 60;
+  const PREFERRED_MINUTES_PER_DAY = inputs.allowOverload ? 24 * 60 : inputs.soft_daily_limit * 60;
 
-  let finalSchedule = new Map<string, Map<string, Array<SessionBlock>>>();
+  const finalSchedule = new Map<string, Map<string, Array<SessionBlock>>>();
+  const dailyCounts = new Map<string, number>();
+  const dailyLoadMinutes = new Map<string, number>();
   let wasOverloadedGlobally = false;
-  let simulate = true;
-  let iterationCount = 0;
 
-  // Sort exams by date ascending
+  // Sort exams by date ascending. Urgent exams get first pick of their valid days.
   const sortedExams = [...inputs.exams].sort((a, b) => new Date(a.exam_date).getTime() - new Date(b.exam_date).getTime());
-
-  let examTargetDates = new Map<string, string[]>();
-
-  while (simulate && iterationCount < 20) {
-    iterationCount++;
-    finalSchedule = new Map<string, Map<string, Array<SessionBlock>>>();
-    const dailyLoadMinutes = new Map<string, number>();
-    examTargetDates = new Map<string, string[]>();
-    let anyExamOverloaded = false;
-
-    for (const exam of sortedExams) {
-      let topics = examTopics.get(exam.id) || [];
-      if (topics.length === 0) continue;
-
-      const lastValidDay = exam.can_study_after_exam
-        ? exam.exam_date.toISOString().split('T')[0]
-        : new Date(new Date(exam.exam_date).getTime() - 86400000).toISOString().split('T')[0];
-
-      let validDatesForExam = availableDates.filter(d => !blockedSet.has(d) && d <= lastValidDay);
-      
-      if (validDatesForExam.length === 0 && availableDates.length > 0) {
-        validDatesForExam = [availableDates[0]];
-      }
-
-      const targetDates: string[] = [];
-      let unassignedCount = topics.length;
-      let topicIndex = topics.length - 1; // Work backwards
-
-      if (validDatesForExam.length > 0) {
-        while (topicIndex >= 0) {
-          const topic = topics[topicIndex];
-          let selectedDay = null;
-
-          // Pass 1: Backwards Bin-Packing up to Preferred Limit
-          for (let i = validDatesForExam.length - 1; i >= 0; i--) {
-            const d = validDatesForExam[i];
-            const load = dailyLoadMinutes.get(d) || 0;
-            if (load + topic.durationMinutes <= PREFERRED_MINUTES_PER_DAY) {
-              selectedDay = d;
-              break;
-            }
-          }
-          
-          // Pass 2: Waterfill - find the valid date with the absolute MINIMUM load
-          if (!selectedDay) {
-            let minLoad = Infinity;
-            let bestDay = null;
-            for (let i = validDatesForExam.length - 1; i >= 0; i--) {
-              const d = validDatesForExam[i];
-              const load = dailyLoadMinutes.get(d) || 0;
-              if (load < minLoad) {
-                minLoad = load;
-                bestDay = d;
-              }
-            }
-            if (bestDay) {
-              selectedDay = bestDay;
-            }
-          }
-
-          if (selectedDay) {
-            targetDates.unshift(selectedDay);
-            dailyLoadMinutes.set(selectedDay, (dailyLoadMinutes.get(selectedDay) || 0) + topic.durationMinutes);
-            unassignedCount--;
-          } else {
-            break; // Stop assigning, we hit a wall for this exam
-          }
-          topicIndex--;
-        }
-      }
-
-      examTargetDates.set(exam.id, targetDates);
-
-      if (unassignedCount > 0) {
-        anyExamOverloaded = true;
-      }
-    }
-
-    // Always exit loop as session combining happens below
-    simulate = false;
-  }
-
-  // Build final schedule with session combining if overloaded
-  const maxSessionsPerDay = Math.max(1, Math.floor((inputs.daily_max_hours * 60) / inputs.session_duration));
 
   for (const exam of sortedExams) {
     const topics = examTopics.get(exam.id) || [];
-    const targetDates = examTargetDates.get(exam.id) || [];
     if (topics.length === 0) continue;
 
-    // Group target dates chronologically
-    targetDates.sort((a: string, b: string) => new Date(a).getTime() - new Date(b).getTime());
+    const lastValidDay = exam.can_study_after_exam
+      ? exam.exam_date.toISOString().split('T')[0]
+      : new Date(new Date(exam.exam_date).getTime() - 86400000).toISOString().split('T')[0];
 
-    // Map topics to their assigned dates
-    const dateToTopicsMap = new Map<string, SessionBlock[]>();
+    let validDatesForExam = availableDates.filter(d => !blockedSet.has(d) && d <= lastValidDay);
+    if (validDatesForExam.length === 0 && availableDates.length > 0) {
+      validDatesForExam = [availableDates[0]];
+    }
+    if (validDatesForExam.length === 0) continue;
 
-    for (let i = 0; i < targetDates.length; i++) {
-      const dateStr = targetDates[i];
-      if (!dateToTopicsMap.has(dateStr)) dateToTopicsMap.set(dateStr, []);
-      if (i < topics.length) {
-        dateToTopicsMap.get(dateStr)!.push(topics[i]);
-      }
+    const targetDates: string[] = [];
+    let unassignedCount = topics.length;
+
+    // Pass 1: Reserve 1 session for final review on day before exam
+    const dayBeforeExam = new Date(new Date(exam.exam_date).getTime() - 86400000).toISOString().split('T')[0];
+    if (unassignedCount > 1 && validDatesForExam.includes(dayBeforeExam)) {
+      targetDates.push(dayBeforeExam);
+      dailyCounts.set(dayBeforeExam, (dailyCounts.get(dayBeforeExam) || 0) + 1);
+      dailyLoadMinutes.set(dayBeforeExam, (dailyLoadMinutes.get(dayBeforeExam) || 0) + (topics[topics.length - 1]?.durationMinutes || 60));
+      unassignedCount--;
     }
 
-    // Combine sessions on overloaded days to strictly respect daily_max_hours
-    for (const [dateStr, dayTopics] of Array.from(dateToTopicsMap.entries())) {
-      let finalDayTopics: SessionBlock[] = dayTopics;
+    // Pass 2: Strict Global Water-Filling across all valid days
+    // This perfectly flatlines the schedule across days so <= 1 session difference globally
+    while (unassignedCount > 0) {
+      let minLoad = Infinity;
+      let minDay = validDatesForExam[validDatesForExam.length - 1]; // Default to latest
 
+      // Iterate backwards so the FIRST day we find with the strict minimum load is the LATEST possible day
+      for (let i = validDatesForExam.length - 1; i >= 0; i--) {
+        const d = validDatesForExam[i];
+        const load = dailyCounts.get(d) || 0;
+        if (load < minLoad) {
+          minLoad = load;
+          minDay = d;
+        }
+      }
+
+      targetDates.push(minDay);
+      dailyCounts.set(minDay, minLoad + 1);
+      const topicToPlace = topics[topics.length - 1 - unassignedCount];
+      dailyLoadMinutes.set(minDay, (dailyLoadMinutes.get(minDay) || 0) + (topicToPlace?.durationMinutes || 60));
+      unassignedCount--;
+    }
+
+    // Sort target dates chronologically
+    targetDates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+    // Place topics onto final Schedule Map chronologically
+    for (let i = 0; i < topics.length; i++) {
+      const dateStr = targetDates[i];
       if (!finalSchedule.has(dateStr)) finalSchedule.set(dateStr, new Map());
+      
       const dayMap = finalSchedule.get(dateStr)!;
       if (!dayMap.has(exam.id)) dayMap.set(exam.id, []);
-      dayMap.get(exam.id)!.push(...finalDayTopics);
+      
+      dayMap.get(exam.id)!.push(topics[i]);
     }
   }
 
+  // Check if any day exceeded MAX_MINUTES_PER_DAY
+  if (!inputs.allowOverload) {
+    for (const [dateStr, totalMins] of Array.from(dailyLoadMinutes.entries())) {
+      if (totalMins > MAX_MINUTES_PER_DAY) {
+        wasOverloadedGlobally = true;
+        break;
+      }
+    }
+  }
+
+  require("fs").writeFileSync("/tmp/aiScheduler.log", "Final Schedule:\n" + Array.from(finalSchedule.entries()).map(([k,v]) => k + ": " + Array.from(v.entries()).map(([ek, ev]) => ek + " (" + ev.length + ")").join(", ")).join("\n") + "\nAvailable Dates: " + availableDates.join(",") + "\n");
   return { schedule: finalSchedule, wasOverloaded: wasOverloadedGlobally };
 }

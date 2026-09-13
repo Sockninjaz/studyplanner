@@ -5,6 +5,13 @@ export interface IMessage {
   content: string;
   studySession?: mongoose.Types.ObjectId;
   createdAt: Date;
+  inlineChats?: IThreadMessage[];
+}
+
+export interface IThreadMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: Date;
 }
 
 export interface IChatSession extends Document {
@@ -14,11 +21,18 @@ export interface IChatSession extends Document {
   messages: IMessage[];
 }
 
+const ThreadMessageSchema = new Schema<IThreadMessage>({
+  role: { type: String, enum: ['user', 'assistant'], required: true },
+  content: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
 const MessageSchema = new Schema<IMessage>({
   role: { type: String, enum: ['user', 'assistant', 'system'], required: true },
   content: { type: String, required: true },
   studySession: { type: Schema.Types.ObjectId, ref: 'StudySession' },
   createdAt: { type: Date, default: Date.now },
+  inlineChats: [ThreadMessageSchema],
 });
 
 const ChatSessionSchema = new Schema<IChatSession>({

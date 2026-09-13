@@ -93,6 +93,12 @@ export async function PUT(
         // Un-complete future and today's sessions so they can be rescheduled
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
+        
+        // If un-completing a past exam, allow studying after the exam so it doesn't get auto-completed again
+        if (new Date(exam.date) < startOfToday) {
+          exam.can_study_after_exam = true;
+        }
+
         await StudySession.updateMany(
           { user: user._id, exam: exam._id, startTime: { $gte: startOfToday } },
           { $set: { isCompleted: false } }

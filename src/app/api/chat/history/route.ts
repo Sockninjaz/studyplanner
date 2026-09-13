@@ -35,3 +35,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch chat history' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const session = await getServerSession();
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const examId = searchParams.get('examId');
+
+  if (!examId) {
+    return NextResponse.json({ error: 'examId is required' }, { status: 400 });
+  }
+
+  await dbConnect();
+
+  try {
+    await ChatSession.deleteMany({ exam: examId });
+    return NextResponse.json({ success: true, message: 'Chat history cleared' });
+  } catch (error) {
+    console.error('Error clearing chat history:', error);
+    return NextResponse.json({ error: 'Failed to clear chat history' }, { status: 500 });
+  }
+}
+

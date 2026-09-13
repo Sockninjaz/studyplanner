@@ -32,6 +32,7 @@ export async function generateStructuredOutput<T>(
   return result.object;
 }
 
+import { generateText } from 'ai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GoogleAIFileManager } from '@google/generative-ai/server';
 import { promises as fs } from 'fs';
@@ -40,85 +41,107 @@ import os from 'os';
 import crypto from 'crypto';
 
 /**
- * Specifically for multimodal tasks like OCR on scanned PDFs.
- * Bypasses Vercel AI SDK validation bugs by using the official Google SDK directly.
- * Only extracts text; does not attempt to force large transcriptions into JSON.
+ * Specifically for multimodal tasks like OCR on screenshots, images, and scanned PDFs.
+ * Uses OpenAI GPT-4o-mini Vision as primary for images, with Gemini fallback.
  */
 export async function extractTextFromMultimodal(
   fileBuffer: Buffer,
   mimeType: string,
   specialInstructions?: string
 ): Promise<string> {
-  // 1. Initialize Google SDK natively
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (!apiKey) throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is missing");
-  
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const fileManager = new GoogleAIFileManager(apiKey);
-  const gemini = genAI.getGenerativeModel({ 
-    model: "gemini-pro-latest",
-  });
+  const normalizedMime = mimeType?.toLowerCase() || 'image/png';
+  const isImage = normalizedMime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'heic', 'bmp', 'gif'].some(ext => normalizedMime.includes(ext));
 
-  // 2. Write buffer to a temporary file because File API requires a path
-  const ext = mimeType.split('/')[1] || 'pdf';
-  const tempFilePath = path.join(os.tmpdir(), `${crypto.randomUUID()}.${ext}`);
-  await fs.writeFile(tempFilePath, fileBuffer);
+  const prompt = `You are an expert OCR and educational content analyzer.
+Thoroughly examine this screenshot, document, or photo and extract all educational study material, syllabus topics, chapter titles, homework assignments, formulas, sub-topics, page ranges, and learning objectives visible.
 
-  let rawTextOutput = '';
-  
-  try {
-    // 3. Upload to Gemini File API
-    const uploadResult = await fileManager.uploadFile(tempFilePath, {
-      mimeType,
-      displayName: "Scanned Document",
+RULES FOR ACCURATE EXTRACTION:
+1. SCREENSHOTS & APPS: If the image is a screenshot of a school portal, learning app, or digital platform (e.g. Magister, Somtoday, Canvas, Blackboard, Teams, Google Classroom, ELO, textbook viewer), ignore peripheral UI buttons and navigation bars, and extract all academic chapters, assignments, and test topics listed.
+2. VERBATIM TITLES: If the image lists specific chapter titles, numbers, or themes (e.g. "Hoofdstuk 4: Zuren en Basen", "Thema 3", "Unit 2: Kinematics", "Paragraaf 3.1 t/m 3.4"), EXTRACT THOSE TITLES EXACTLY VERBATIM in their original language.
+3. CONCEPTS & FORMULAS: Include key definitions, formulas, or bullet points mentioned under each topic so an actionable study plan can be generated.
+${specialInstructions ? `\nUSER SPECIAL INSTRUCTIONS (focus on these): ${specialInstructions}` : ''}`;
+
+  if (isImage) {
+    // Direct OpenAI Vision inference (fast, reliable, handles screenshots & all image formats)
+    console.log(`[aiClient] Performing OpenAI Vision OCR for screenshot/image (${normalizedMime})...`);
+    const result = await generateText({
+      model: openai('gpt-4o-mini'),
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image', image: fileBuffer }
+          ]
+        }
+      ]
     });
-
-    console.log(`[aiClient] Uploaded to Gemini: ${uploadResult.file.name}. Waiting for processing...`);
-
-    // PDFs require asynchronous processing on Google's side. We MUST poll until active.
-    let fileState = await fileManager.getFile(uploadResult.file.name);
-    while (fileState.state === 'PROCESSING') {
-      console.log(`[aiClient] File is PROCESSING. Waiting 3 seconds...`);
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      fileState = await fileManager.getFile(uploadResult.file.name);
-    }
-
-    if (fileState.state === 'FAILED') {
-      throw new Error("Gemini failed to process the uploaded file.");
-    }
-
-    console.log(`[aiClient] File is ${fileState.state}. Starting inference...`);
-
-    const filePart = {
-      fileData: {
-        fileUri: uploadResult.file.uri,
-        mimeType: uploadResult.file.mimeType,
-      },
-    };
-
-    // 4. Perform native multimodal generation using the File URI
-    const prompt = `Extract a comprehensive, highly detailed outline of all the educational content, chapters, sub-chapters, and topics in this document. 
-    
-    CRITICAL INSTRUCTION 1: If the document explicitly lists a Table of Contents, Chapter Titles, or Syllabus Themes (e.g. "Voortplanting", "Planten"), you MUST EXTRACT THOSE TITLES EXACTLY VERBATIM. Do not paraphrase the titles.
-    CRITICAL INSTRUCTION 2: For the body text or long paragraphs, do NOT transcribe or quote verbatim text. You MUST heavily paraphrase and summarize the key concepts to completely avoid copyright recitation filters. 
-    
-    Include enough detail so another AI can accurately estimate how many study hours this material requires.
-    ${specialInstructions ? `\nUSER INSTRUCTIONS (focus on these): ${specialInstructions}` : ''}`;
-
-    const result = await gemini.generateContent([
-      prompt, 
-      filePart
-    ]);
-    rawTextOutput = result.response.text();
-    
-    // Cleanup the file from Google's servers (optional but good practice)
-    await fileManager.deleteFile(uploadResult.file.name).catch(() => {});
-  } finally {
-    // Always cleanup local temp file
-    await fs.unlink(tempFilePath).catch(() => {});
+    return result.text;
   }
 
-  return rawTextOutput;
+  // For PDFs: Try Google Generative AI first if available, otherwise fallback to OpenAI
+  const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (googleApiKey) {
+    try {
+      const genAI = new GoogleGenerativeAI(googleApiKey);
+      const fileManager = new GoogleAIFileManager(googleApiKey);
+      const gemini = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+      });
+
+      const ext = normalizedMime.split('/')[1] || 'pdf';
+      const tempFilePath = path.join(os.tmpdir(), `${crypto.randomUUID()}.${ext}`);
+      await fs.writeFile(tempFilePath, fileBuffer);
+
+      try {
+        const uploadResult = await fileManager.uploadFile(tempFilePath, {
+          mimeType: normalizedMime,
+          displayName: "Document OCR",
+        });
+
+        let fileState = await fileManager.getFile(uploadResult.file.name);
+        let retries = 0;
+        while (fileState.state === 'PROCESSING' && retries < 10) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          fileState = await fileManager.getFile(uploadResult.file.name);
+          retries++;
+        }
+
+        if (fileState.state === 'ACTIVE') {
+          const result = await gemini.generateContent([
+            prompt, 
+            {
+              fileData: {
+                fileUri: uploadResult.file.uri,
+                mimeType: uploadResult.file.mimeType,
+              },
+            }
+          ]);
+          await fileManager.deleteFile(uploadResult.file.name).catch(() => {});
+          return result.response.text();
+        }
+      } finally {
+        await fs.unlink(tempFilePath).catch(() => {});
+      }
+    } catch (googleErr) {
+      console.warn('[aiClient] Google Multimodal OCR failed, falling back to OpenAI Vision...', googleErr);
+    }
+  }
+
+  // Fallback: Use OpenAI vision
+  const result = await generateText({
+    model: openai('gpt-4o-mini'),
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image', image: fileBuffer }
+        ]
+      }
+    ]
+  });
+  return result.text;
 }
 
 export { model, geminiModel };

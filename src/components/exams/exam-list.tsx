@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-type Tab = 'upcoming' | 'past';
+type Tab = 'upcoming' | 'completed';
 
 export default function ExamList() {
   const { data, error, isLoading } = useSWR('/api/exams', fetcher);
@@ -51,15 +51,10 @@ export default function ExamList() {
     }
   });
   
-  // Calculate threshold: exams older than 2 days go to Past
-  const threshold = new Date();
-  threshold.setDate(threshold.getDate() - 2);
-  threshold.setHours(0, 0, 0, 0);
+  const upcomingExams = exams.filter((exam: any) => !exam.isCompleted);
+  const completedExams = exams.filter((exam: any) => exam.isCompleted);
 
-  const upcomingExams = exams.filter((exam: any) => new Date(exam.date) >= threshold && !exam.isCompleted);
-  const pastExams = exams.filter((exam: any) => new Date(exam.date) < threshold || exam.isCompleted);
-
-  const displayedExams = activeTab === 'upcoming' ? upcomingExams : pastExams;
+  const displayedExams = activeTab === 'upcoming' ? upcomingExams : completedExams;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -77,14 +72,14 @@ export default function ExamList() {
           Upcoming ({upcomingExams.length})
         </button>
         <button
-          onClick={() => setActiveTab('past')}
+          onClick={() => setActiveTab('completed')}
           className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-            activeTab === 'past' 
+            activeTab === 'completed' 
               ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' 
               : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
           }`}
         >
-          Past ({pastExams.length})
+          Completed ({completedExams.length})
         </button>
       </div>
 

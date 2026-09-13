@@ -45,6 +45,7 @@ You MUST heavily rely on the STUDENT ACADEMIC PROFILE (if provided) to calculate
 - DO NOT blindly assign massive hours (e.g., 10-15 hours) just because a document has a lot of words or questions.
 - Ask yourself: "How long does a typical student at exactly THIS grade level (e.g., 5 VWO in the Netherlands, or a University Senior) realistically take to process this specific type of document?"
 - For example: A 5 VWO student doing a single physics past exam paper takes about 2 to 4 hours maximum to complete and review. A 15-hour estimate for a single exam paper is an absurd hallucination.
+- BIOLOGY EXCEPTION (BASISSTOFFEN): Biology textbooks (like Nectar or Biologie voor Jou) often contain 6-8 "basisstoffen" (subchapters) per chapter. These chapters are extremely dense. If you identify biology chapters with multiple basisstoffen or subchapters, you MUST assign higher time estimates (typically 4 to 6 hours per chapter). Do not underestimate biology chapters!
 - You MUST anchor your time estimates in the realistic study speed and attention span of a typical student in that exact country and grade level.
 
 B. SPARSE INPUT HANDLING (No Blind Hallucinations):
@@ -57,10 +58,8 @@ C. CURRICULUM-AWARE CHAPTER GROUPING & WEIGHTING:
 When a user requests a large block of chapters (e.g., "chapters 1 till 12") for a specific grade or track (e.g., "5 VWO"), you MUST NOT blindly output all 12 chapters with equal weight (e.g., 1 hour each). Use your curriculum expertise to make educated adjustments:
 - Identify and combine introductory, review, or lower-grade chapters (e.g., 4 VWO material being reviewed in a 5 VWO book) into fewer, generalized review chapters with lower hour allocations.
 - Identify the core, most difficult, or most heavily tested domains for their specific grade year. Assign these significantly more study hours and higher difficulty ratings.
-- Do not output a rigid 1-to-1 chapter list if combining easy/review chapters makes for a smarter, more focused study plan.
-
-GATED CONTENT GUARDRAIL:
-If the provided text looks like a login page, a cookie consent wall, an "Access Denied" error, or purely generic website junk (Terms of Service, Privacy Policy, Login) WITHOUT any actual educational or study-related material, do NOT generate study chapters. Instead, return exactly ONE chapter named "FILE_ERROR_GATED" and in the "summary" explain that the provided source appears to be a protected or restricted page that the AI cannot read.
+SCREENSHOTS & SCHOOL PORTAL CONTENT:
+When the material comes from a screenshot, photo, or school portal (e.g. Magister, Somtoday, Blackboard, Canvas, Teams, Classroom, textbook viewer, or homework app), ignore peripheral UI elements (like user icons, login indicators, back buttons, or navigation menus) and focus strictly on the educational content, assignments, chapters, tasks, or study topics shown. Always generate realistic study chapters for the material. If the image has concise or high-level topics, use your curriculum knowledge of the subject to structure it into 2 to 5 actionable study chapters. Never return an empty chapters array.
 
 Return your analysis as structured JSON.`;
 
@@ -103,10 +102,17 @@ export function buildMaterialAnalysisMessage(
   const diffDays = Math.ceil((parsedExamDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
   
   let timeConstraintStr = '';
+  const isBio = subjectName.toLowerCase().includes('bio');
+  const bioMultiplier = isBio ? 1.5 : 1;
+
   if (diffDays <= 1) {
-    timeConstraintStr = `\nCRITICAL TIME CONSTRAINT: The exam is literally TOMORROW (1 day away). You MUST NOT bombard the student with an impossible task. Cap the TOTAL realistic study hours at an absolute maximum of 4 to 6 hours. Condense the topics into only the most critical, high-yield review elements.`;
+    timeConstraintStr = `\nCRITICAL TIME CONSTRAINT: The exam is literally TOMORROW (1 day away). You MUST NOT bombard the student with an impossible task. Cap the TOTAL realistic study hours at an absolute maximum of ${Math.round(4 * bioMultiplier)} to ${Math.round(6 * bioMultiplier)} hours. Condense the topics into only the most critical, high-yield review elements.`;
   } else if (diffDays <= 3) {
-    timeConstraintStr = `\nCRITICAL TIME CONSTRAINT: The exam is very soon (${diffDays} days away). Cap the TOTAL realistic study hours at a maximum of ${diffDays * 3} hours. Be extremely concise.`;
+    timeConstraintStr = `\nCRITICAL TIME CONSTRAINT: The exam is very soon (${diffDays} days away). Cap the TOTAL realistic study hours at a maximum of ${Math.round(diffDays * 3 * bioMultiplier)} hours. Be extremely concise.`;
+  }
+
+  if (isBio) {
+    timeConstraintStr += `\nBIOLOGY NOTE: The user has indicated that Biology chapters (e.g. DNA, Planten) are dense and typically take 4-5 hours each. Please be more generous with time estimates for Biology chapters to reflect this, while still generally respecting the overall time constraints above.`;
   }
 
   return `Analyze the following study material for the subject "${subjectName}" (exam date: ${examDate}).

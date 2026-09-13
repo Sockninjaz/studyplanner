@@ -1,20 +1,38 @@
-const mongoose = require('mongoose');
-const Exam = require('./src/models/Exam').default;
-const StudySession = require('./src/models/StudySession').default;
-require('dotenv').config({ path: '.env.local' });
+import mongoose from 'mongoose';
+import Exam from './src/models/Exam';
+import StudySession from './src/models/StudySession';
+import fs from 'fs';
+import path from 'path';
 
-async function run() {
-  await mongoose.connect(process.env.MONGODB_URI);
+// Read .env.local manually
+const envPath = path.join(process.cwd(), '.env.local');
+let mongoUri = '';
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  for (const line of envContent.split('\n')) {
+    if (line.startsWith('MONGODB_URI=')) {
+      mongoUri = line.substring('MONGODB_URI='.length).replace(/['"]/g, '').trim();
+      break;
+    }
+  }
+}
+
+async function runCleanup() {
+  if (!mongoUri) {
+    console.error('No MONGODB_URI found');
+    process.exit(1);
+  }
+  await mongoose.connect(mongoUri);
   const exams = await Exam.find();
   let deleted = 0;
   for (const exam of exams) {
-    const validChapters = exam.studyMaterials.map(m => m.chapter.toLowerCase());
+    const validChapters = (exam.studyMaterials || []).map((m: any) => m.chapter.toLowerCase());
     const sessions = await StudySession.find({ exam: exam._id, isCompleted: true });
     
     const sessionsToDelete = [];
     for (const s of sessions) {
       const titleLower = s.title.toLowerCase();
-      const matches = validChapters.some(ch => titleLower.includes(ch) || ch.includes(titleLower.replace(/^(study: )?(.*?)( \- )?/, '').trim()));
+      const matches = validChapters.some((ch: string) => titleLower.includes(ch) || ch.includes(titleLower.replace(/^(study: )?(.*?)( \- )?/, '').trim()));
       if (!matches && !titleLower.includes('review')) {
         sessionsToDelete.push(s._id);
       }
@@ -29,4 +47,4 @@ async function run() {
   console.log(`Cleanup done. Deleted ${deleted} orphaned sessions.`);
   process.exit(0);
 }
-run();
+runCleanup();

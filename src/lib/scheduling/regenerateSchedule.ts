@@ -4,8 +4,11 @@ import StudySession from '@/models/StudySession';
 import BlockedDay from '@/models/BlockedDay';
 import { generateAISchedule } from '@/lib/scheduling/aiScheduler';
 import { separateSessions } from '@/lib/scheduling/sessionUtils';
-import { compressSchedule, compressSessionsInMemory } from '@/lib/scheduling/compressSchedule';
+import { compressSessionsInMemory } from '@/lib/scheduling/compressSchedule';
 import { generateSessionDetails } from '@/lib/ai/generateSessionDetails';
+
+// Per-user execution lock to serialize concurrent regenerations
+const userLocks = new Map<string, Promise<any>>();
 
 export async function regenerateSchedule(
   user: any, 
@@ -13,43 +16,108 @@ export async function regenerateSchedule(
   forceRegenerateExamId?: string,
   action?: 'check' | 'compress' | 'allowOverload'
 ) {
+  const userId = user._id?.toString() || user.id?.toString();
+  if (!userId) {
+    return runRegenerateSchedule(user, overridePrefs, forceRegenerateExamId, action);
+  }
+
+  const currentPromise = userLocks.get(userId) || Promise.resolve();
+  const nextPromise = (async () => {
+    try {
+      await currentPromise;
+    } catch {
+      // Ignore errors from previous queued task
+    }
+    return runRegenerateSchedule(user, overridePrefs, forceRegenerateExamId, action);
+  })();
+
+  userLocks.set(userId, nextPromise);
+
+  try {
+    return await nextPromise;
+  } finally {
+    if (userLocks.get(userId) === nextPromise) {
+      userLocks.delete(userId);
+    }
+  }
+}
+
+async function runRegenerateSchedule(
+  user: any, 
+  overridePrefs: any = {}, 
+  forceRegenerateExamId?: string,
+  action?: 'check' | 'compress' | 'allowOverload'
+) {
   await dbConnect();
 
+  // Automatically mark exams as completed if their date is strictly before the start of today
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  await Exam.updateMany(
+    { user: user._id, isCompleted: { $ne: true }, date: { $lt: startOfToday }, can_study_after_exam: { $ne: true } },
+    { $set: { isCompleted: true, completedAt: now } }
+  );
+
   // Get all active user exams (ignore completed exams so we don't schedule new sessions for them)
-  const allExams = await Exam.find({ user: user._id, isCompleted: { $ne: true } });
+  const rawExams = await Exam.find({ user: user._id, isCompleted: { $ne: true } });
 
-  // Separate historical/future sessions for exams early so we can clean up ghost sessions if no exams exist
-  const allSessions = await StudySession.find({ user: user._id });
-  const { completedSessions, missedSessions, reschedulableSessions, completedHours } = separateSessions(allSessions);
+  // Deduplicate active exams by subject so orphaned duplicate exams (from re-saves) are cleaned up
+  const examsBySubject = new Map<string, any>();
+  for (const e of rawExams) {
+    const key = (e.subject || '').trim().toLowerCase();
+    if (!examsBySubject.has(key)) {
+      examsBySubject.set(key, e);
+    } else {
+      const existing = examsBySubject.get(key);
+      const existingTime = new Date((existing as any).updatedAt || (existing as any).createdAt || existing._id.getTimestamp()).getTime();
+      const currentTime = new Date((e as any).updatedAt || (e as any).createdAt || e._id.getTimestamp()).getTime();
 
+      if (currentTime > existingTime) {
+        const oldId = existing._id;
+        if (action !== 'check') {
+          await Exam.deleteOne({ _id: oldId });
+          await StudySession.deleteMany({ exam: oldId });
+          console.log(`Deleted orphaned duplicate active exam ${oldId} for subject "${existing.subject}"`);
+        }
+        examsBySubject.set(key, e);
+      } else {
+        const oldId = e._id;
+        if (action !== 'check') {
+          await Exam.deleteOne({ _id: oldId });
+          await StudySession.deleteMany({ exam: oldId });
+          console.log(`Deleted orphaned duplicate active exam ${oldId} for subject "${e.subject}"`);
+        }
+      }
+    }
+  }
+  const allExams = Array.from(examsBySubject.values());
+
+  // If no exams remain, clean up any uncompleted sessions
   if (allExams.length === 0) {
-    const sessionsToDelete = [...reschedulableSessions, ...missedSessions];
-    if (sessionsToDelete.length > 0 && action !== 'check') {
-      await StudySession.deleteMany({ _id: { $in: sessionsToDelete.map(s => s._id) } });
-      console.log(`Cleaned up ${sessionsToDelete.length} orphan sessions as no exams remain.`);
+    if (action !== 'check') {
+      await StudySession.deleteMany({ user: user._id, isCompleted: { $ne: true } });
+      console.log(`Cleaned up orphan uncompleted sessions as no active exams remain.`);
     }
     return { success: true, message: 'No exams found to schedule', sessionsLength: 0 };
   }
 
+  // Separate historical/future sessions for exams to calculate completed hours
+  const allSessions = await StudySession.find({ user: user._id });
+  const { completedSessions, missedSessions, reschedulableSessions, completedHours } = separateSessions(allSessions);
+
   console.log(`Regenerate request [${action || 'default'}] - Completed: ${completedSessions.length}, Missed: ${missedSessions.length}, Reschedulable: ${reschedulableSessions.length}`);
 
-  // Delete reschedulable sessions (future/today) and missed sessions (past uncompleted) ONLY if we are actually saving
-  const sessionsToDelete = [...reschedulableSessions, ...missedSessions];
-  if (sessionsToDelete.length > 0 && action !== 'check') {
-    await StudySession.deleteMany({ _id: { $in: sessionsToDelete.map(s => s._id) } });
-    console.log(`Deleted ${reschedulableSessions.length} reschedulable and ${missedSessions.length} missed sessions for regeneration`);
-  }
-
-  // Re-fetch remaining locked sessions (completed + missed) for deduplication
-  // If we are in 'check' mode, the missed sessions are still in the DB, so we should exclude them from lockedSessions artificially
   const activeExamIds = allExams.map(e => e._id);
-  const lockedSessions = action === 'check' 
-    ? allSessions.filter(s => !sessionsToDelete.some(td => td._id.toString() === s._id.toString()) && activeExamIds.some(id => id.toString() === s.exam.toString()))
-    : await StudySession.find({ user: user._id, exam: { $in: activeExamIds } });
+  const lockedSessions = completedSessions.filter(s => activeExamIds.some(id => id.toString() === s.exam?.toString()));
+
+  const isAllowOverload = action === 'allowOverload';
+  const effectiveMaxHours = isAllowOverload ? 24 : (overridePrefs.daily_max_hours || user.daily_study_limit || 4);
+  const effectiveSoftLimit = isAllowOverload ? 24 : (overridePrefs.soft_daily_limit || user.soft_daily_limit || 2);
 
   const userInputs: any = {
-    daily_max_hours: overridePrefs.daily_max_hours || user.daily_study_limit || 4,
-    soft_daily_limit: overridePrefs.soft_daily_limit || user.soft_daily_limit || 2,
+    daily_max_hours: effectiveMaxHours,
+    soft_daily_limit: effectiveSoftLimit,
     adjustment_percentage: overridePrefs.adjustment_percentage || user.adjustment_percentage || 25,
     session_duration: overridePrefs.session_duration || user.session_duration || 30,
     enable_daily_limits: overridePrefs.enable_daily_limits !== undefined ? overridePrefs.enable_daily_limits : user.enable_daily_limits,
@@ -63,7 +131,7 @@ export async function regenerateSchedule(
       can_study_after_exam: e.can_study_after_exam,
       studyMaterials: e.studyMaterials || [],
     })),
-    allowOverload: action === 'allowOverload'
+    allowOverload: isAllowOverload
   };
 
   // Fetch blocked days for this user
@@ -77,7 +145,7 @@ export async function regenerateSchedule(
   let overloadedDays: { date: string; sessions: number; limit: number }[] = [];
 
   const sessionsToSave: any[] = [];
-  const maxMinutesPerDay = userInputs.daily_max_hours * 60;
+  const maxMinutesPerDay = effectiveMaxHours * 60;
   const dailySessionMinutes: { [date: string]: number } = {};
 
   for (const [dateStr, dayMap] of Array.from(aiScheduleMap.entries())) {
@@ -93,18 +161,14 @@ export async function regenerateSchedule(
     
     for (const [examId, sessionsArr] of Array.from(dayMap.entries())) {
       const examForSubject = allExams.find(e => e._id.toString() === examId);
-      console.log(`[DEBUG] Date: ${dateStr}, Exam: ${examId}, Sessions in AI output: ${sessionsArr.length}, Exam exists: ${!!examForSubject}`);
       
       if (examForSubject) {
-        const lockedForDay = lockedSessions.filter(s =>
-          s.exam.toString() === examId &&
-          s.startTime.toISOString().split('T')[0] === dateStr
-        );
-        
         const sessionsToCreate = sessionsArr;
 
         for (const sessionData of sessionsToCreate) {
-          const duration = (sessionData as any).durationMinutes || userInputs.session_duration;
+          const rawDuration = (sessionData as any).durationMinutes || userInputs.session_duration || 45;
+          // Strictly cap session duration between 30m and 90m (around 1h to 1.5h max)
+          const duration = Math.min(90, Math.max(30, rawDuration));
           dailySessionMinutes[dateStr] = (dailySessionMinutes[dateStr] || 0) + duration;
 
           const [year, month, day] = dateStr.split('-').map(Number);
@@ -132,6 +196,8 @@ export async function regenerateSchedule(
               chapter: exactTitle,
               difficulty: matchingMaterial?.difficulty || 3,
               formulas: matchingMaterial?.formulas || [],
+              numMerged: 1,
+              durationMinutes: duration,
             },
           });
           
@@ -141,14 +207,13 @@ export async function regenerateSchedule(
     }
   }
 
-  console.log(`[DEBUG] Final sessionsToSave length: ${sessionsToSave.length}`);
-
   for (const [dateStr, totalMins] of Object.entries(dailySessionMinutes)) {
     if (totalMins > maxMinutesPerDay) {
       overloadedDays.push({ date: dateStr, sessions: Math.round(totalMins / 60), limit: userInputs.daily_max_hours });
     }
   }
 
+  // If in check mode, return evaluation without modifying database
   if (action === 'check') {
     if (wasOverloaded || overloadedDays.length > 0) {
       return { success: true, requiresDecision: true, wasOverloaded, overloadedDays };
@@ -177,6 +242,8 @@ export async function regenerateSchedule(
       chapter: s._enrichMeta?.chapter || s.title,
       difficulty: s._enrichMeta?.difficulty || 3,
       formulas: s._enrichMeta?.formulas || [],
+      numMerged: s._enrichMeta?.numMerged || 1,
+      durationMinutes: s._enrichMeta?.durationMinutes || Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000),
     }));
 
     const enriched = await generateSessionDetails(enrichInputs);
@@ -196,9 +263,50 @@ export async function regenerateSchedule(
       }
       delete session._enrichMeta;
     }
+  }
 
+  // === ATOMIC DATABASE UPDATE & DEDUPLICATION ===
+  // 1. Clean up duplicate or orphaned completed sessions
+  
+  // Get all valid exam IDs (active and completed) to prevent deleting sessions for completed exams
+  const allUserExamsIds = (await Exam.find({ user: user._id }, '_id')).map(e => e._id.toString());
+  const validExamIdStrings = new Set(allUserExamsIds);
+  const activeExamIdStrings = new Set(allExams.map(e => e._id.toString()));
+  
+  const existingCompleted = await StudySession.find({ user: user._id, isCompleted: true });
+  const seenCompletedKeys = new Set<string>();
+  const duplicateCompletedIds: any[] = [];
+  
+  for (const cs of existingCompleted) {
+    if (!cs.exam || !validExamIdStrings.has(cs.exam.toString())) {
+      // Exam was completely deleted from DB
+      duplicateCompletedIds.push(cs._id);
+      continue;
+    }
+    
+    // Only deduplicate sessions for ACTIVE exams. 
+    // If the exam is completed, we just keep all its sessions intact.
+    if (activeExamIdStrings.has(cs.exam.toString())) {
+      const key = `${cs.exam.toString()}-${cs.startTime.toISOString()}-${cs.title}`;
+      if (seenCompletedKeys.has(key)) {
+        duplicateCompletedIds.push(cs._id);
+      } else {
+        seenCompletedKeys.add(key);
+      }
+    }
+  }
+  if (duplicateCompletedIds.length > 0) {
+    await StudySession.deleteMany({ _id: { $in: duplicateCompletedIds } });
+    console.log(`Cleaned up ${duplicateCompletedIds.length} orphaned/duplicate completed sessions.`);
+  }
+
+  // 2. Delete all existing uncompleted sessions atomically right before inserting the new schedule
+  await StudySession.deleteMany({ user: user._id, isCompleted: { $ne: true } });
+
+  // 3. Insert newly generated sessions
+  if (finalSessionsToSave.length > 0) {
     await StudySession.insertMany(finalSessionsToSave);
-    console.log(`Regenerated ${finalSessionsToSave.length} AI sessions with enriched titles and tasks`);
+    console.log(`Regenerated and inserted ${finalSessionsToSave.length} AI sessions cleanly.`);
   }
 
   return { success: true, sessionsLength: finalSessionsToSave.length, overloadWarning, overloadedDays, sessionsToSave: finalSessionsToSave };

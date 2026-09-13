@@ -225,16 +225,16 @@ export default function StudyHubPage() {
                 setTasks(data.data.tasks || []);
                 
                 // Initialize timer using localStorage fallback if state isn't ready
-                let duration = 30;
+                let duration = Math.min(90, Math.max(30, sessionDuration || 45));
                 if (data.data.startTime && data.data.endTime) {
-                  duration = Math.round((new Date(data.data.endTime).getTime() - new Date(data.data.startTime).getTime()) / (1000 * 60));
-                  if (duration <= 0) duration = 30;
+                  const rawMins = Math.round((new Date(data.data.endTime).getTime() - new Date(data.data.startTime).getTime()) / (1000 * 60));
+                  if (rawMins > 0) duration = Math.min(90, Math.max(30, rawMins));
                 } else {
                   try {
                     const saved = localStorage.getItem('userPreferences');
                     if (saved) {
                       const p = JSON.parse(saved);
-                      if (p.session_duration) duration = p.session_duration;
+                      if (p.session_duration) duration = Math.min(90, Math.max(30, p.session_duration));
                     }
                   } catch {}
                 }
@@ -289,11 +289,13 @@ export default function StudyHubPage() {
   const handleSelectSession = useCallback(async (session: StudySession) => {
     setSelectedSession(session);
     
-    // Calculate real session duration from start and end times
-    let actualDuration = sessionDuration;
+    // Calculate real session duration from start and end times, safely bounded (30m to 90m max)
+    let actualDuration = Math.min(90, Math.max(30, sessionDuration || 45));
     if (session.startTime && session.endTime) {
-      actualDuration = Math.round((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60));
-      if (actualDuration <= 0) actualDuration = sessionDuration;
+      const rawMins = Math.round((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60));
+      if (rawMins > 0) {
+        actualDuration = Math.min(90, Math.max(30, rawMins));
+      }
     }
     
     setTimerSeconds(actualDuration * 60);
@@ -642,7 +644,7 @@ export default function StudyHubPage() {
                             {s.exam?.subject || s.subject}
                           </span>
                           <span className="text-[10px] text-gray-400 dark:text-slate-600 flex-shrink-0">
-                            {formatDuration(s.startTime && s.endTime ? Math.max(1, Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / (1000 * 60))) : sessionDuration)}
+                            {formatDuration(s.startTime && s.endTime ? Math.min(90, Math.max(30, Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / (1000 * 60)))) : Math.min(90, Math.max(30, sessionDuration || 45)))}
                           </span>
                         </div>
                         <p className={`text-sm text-gray-800 dark:text-slate-200 leading-snug mt-0.5 ${s.isCompleted ? 'line-through text-gray-400 dark:text-slate-600' : ''}`}>

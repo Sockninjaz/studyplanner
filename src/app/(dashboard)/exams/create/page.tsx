@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate } from 'swr';
 import { isValidCalendarDate } from '@/lib/dateUtils';
@@ -42,6 +42,7 @@ function CreateExamContent() {
   const [overloadWarning, setOverloadWarning] = useState<any | null>(null);
   const [isDeletingExam, setIsDeletingExam] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [rawTextInput, setRawTextInput] = useState('');
   const [bookTitle, setBookTitle] = useState('');
@@ -193,36 +194,36 @@ function CreateExamContent() {
   };
 
   const handleChapterWeightChange = (idx: number, direction: 1 | -1) => {
-    if (!aiAnalysis || chapterWeights.length === 0) return;
-    const total = adjustedTotalHours ?? aiAnalysis.totalEstimatedHours;
+    if (chapterWeights.length === 0) return;
+    const total = adjustedTotalHours ?? aiAnalysis?.totalEstimatedHours ?? 1;
     if (total <= 0) return;
 
     const step = 0.5;
-    const weightStep = step / total;
-    const currentWeight = chapterWeights[idx];
-    const nextWeight = Math.max(0.5 / total, currentWeight + direction * weightStep);
-    const actualWeightDelta = nextWeight - currentWeight;
-
-    if (Math.abs(actualWeightDelta) < 1e-9) return;
-    const othersTotal = chapterWeights.reduce((s, w, i) => i === idx ? s : s + w, 0);
-
-    let newWeights: number[];
-    if (othersTotal <= 0 || chapterWeights.length === 1) {
-      newWeights = chapterWeights.map((w, i) => i === idx ? nextWeight : w);
-    } else {
-      newWeights = chapterWeights.map((w, i) => {
-        if (i === idx) return nextWeight;
-        const proportion = w / othersTotal;
-        return Math.max(0.5 / total, w - actualWeightDelta * proportion);
-      });
-    }
-
-    const sum = newWeights.reduce((s, w) => s + w, 0);
-    setChapterWeights(newWeights.map(w => w / sum));
+    
+    // Use actual displayed hours to prevent fractional drifting
+    const currentHours = chapterWeights.map((_, i) => getDisplayHours(i));
+    
+    // Modify target chapter
+    const targetOldHours = currentHours[idx];
+    const targetNewHours = Math.max(0.5, targetOldHours + direction * step);
+    
+    currentHours[idx] = targetNewHours;
+    
+    const newTotal = currentHours.reduce((sum, h) => sum + h, 0);
+    const newWeights = currentHours.map(h => h / newTotal);
+    
+    setAdjustedTotalHours(roundToHalfHour(newTotal));
+    setChapterWeights(newWeights);
   };
 
   const handleFileSelect = (files: FileList | File[]) => {
-    const allowedExtensions = ['pdf', 'docx', 'pptx', 'txt', 'md', 'html', 'htm', 'json', 'zip', 'png', 'jpg', 'jpeg'];
+    if (!files || files.length === 0) return;
+    console.log('[handleFileSelect] received files:', files);
+
+    const allowedExtensions = [
+      'pdf', 'docx', 'doc', 'pptx', 'ppt', 'txt', 'md', 'rtf', 'pages', 'odt', 'epub',
+      'html', 'htm', 'json', 'zip', 'png', 'jpg', 'jpeg', 'webp', 'heic', 'bmp', 'gif', 'svg'
+    ];
     const newFiles: File[] = [];
     let hasError = false;
 
@@ -230,21 +231,31 @@ function CreateExamContent() {
       const hasExtension = file.name.includes('.');
       const ext = hasExtension ? file.name.toLowerCase().split('.').pop() || '' : '';
       const isAllowedExt = hasExtension && allowedExtensions.includes(ext);
-      const isAllowedType = file.type === 'application/pdf' || file.type.includes('word') || file.type.includes('presentation') || file.type.includes('text') || file.type.includes('json') || file.type.includes('zip') || file.type.startsWith('image/');
+      const isAllowedType = file.type === 'application/pdf' || 
+        file.type.includes('word') || 
+        file.type.includes('officedocument') ||
+        file.type.includes('presentation') || 
+        file.type.includes('text') || 
+        file.type.includes('json') || 
+        file.type.includes('zip') || 
+        file.type.startsWith('image/');
       
-      if (!isAllowedExt && !isAllowedType && !(!hasExtension && !file.type)) {
-        hasError = true;
-      } else {
+      if (isAllowedExt || isAllowedType || (!hasExtension && !file.type)) {
         newFiles.push(file);
+      } else {
+        hasError = true;
       }
     });
 
     if (hasError) {
-      setAiError(`Some files were unsupported. Use: .pdf, .docx, .pptx, .txt, .md, .html, .json, .zip, .png, .jpg`);
+      setAiError(`Some files were unsupported. Supported formats: .pdf, .docx, .pptx, .txt, .md, .png, .jpg, .jpeg, .webp, .pages, .rtf`);
     } else {
       setAiError(null);
     }
-    setUploadedFiles(prev => [...prev, ...newFiles]);
+    
+    if (newFiles.length > 0) {
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+    }
   };
 
   const removeFile = (idx: number) => {
@@ -263,8 +274,10 @@ function CreateExamContent() {
   };
 
   const handleAnalyze = async () => {
-    if (uploadedFiles.length === 0 && rawTextInput.trim().length === 0) {
-      setAiError('Please drop at least one file or type some syllabus material first.');
+    const hasFiles = uploadedFiles.length > 0;
+    const hasText = rawTextInput.trim().length > 0 || bookTitle.trim().length > 0 || bookEdition.trim().length > 0;
+    if (!hasFiles && !hasText) {
+      setAiError('Please drop or select at least one syllabus file/screenshot, or enter your book / chapter details.');
       return;
     }
 
@@ -298,10 +311,6 @@ function CreateExamContent() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to analyze file');
-
-      if (data.analysis?.chapters?.[0]?.chapter === 'FILE_ERROR_GATED') {
-        throw new Error(data.analysis.summary || 'This website appears to be protected. Try copy-pasting the text instead.');
-      }
 
       setAiAnalysis(data.analysis);
       setRawMaterialText(data.rawText || '');
@@ -498,108 +507,201 @@ function CreateExamContent() {
                     {!aiAnalysis && !isAnalyzing ? (
                       <div className="flex flex-col h-full">
                         <div 
-                          className={`relative rounded-2xl border-2 border-dashed transition-all p-3 flex flex-col flex-1 min-h-[140px] ${isDragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10' : 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50'} ${uploadedFiles.length === 0 ? 'items-center justify-center' : ''}`}
-                          onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files.length) handleFileSelect(e.dataTransfer.files); }}
-                          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                          onDragLeave={() => setIsDragging(false)}
+                          className={`relative rounded-2xl border-2 border-dashed transition-all p-3 flex flex-col min-h-[140px] overflow-hidden ${
+                            isDragging 
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-inner' 
+                              : 'border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800/40 hover:border-blue-400 hover:bg-slate-100/60 dark:hover:bg-slate-800'
+                          } ${uploadedFiles.length === 0 ? 'items-center justify-center flex-1' : ''}`}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsDragging(false);
+                            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                              handleFileSelect(e.dataTransfer.files);
+                            }
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsDragging(true);
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsDragging(false);
+                          }}
                         >
-                  {uploadedFiles.length > 0 ? (
-                    <div className="w-full flex flex-col h-full">
-                      <div className="w-full flex flex-col gap-2 overflow-y-auto pr-1 max-h-40">
-                        {uploadedFiles.map((f, i) => (
-                          <div key={i} className="bg-white dark:bg-slate-700 rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm border border-slate-200 dark:border-slate-600 w-full shrink-0">
-                            <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg text-blue-600 dark:text-blue-400">
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                          {uploadedFiles.length === 0 && (
+                            <input
+                              id="exam-material-file-input"
+                              ref={fileInputRef}
+                              type="file"
+                              multiple
+                              accept=".pdf,.docx,.doc,.pptx,.ppt,.txt,.md,.rtf,.pages,.odt,.epub,.json,.zip,.png,.jpg,.jpeg,.webp,.heic,.bmp,.gif,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/*"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                  handleFileSelect(e.target.files);
+                                }
+                                e.target.value = '';
+                              }}
+                            />
+                          )}
+
+                          {uploadedFiles.length > 0 ? (
+                            <div className="w-full flex flex-col gap-2 relative z-20">
+                              <div className="w-full flex flex-col gap-1.5 overflow-y-auto max-h-36 pr-0.5">
+                                {uploadedFiles.map((f, i) => (
+                                  <div key={i} className="bg-white dark:bg-slate-700/90 rounded-lg px-2.5 py-1.5 flex items-center gap-2 shadow-xs border border-slate-200 dark:border-slate-600 w-full shrink-0">
+                                    <div className="bg-blue-100 dark:bg-blue-900/40 p-1 rounded text-blue-600 dark:text-blue-400 shrink-0">
+                                      {f.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'heic', 'bmp', 'gif', 'svg'].some(ext => f.name.toLowerCase().endsWith(`.${ext}`)) ? (
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                      ) : (
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                      )}
+                                    </div>
+                                    <span className="flex-1 font-medium text-xs text-slate-800 dark:text-slate-200 truncate" title={f.name}>
+                                      {f.name}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 shrink-0">
+                                      {f.size > 1024 * 1024 ? `${(f.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(f.size / 1024))} KB`}
+                                    </span>
+                                    <button 
+                                      type="button" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeFile(i);
+                                      }} 
+                                      title="Remove file"
+                                      className="text-slate-400 hover:text-red-500 transition-colors p-0.5 rounded cursor-pointer"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                              <label
+                                className="cursor-pointer relative overflow-hidden py-2 px-3 flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-blue-50/50 dark:hover:bg-slate-700 transition-colors w-full shrink-0 shadow-xs font-medium text-xs"
+                              >
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept=".pdf,.docx,.doc,.pptx,.ppt,.txt,.md,.rtf,.pages,.odt,.epub,.json,.zip,.png,.jpg,.jpeg,.webp,.heic,.bmp,.gif,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/*"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files.length > 0) {
+                                      handleFileSelect(e.target.files);
+                                    }
+                                    e.target.value = '';
+                                  }}
+                                />
+                                <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                <span>Add more files or drop here</span>
+                              </label>
                             </div>
-                            <span className="flex-1 font-semibold text-sm text-slate-800 dark:text-slate-200 truncate">{f.name}</span>
-                            <button type="button" onClick={() => removeFile(i)} className="text-slate-400 hover:text-red-500 transition-colors p-1"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                          ) : (
+                            <div className="text-center py-4 space-y-2.5 w-full pointer-events-none">
+                              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto transition-transform group-hover:scale-105">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">Click to browse or drag & drop files here</p>
+                                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Supports screenshots, images, PDFs, Word, PPT, Text</p>
+                              </div>
+                              <div className="pt-0.5">
+                                <span
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg shadow-xs hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors font-semibold text-xs cursor-pointer"
+                                >
+                                  Browse Files
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="w-full mt-4 space-y-3 shrink-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                              Using a textbook?
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                      <label className="cursor-pointer flex-1 min-h-[60px] mt-3 flex flex-col items-center justify-center gap-1.5 bg-white/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-colors w-full border-dashed">
-                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                        <span className="font-medium text-sm">Add more files or drop here</span>
-                        <input type="file" multiple className="hidden" onChange={(e) => { if (e.target.files) handleFileSelect(e.target.files); }} />
-                      </label>
-                    </div>
-                  ) : (
-                    <div className="text-center space-y-4 w-full">
-                      <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                      </div>
-                      <p className="text-slate-700 dark:text-slate-300 font-medium">Drag & Drop your syllabus here</p>
-                      <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors font-medium text-sm">
-                        <span>Browse Files</span>
-                        <input type="file" multiple className="hidden" onChange={(e) => { if (e.target.files) handleFileSelect(e.target.files); }} />
-                      </label>
-                    </div>
-                  )}
-                  </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Method / Book Title</label>
+                              <input
+                                type="text"
+                                value={bookTitle}
+                                onChange={(e) => setBookTitle(e.target.value)}
+                                placeholder="e.g. Campbell Biology"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Edition & Level (Important!)</label>
+                              <input
+                                type="text"
+                                value={bookEdition}
+                                onChange={(e) => setBookEdition(e.target.value)}
+                                placeholder="e.g. 7th edition AP"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
+                              />
+                            </div>
+                          </div>
 
-                  <div className="w-full mt-4 space-y-3 shrink-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                        Gebruik je een schoolboek?
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Methode / Boektitel</label>
-                        <input
-                          type="text"
-                          value={bookTitle}
-                          onChange={(e) => setBookTitle(e.target.value)}
-                          placeholder="Bijv. Chemie Overal"
-                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Editie & Niveau (Belangrijk!)</label>
-                        <input
-                          type="text"
-                          value={bookEdition}
-                          onChange={(e) => setBookEdition(e.target.value)}
-                          placeholder="Bijv. 7e editie VWO 5"
-                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
-                        />
-                      </div>
-                    </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Which chapters or topics?</label>
+                            <textarea
+                              value={rawTextInput}
+                              onChange={(e) => setRawTextInput(e.target.value)}
+                              placeholder="e.g. Chapter 1 to 4, or paste your entire syllabus here..."
+                              className="w-full h-16 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
+                            />
+                          </div>
+                        </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Welke hoofdstukken of onderwerpen?</label>
-                      <textarea
-                        value={rawTextInput}
-                        onChange={(e) => setRawTextInput(e.target.value)}
-                        placeholder="Bijv. Hoofdstuk 1 t/m 4, of plak hier je hele studiewijzer..."
-                        className="w-full h-16 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
-                      />
-                    </div>
-                  </div>
+                        <button 
+                          type="button" 
+                          onClick={handleAnalyze}
+                          disabled={isAnalyzing}
+                          className="mt-3 w-full bg-blue-600 text-white py-2.5 px-4 rounded-xl font-bold shadow-md hover:bg-blue-700 hover:shadow-lg disabled:opacity-50 transition-all shrink-0 text-sm flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <svg className="w-4 h-4 animate-spin text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                              <span>Analyzing Material with AI...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                              <span>Analyze Material</span>
+                            </>
+                          )}
+                        </button>
 
-                  <button 
-                    type="button" 
-                    onClick={handleAnalyze}
-                    disabled={uploadedFiles.length === 0 && rawTextInput.trim().length === 0}
-                    className="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-xl font-bold shadow-md hover:bg-blue-700 hover:shadow-lg disabled:opacity-50 transition-all shrink-0 text-sm"
-                  >
-                    Analyze Material
-                  </button>
-                  {aiError && <p className="text-sm text-red-500 mt-2 font-medium shrink-0">{aiError}</p>}
-                </div>
-              ) : isAnalyzing ? (
-                <div className="flex-1 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-800/30 flex flex-col items-center justify-center gap-4 min-h-[150px]">
-                  <div className="relative w-10 h-10">
-                    <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-900 rounded-full"></div>
-                    <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                  <div className="text-center px-4">
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">AI is building your study plan...</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Parsing chunks, estimating hours...</p>
-                  </div>
-                </div>
-              ) : aiAnalysis && (
+                        {aiError && (
+                          <div className="mt-2.5 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-2.5 text-red-700 dark:text-red-300 text-xs shrink-0 animate-in fade-in">
+                            <svg className="w-4 h-4 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <div className="flex-1 font-medium leading-relaxed">{aiError}</div>
+                            <button type="button" onClick={() => setAiError(null)} className="text-red-400 hover:text-red-600 transition-colors p-0.5">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : isAnalyzing ? (
+                      <div className="flex-1 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-800/30 flex flex-col items-center justify-center gap-4 min-h-[150px]">
+                        <div className="relative w-10 h-10">
+                          <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-900 rounded-full"></div>
+                          <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        <div className="text-center px-4">
+                          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">AI is building your study plan...</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Parsing chunks, estimating hours...</p>
+                        </div>
+                      </div>
+                    ) : aiAnalysis && (
                   <div className="flex-1 flex flex-col border-2 border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/10 rounded-2xl p-3 shadow-sm space-y-3 min-h-0">
                   <div className="flex items-start justify-between border-b border-green-200 dark:border-green-800/50 pb-2 shrink-0">
                     <div>

@@ -23,11 +23,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Automatically complete past exams before fetching
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    await Exam.updateMany(
+      { user: user._id, isCompleted: { $ne: true }, date: { $lt: startOfToday }, can_study_after_exam: { $ne: true } },
+      { $set: { isCompleted: true, completedAt: now } }
+    );
+
     const exams = await Exam.find({ user: user._id }).sort({ date: 1 }).lean();
     
     // Attach progress based on sessions
     for (let exam of exams) {
-       const sessions = await StudySession.find({ examId: exam._id }).lean();
+       const sessions = await StudySession.find({ $or: [{ exam: exam._id }, { examId: exam._id }] }).lean();
        const totalSessions = sessions.length;
        const completedSessions = sessions.filter((s: any) => s.isCompleted).length;
        (exam as any).progressPercentage = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
@@ -133,18 +142,34 @@ export async function POST(request: Request) {
     const textLength = rawMaterialText?.length || 0;
     const useRag = textLength > 400000;
 
-    const exam = new Exam({
-      subject,
-      date: new Date(date),
+    let exam = await Exam.findOne({
       user: user._id,
-      studyMaterials,
-      originalFileName: originalFileName || undefined,
-      rawMaterialText: rawMaterialText || undefined,
-      useRag,
-      color,
+      subject: new RegExp('^' + subject.trim() + '$', 'i'),
+      isCompleted: { $ne: true },
     });
 
-    await exam.save();
+    if (exam) {
+      exam.date = new Date(date);
+      exam.studyMaterials = studyMaterials;
+      if (originalFileName) exam.originalFileName = originalFileName;
+      if (rawMaterialText) exam.rawMaterialText = rawMaterialText;
+      exam.useRag = useRag;
+      await exam.save();
+      console.log(`[POST /api/exams] Updated existing active exam ${exam._id} for subject "${subject}"`);
+    } else {
+      exam = new Exam({
+        subject,
+        date: new Date(date),
+        user: user._id,
+        studyMaterials,
+        originalFileName: originalFileName || undefined,
+        rawMaterialText: rawMaterialText || undefined,
+        useRag,
+        color,
+      });
+      await exam.save();
+      console.log(`[POST /api/exams] Created new active exam ${exam._id} for subject "${subject}"`);
+    }
 
     // If RAG is enabled, trigger embedding in the background
     if (useRag && rawMaterialText) {

@@ -40,22 +40,18 @@ export async function GET(request: Request) {
     const validExamIds = new Set(exams.map(e => e._id.toString()));
 
     // Get all study sessions for the user, but only for valid exams
-    let sessions = await StudySession.find({ user: user._id });
-    sessions = sessions.filter(session => validExamIds.has(session.exam?.toString()));
+    let rawSessions = await StudySession.find({ user: user._id });
+    let validSessions = rawSessions.filter(session => validExamIds.has(session.exam?.toString()));
 
-    // AUTO-REGENERATE RECOVERY: If user has active exams but ZERO uncompleted sessions left,
-    // automatically trigger regenerateSchedule to restore their study/review sessions!
-    const uncompletedCount = sessions.filter(s => !s.isCompleted).length;
-    const activeExams = exams.filter(e => !e.isCompleted);
-
-    if (activeExams.length > 0 && uncompletedCount === 0) {
-      console.log('Detected active exams with 0 uncompleted sessions. Auto-regenerating schedule recovery...');
-      const { regenerateSchedule } = await import('@/lib/scheduling/regenerateSchedule');
-      await regenerateSchedule(user, {}, undefined, 'allowOverload');
-      
-      // Re-fetch regenerated sessions
-      sessions = await StudySession.find({ user: user._id });
-      sessions = sessions.filter(session => validExamIds.has(session.exam?.toString()));
+    // Deduplicate sessions in memory by exam + startTime + title to prevent duplicate chips
+    const seenSessionKeys = new Set<string>();
+    const sessions: typeof validSessions = [];
+    for (const session of validSessions) {
+      const key = `${session.exam?.toString()}-${new Date(session.startTime).toISOString()}-${(session as any).shortTitle || session.title}`;
+      if (!seenSessionKeys.has(key)) {
+        seenSessionKeys.add(key);
+        sessions.push(session);
+      }
     }
 
     // Get all tasks for the user
@@ -144,7 +140,7 @@ export async function GET(request: Request) {
 
       return {
         id: `session-${session._id}`,
-        title: `${session.subject}: ${displayTitle}`,
+        title: session.subject,
         start: session.startTime,
         end: session.endTime,
         allDay: false,

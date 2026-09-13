@@ -5,10 +5,26 @@ import StudySession from '@/models/StudySession';
  * exceeds maxSessionsPerDay.
  *
  * For dates exceeding maxSessionsPerDay:
- * - Keeps the first (maxSessionsPerDay - 1) sessions intact.
- * - Merges the remaining excess sessions into 1 combined session with a combined shortTitle,
- *   combined fullTitle, summed duration, and combined metadata for AI task generation.
+ * - Divides the sessions evenly into `maxSessionsPerDay` chunks.
+ * - Merges the sessions within each chunk into 1 combined session.
  */
+
+function chunkArray<T>(array: T[], numChunks: number): T[][] {
+  const result: T[][] = [];
+  const baseSize = Math.floor(array.length / numChunks);
+  let remainder = array.length % numChunks;
+  
+  let offset = 0;
+  for (let i = 0; i < numChunks; i++) {
+    const size = baseSize + (remainder > 0 ? 1 : 0);
+    if (size > 0) {
+      result.push(array.slice(offset, offset + size));
+    }
+    offset += size;
+    remainder--;
+  }
+  return result;
+}
 export function compressSessionsInMemory(sessionsToSave: any[], maxSessionsPerDay: number): any[] {
   if (sessionsToSave.length === 0) return [];
   const limit = Math.max(1, maxSessionsPerDay || 4);
@@ -32,12 +48,16 @@ export function compressSessionsInMemory(sessionsToSave: any[], maxSessionsPerDa
     // Sort by startTime
     daySessions.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
-    const keep = daySessions.slice(0, limit - 1);
-    const toMerge = daySessions.slice(limit - 1);
+    const chunks = chunkArray(daySessions, limit);
 
-    result.push(...keep);
+    for (const chunk of chunks) {
+      if (chunk.length === 1) {
+        result.push(chunk[0]);
+        continue;
+      }
 
-    if (toMerge.length > 0) {
+      const toMerge = chunk;
+
       const extractChapterName = (s: any): string => {
         const raw = s._enrichMeta?.chapter || s.title || '';
         const noPrefix = raw.replace(/^(Study|Review):\s*/i, '').trim();
@@ -56,8 +76,10 @@ export function compressSessionsInMemory(sessionsToSave: any[], maxSessionsPerDa
       const fullTitle = `Study ${subject}: ${chapterNames.join(', ')}`;
 
       const totalDurationMs = toMerge.reduce((sum: number, s: any) => sum + (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()), 0);
+      const avgDurationMs = totalDurationMs / Math.max(1, toMerge.length);
+      const mergedDurationMs = Math.min(90 * 60 * 1000, Math.max(45 * 60 * 1000, Math.round(avgDurationMs)));
       const mergedStart = new Date(toMerge[0].startTime);
-      const mergedEnd = new Date(mergedStart.getTime() + totalDurationMs);
+      const mergedEnd = new Date(mergedStart.getTime() + mergedDurationMs);
 
       const allFormulas = toMerge.flatMap((s: any) => s._enrichMeta?.formulas || []);
       const combinedChapterForAI = chapterNames.join(' & ');
@@ -75,6 +97,8 @@ export function compressSessionsInMemory(sessionsToSave: any[], maxSessionsPerDa
           chapter: combinedChapterForAI,
           difficulty: 3,
           formulas: allFormulas,
+          numMerged: toMerge.length,
+          durationMinutes: Math.round(mergedDurationMs / 60000),
         },
       });
     }
@@ -108,47 +132,52 @@ export async function compressSchedule(
 
     daySessions.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
-    const keepSlots = daySessions.slice(0, maxSessionsPerDay - 1);
-    const toMerge = daySessions.slice(maxSessionsPerDay - 1);
+    const chunks = chunkArray(daySessions, maxSessionsPerDay);
 
-    if (toMerge.length < 2) continue;
+    for (const chunk of chunks) {
+      if (chunk.length < 2) continue;
 
-    const extractChapterName = (s: any): string => {
-      if (s.shortTitle) return s.shortTitle;
-      const raw = s.title || '';
-      const noPrefix = raw.replace(/^(Study|Review):\s*/i, '').trim();
-      return noPrefix.includes(':') ? noPrefix.split(':')[0].trim() : noPrefix;
-    };
+      const toMerge = chunk;
 
-    const chapterNames = toMerge
-      .map(extractChapterName)
-      .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i);
+      const extractChapterName = (s: any): string => {
+        if (s.shortTitle) return s.shortTitle;
+        const raw = s.title || '';
+        const noPrefix = raw.replace(/^(Study|Review):\s*/i, '').trim();
+        return noPrefix.includes(':') ? noPrefix.split(':')[0].trim() : noPrefix;
+      };
 
-    const subject = toMerge[0].subject || '';
-    const shortTitleParts = chapterNames.slice(0, 2);
-    const shortTitle = chapterNames.length > 2
-      ? `${shortTitleParts.join(', ')} e.a.`
-      : shortTitleParts.join(', ');
+      const chapterNames = toMerge
+        .map(extractChapterName)
+        .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i);
 
-    const fullTitle = `Study ${subject}: ${chapterNames.join(', ')}`;
+      const subject = toMerge[0].subject || '';
+      const shortTitleParts = chapterNames.slice(0, 2);
+      const shortTitle = chapterNames.length > 2
+        ? `${shortTitleParts.join(', ')} e.a.`
+        : shortTitleParts.join(', ');
 
-    const combinedDurationMs = toMerge.reduce((sum: number, s: any) => {
-      return sum + (new Date(s.endTime).getTime() - new Date(s.startTime).getTime());
-    }, 0);
+      const fullTitle = `Study ${subject}: ${chapterNames.join(', ')}`;
 
-    const mergedStart = new Date(toMerge[0].startTime);
-    const mergedEnd = new Date(mergedStart.getTime() + combinedDurationMs);
+      const totalDurationMs = toMerge.reduce((sum: number, s: any) => {
+        return sum + (new Date(s.endTime).getTime() - new Date(s.startTime).getTime());
+      }, 0);
+      const avgDurationMs = totalDurationMs / Math.max(1, toMerge.length);
+      const combinedDurationMs = Math.min(90 * 60 * 1000, Math.max(45 * 60 * 1000, Math.round(avgDurationMs)));
 
-    await StudySession.findByIdAndUpdate(toMerge[0]._id, {
-      title: fullTitle,
-      shortTitle: shortTitle,
-      startTime: mergedStart,
-      endTime: mergedEnd,
-    });
+      const mergedStart = new Date(toMerge[0].startTime);
+      const mergedEnd = new Date(mergedStart.getTime() + combinedDurationMs);
 
-    const idsToDelete = toMerge.slice(1).map((s: any) => s._id);
-    if (idsToDelete.length > 0) {
-      await StudySession.deleteMany({ _id: { $in: idsToDelete } });
+      await StudySession.findByIdAndUpdate(toMerge[0]._id, {
+        title: fullTitle,
+        shortTitle: shortTitle,
+        startTime: mergedStart,
+        endTime: mergedEnd,
+      });
+
+      const idsToDelete = toMerge.slice(1).map((s: any) => s._id);
+      if (idsToDelete.length > 0) {
+        await StudySession.deleteMany({ _id: { $in: idsToDelete } });
+      }
     }
 
     compressedDays++;

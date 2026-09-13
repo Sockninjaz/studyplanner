@@ -36,18 +36,19 @@ export async function GET(request: Request) {
       query.startTime = { $gte: start, $lte: end };
     }
 
-    let sessions = await StudySession.find(query).populate('exam').sort({ startTime: 1 });
+    let rawSessions = await StudySession.find(query).populate('exam').sort({ startTime: 1 });
 
-    if (sessions.length === 0) {
-      const Exam = (await import('@/models/Exam')).default;
-      const activeExams = await Exam.find({ user: user._id, isCompleted: { $ne: true } });
-      if (activeExams.length > 0) {
-        console.log(`Auto-healing: Regenerating schedule for user ${user._id} because an active exam has 0 sessions`);
-        const { regenerateSchedule } = await import('@/lib/scheduling/regenerateSchedule');
-        await regenerateSchedule(user, {}, undefined, 'allowOverload');
-        sessions = await StudySession.find(query).populate('exam').sort({ startTime: 1 });
+    // Deduplicate sessions in memory by exam + startTime + title
+    const seenSessionKeys = new Set<string>();
+    const sessions = rawSessions.filter(session => {
+      const examId = session.exam?._id ? session.exam._id.toString() : session.exam?.toString() || '';
+      const key = `${examId}-${new Date(session.startTime).toISOString()}-${(session as any).shortTitle || session.title}`;
+      if (seenSessionKeys.has(key)) {
+        return false;
       }
-    }
+      seenSessionKeys.add(key);
+      return true;
+    });
 
     return NextResponse.json({ data: sessions }, { status: 200 });
   } catch (error) {

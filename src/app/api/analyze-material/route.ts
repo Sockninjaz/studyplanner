@@ -97,25 +97,34 @@ export async function POST(request: NextRequest) {
           }
         }
         
+        const ext = fileName.toLowerCase().split('.').pop() || '';
+        const isImage = (file.type && file.type.startsWith('image/')) || ['png', 'jpg', 'jpeg', 'webp', 'heic', 'bmp', 'gif', 'svg'].includes(ext);
+        const isPdf = file.type === 'application/pdf' || ext === 'pdf' || (buffer.length > 4 && buffer.slice(0, 4).toString('ascii') === '%PDF');
+        const resolvedMime = file.type && file.type !== 'application/octet-stream'
+          ? file.type
+          : (isImage ? `image/${ext === 'jpg' ? 'jpeg' : (ext || 'png')}` : isPdf ? 'application/pdf' : 'application/octet-stream');
+
         const parsed = await parseDocument(buffer, fileName);
         console.log(`[analyze-material] Extracted ${parsed.text.length} chars from ${file.name}`);
         
-        textToAnalyze += `\n\n--- Document: ${fileName} ---\n\n${parsed.text}`;
+        if (parsed.text.trim().length > 0) {
+          textToAnalyze += `\n\n--- Document: ${fileName} ---\n\n${parsed.text}`;
+        }
         parsedFileInfo.pageCount += (parsed.pageCount ?? 0);
         parsedFileInfo.names.push(fileName);
         
-        // Basic OCR fallback if text is too short for a PDF, or if it is an image
-        if (parsed.text.trim().length < 50 && (file.type === 'application/pdf' || file.type.startsWith('image/'))) {
-          console.log(`[analyze-material] Text extraction yielded almost nothing for ${file.name}. Attempting Gemini Multimodal OCR...`);
+        // Multimodal Vision OCR for images/screenshots or scanned PDFs with sparse text
+        if (isImage || (isPdf && parsed.text.trim().length < 50)) {
+          console.log(`[analyze-material] Running Multimodal Vision OCR for ${fileName} (${resolvedMime})...`);
           try {
             const { extractTextFromMultimodal } = await import('@/lib/ai/aiClient');
-            const ocrText = await extractTextFromMultimodal(buffer, file.type, specialInstructions || undefined);
-            if (ocrText && ocrText.trim().length >= 50) {
-              console.log(`[analyze-material] Gemini OCR successful for ${file.name}.`);
-              textToAnalyze += `\n[OCR Extracted Text for ${fileName}]:\n${ocrText}`;
+            const ocrText = await extractTextFromMultimodal(buffer, resolvedMime, specialInstructions || undefined);
+            if (ocrText && ocrText.trim().length > 0) {
+              console.log(`[analyze-material] Vision OCR successful for ${fileName} (${ocrText.length} chars).`);
+              textToAnalyze += `\n\n--- Extracted Material from ${fileName} ---\n${ocrText}`;
             }
           } catch (ocrErr: any) {
-            console.error(`[analyze-material] Gemini OCR failed for ${file.name}:`, ocrErr);
+            console.error(`[analyze-material] Vision OCR failed for ${fileName}:`, ocrErr);
           }
         }
       }
@@ -165,7 +174,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (files.length === 0 && textToAnalyze.trim().length < 3) {
+    if (textToAnalyze.trim().length < 3) {
+      if (files.length > 0) {
+        return NextResponse.json(
+          { error: 'Could not extract readable text or syllabus topics from the uploaded file(s). Please try uploading a clearer image/PDF or enter your topics manually.' },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
         { error: 'Input is too short. Please provide at least a topic or chapter description.' },
         { status: 400 }
@@ -292,6 +307,25 @@ export async function POST(request: NextRequest) {
     );
 
     console.log(`[analyze-material] AI returned ${analysis.chapters.length} chapters, ${analysis.totalEstimatedHours}h total`);
+
+    if (!analysis.chapters || analysis.chapters.length === 0) {
+      analysis.chapters = [
+        {
+          chapter: `${subjectName || 'Course'} Overview & Foundations`,
+          difficulty: 3,
+          confidence: 3,
+          user_estimated_total_hours: 2,
+          formulas: []
+        },
+        {
+          chapter: `${subjectName || 'Course'} Core Practice & Review`,
+          difficulty: 3,
+          confidence: 3,
+          user_estimated_total_hours: 2,
+          formulas: []
+        }
+      ];
+    }
 
     // Guarantee clean 0.5-hour step rounding for all chapter hours and total
     let chaptersSum = 0;

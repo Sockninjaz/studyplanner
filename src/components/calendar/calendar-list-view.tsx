@@ -319,8 +319,35 @@ export default function CalendarListView({
     }
   };
 
-  if (error) return <div>Failed to load calendar events</div>;
-  if (isLoading) return <div>Loading...</div>;
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center p-6">
+        <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center mb-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        </div>
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Failed to load calendar events</p>
+        <button onClick={() => mutate()} className="mt-3 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 transition-colors">
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-full overflow-y-auto p-4 max-w-4xl mx-auto space-y-6 animate-pulse">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="space-y-3">
+            <div className="h-5 w-36 bg-slate-200 dark:bg-slate-800 rounded-md"></div>
+            <div className="space-y-2">
+              <div className="h-16 bg-slate-100 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/50"></div>
+              <div className="h-16 bg-slate-100 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/50"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto">

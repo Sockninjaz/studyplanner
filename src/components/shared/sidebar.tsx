@@ -272,7 +272,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                 <ul className="mb-4 flex flex-col gap-0.5">
                   <li>
                     <Link href="/today" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-300 ease-in-out ${pathname.startsWith('/today') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
-                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <svg width="16" height="16" className="w-4 h-4 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       Study Hub
@@ -280,7 +280,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                   </li>
                   <li>
                     <Link href="/calendar" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-300 ease-in-out ${pathname.startsWith('/calendar') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
-                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <svg width="16" height="16" className="w-4 h-4 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
                       Schedule
@@ -288,7 +288,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                   </li>
                   <li>
                     <Link href="/chat" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-300 ease-in-out ${pathname.startsWith('/chat') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
-                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <svg width="16" height="16" className="w-4 h-4 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                       </svg>
                       Chat
@@ -296,7 +296,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                   </li>
                   <li>
                     <Link href="/exams" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-300 ease-in-out ${pathname.startsWith('/exams') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
-                      <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <svg width="16" height="16" className="w-4 h-4 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
                       </svg>
                       Exams
@@ -309,22 +309,22 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
             {isCollapsed && (
               <div className="space-y-1">
                 <Link href="/calendar" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/calendar') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`} title="Schedule">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg width="24" height="24" className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </Link>
                 <Link href="/today" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/today') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`} title="Today">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg width="24" height="24" className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </Link>
                 <Link href="/chat" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/chat') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`} title="Chat">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg width="24" height="24" className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                 </Link>
                 <Link href="/exams" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/exams') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`} title="Exams">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg width="24" height="24" className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477 4.5 1.253" />
                   </svg>
                 </Link>
