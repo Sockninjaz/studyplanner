@@ -447,19 +447,23 @@ export default function ChatPage() {
                     messages.map((m) => (
                       <div key={m.id} className={`flex flex-col gap-2 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
                         {/* Main Message Bubble */}
-                        <div className={`group relative max-w-[85%] rounded-xl px-4 py-2 shadow-sm ${
+                        <div className={`group relative max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm ${
                             m.role === 'user'
-                              ? 'bg-[rgb(54,65,86)] text-white rounded-br-none'
-                              : 'bg-neutral-light dark:bg-slate-800 text-neutral-dark dark:text-slate-200 rounded-bl-none border border-neutral-dark/5 dark:border-slate-700'
+                              ? 'bg-[rgb(54,65,86)] text-white rounded-br-sm'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-sm border border-slate-200 dark:border-slate-700/80'
                           }`}>
                           {m.content === '' && m.role === 'assistant' ? (
-                            <div className="flex gap-1">
-                              <div className="w-2 h-2 bg-neutral-dark/40 rounded-full animate-bounce" />
-                              <div className="w-2 h-2 bg-neutral-dark/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                              <div className="w-2 h-2 bg-neutral-dark/40 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                            <div className="flex gap-1 py-1">
+                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                             </div>
                           ) : (
-                            <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0">
+                            <div className={`text-sm leading-relaxed prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:p-0 ${
+                              m.role === 'user'
+                                ? 'prose-invert text-white prose-p:text-white prose-headings:text-white prose-strong:text-white prose-code:text-white'
+                                : 'dark:prose-invert text-slate-800 dark:text-slate-100'
+                            }`}>
                               <ReactMarkdown remarkPlugins={[remarkMath, remarkBreaks]} rehypePlugins={[rehypeKatex]}>{preprocessMath(m.content)}</ReactMarkdown>
                             </div>
                           )}
@@ -514,7 +518,7 @@ export default function ChatPage() {
                                     {im.role === 'assistant' && (
                                       <div className="absolute -left-4 top-[14px] w-4 h-[2px] bg-slate-200 dark:bg-slate-700" />
                                     )}
-                                    <div className={`z-10 px-3 py-1.5 text-sm rounded-xl shadow-sm overflow-x-auto ${im.role === 'user' ? 'bg-[rgb(54,65,86)]/10 text-neutral-dark dark:text-blue-300 rounded-br-sm' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-bl-sm'}`}>
+                                    <div className={`z-10 px-3.5 py-2 text-sm rounded-xl shadow-sm overflow-x-auto ${im.role === 'user' ? 'bg-[rgb(54,65,86)] text-white rounded-br-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-bl-sm'}`}>
                                       {im.content === '' && im.role === 'assistant' ? (
                                         <div className="flex gap-1 py-1">
                                           <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
@@ -522,7 +526,11 @@ export default function ChatPage() {
                                           <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                                         </div>
                                       ) : (
-                                        <div className="leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0">
+                                        <div className={`leading-relaxed prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:p-0 ${
+                                          im.role === 'user' 
+                                            ? 'prose-invert text-white prose-p:text-white prose-strong:text-white' 
+                                            : 'dark:prose-invert text-slate-800 dark:text-slate-100'
+                                        }`}>
                                           <ReactMarkdown remarkPlugins={[remarkMath, remarkBreaks]} rehypePlugins={[rehypeKatex]}>{preprocessMath(im.content)}</ReactMarkdown>
                                         </div>
                                       )}

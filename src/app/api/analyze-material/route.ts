@@ -69,6 +69,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (!userProfile) {
+      userProfile = {
+        countryName: 'Netherlands',
+        academicTierLabel: 'VWO',
+        gradeLabel: 'Klas 6',
+        academicTier: 'vwo',
+        grade: 'klas-6',
+        examBoardLabel: 'National Curriculum (Centraal Examen / Schoolexamen)'
+      };
+    }
+
     if (files.length === 0 && (!rawText || rawText.trim().length === 0)) {
       return NextResponse.json({ error: 'Please upload at least one file or type your material.' }, { status: 400 });
     }

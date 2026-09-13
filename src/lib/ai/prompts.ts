@@ -4,13 +4,17 @@
 
 export const MATERIAL_ANALYSIS_PROMPT = `You are an expert educational content analyzer. Your job is to analyze uploaded study material and break it down into logical study topics/chapters.
 
-STEP 1 — HOLISTIC ASSESSMENT:
-First, assess the ENTIRE document as a whole. Think: "How many hours would a typical university student realistically need to study this from scratch?" This is your global budget. Be highly realistic and avoid inflating estimates:
-- A typical 10-page lecture handout: 1-2 hours
-- A dense 40-page textbook chapter: 3-5 hours
-- A short exercises sheet: 0.5-1.5 hours
-- A massive 100+ page textbook section: 10-15 hours
-- MOST materials will only be 1 to 5 hours. ONLY approach the 20-hour limit if the document is genuinely an entire semester's worth of textbook chapters.
+STEP 1 — HOLISTIC ASSESSMENT & GRADE-LEVEL SCALING:
+First, assess the ENTIRE document as a whole, specifically anchored in the STUDENT ACADEMIC PROFILE (their country, academic tier, and exact grade year).
+Academic study requirements scale significantly by school year:
+- UPPER-SECONDARY EXAM YEARS (e.g. Klas 6 VWO, Klas 5 HAVO, Grade 12, Senior High):
+  Students are preparing for high-stakes, cumulative national/school exams (Centraal Examen / Schoolexamen). Tests cover deep conceptual domains and complex practice problems.
+  * Allocate 3.5 to 6.0 hours per major chapter (e.g., dense biology chapters with 5-8 basisstoffen like DNA or Planten, or calculus/physics chapters, take 4 to 6 hours each!).
+  * An exam covering 2-4 chapters realistically requires 10 to 20+ hours of total study time.
+- MID UPPER-SECONDARY (e.g. Klas 4-5 VWO, Klas 4 HAVO, Grade 10-11):
+  * Allocate 2.5 to 4.5 hours per chapter. Exams typically require 6 to 12 hours total.
+- LOWER SECONDARY (e.g. Klas 1-3, Grades 7-9):
+  * Shorter introductory chapters: 1.0 to 2.5 hours per chapter. Tests typically require 3 to 6 hours total.
 
 STEP 2 — DIVIDE INTO CHAPTERS:
 Now divide that global hour budget among the chapters/topics you identify. Their hours MUST SUM to the totalEstimatedHours you set in Step 1.
@@ -25,8 +29,8 @@ HOUR ROUNDING RULE: All hour estimates (both per-chapter user_estimated_total_ho
 
 Guidelines:
 - Aim for 3-10 meaningful chapters. If the material is extremely long and covers many topics, adjust expectations: not everything requires super in-depth knowledge.
-- You CAN assign fractional hours (e.g., 0.25, 0.5) for short or overview chapters. A chapter does NOT need to take 1 hour if it is brief.
-- Do NOT artificially inflate the total hours just because there are many chapters. Group them logically and assign realistic fractional hours if needed.
+- You CAN assign fractional hours (e.g., 0.5, 1.0) for short review or overview chapters.
+- Do NOT artificially compress study hours down to 1 hour if the student is in upper secondary / exam years (e.g. 5-6 VWO) studying major textbook chapters.
 - SYLLABUS TITLE RULE: If the material has a clear title or header (e.g. in a syllabus), use it to identify the main academic topic and group the material logically under that overarching concept.
 - FORMULA EXTRACTION: If there are specific formulas, equations, or laws given in the text, you MUST extract them and include them in the "formulas" array for the relevant chapter so the student can study them.
 - If material is a syllabus/outline, use section headers as natural boundaries
@@ -34,19 +38,15 @@ Guidelines:
 - STRICT PRACTICE QUESTIONS RULE: If the material contains practice questions, past exams, or exercises, you MUST completely abstract away from the specific questions. 
   * NEVER use the story context or specific applications as chapter names (e.g. NEVER output "Wine fraud", "Helium spectrum", "The boy at the store").
   * Instead, you MUST identify the underlying academic theory, physics/math concept, or broad curriculum domain (e.g. "Radioactive Decay", "Quantum Mechanics", "Newton's Laws") and use THAT as the chapter name.
-  * EXAMPLE BAD OUTPUT: "Question 4: Wine fraud", "Assignment 3: The red car", "Echography"
-  * EXAMPLE GOOD OUTPUT: "Isotopes and Decay", "Kinematics", "Sound Waves and Reflection"
 - EXACT TITLES RULE (CRITICAL): If the material explicitly provides textbook chapter titles, table of contents, or themes (e.g., "Voortplanting", "Planten"), you MUST use EXACTLY those names word-for-word. Do NOT rephrase them. Do NOT translate them. Do NOT try to make them sound more academic. Do NOT mix them with international curriculum standards. If the user provides a table of contents or one is found in the database, your output chapters MUST mirror it perfectly. If the user provides a sparse list of chapter numbers (e.g., "H11 10 9 4"), treat EVERY standalone number as a separate chapter request (Chapter 11, Chapter 10, Chapter 9, Chapter 4) and extract their names from the database or provided context.
 - GROUPING SUBTOPICS RULE: If the provided text contains high-level Themes/Chapters with many sub-bullet points underneath them, YOU MUST GROUP THEM. Create exactly ONE chapter for the main Theme (e.g., "Thema: Genetica") and absorb all the sub-bullet points into the chapter's "summary" field. NEVER turn every single bullet point or subtopic into its own standalone chapter.
 IMPORTANT LANGUAGE RULE: You MUST output all chapter names and summaries in the EXACT SAME LANGUAGE as the provided study material. Do not translate the material to English unless the original material is in English.
 
 A. PACING / ESTIMATED HOURS RULE (CRITICAL):
 You MUST heavily rely on the STUDENT ACADEMIC PROFILE (if provided) to calculate the \`totalEstimatedHours\`. 
-- DO NOT blindly assign massive hours (e.g., 10-15 hours) just because a document has a lot of words or questions.
-- Ask yourself: "How long does a typical student at exactly THIS grade level (e.g., 5 VWO in the Netherlands, or a University Senior) realistically take to process this specific type of document?"
-- For example: A 5 VWO student doing a single physics past exam paper takes about 2 to 4 hours maximum to complete and review. A 15-hour estimate for a single exam paper is an absurd hallucination.
-- BIOLOGY EXCEPTION (BASISSTOFFEN): Biology textbooks (like Nectar or Biologie voor Jou) often contain 6-8 "basisstoffen" (subchapters) per chapter. These chapters are extremely dense. If you identify biology chapters with multiple basisstoffen or subchapters, you MUST assign higher time estimates (typically 4 to 6 hours per chapter). Do not underestimate biology chapters!
-- You MUST anchor your time estimates in the realistic study speed and attention span of a typical student in that exact country and grade level.
+- Scale time according to the student's exact grade and track: A student in 6 VWO preparing for an exam on 2-3 dense science/math chapters needs 8 to 18 hours of study, whereas a 1st or 2nd year student needs 2 to 4 hours.
+- BIOLOGY EXCEPTION (BASISSTOFFEN): Biology textbooks (like Nectar or Biologie voor Jou) contain 5-8 dense "basisstoffen" per chapter. For upper-level students (HAVO 4-5, VWO 4-6), each biology chapter requires 4.0 to 6.0 hours of study. Do not underestimate biology chapters!
+- You MUST anchor your time estimates in the realistic study speed and attention span of a typical student in that exact country, track, and grade level.
 
 B. SPARSE INPUT HANDLING (No Blind Hallucinations):
 You must output a boolean field: \`isSuggestedFallback\`.
@@ -115,21 +115,33 @@ export function buildMaterialAnalysisMessage(
     timeConstraintStr += `\nBIOLOGY NOTE: The user has indicated that Biology chapters (e.g. DNA, Planten) are dense and typically take 4-5 hours each. Please be more generous with time estimates for Biology chapters to reflect this, while still generally respecting the overall time constraints above.`;
   }
 
+  const gradeStr = userProfile?.gradeLabel || userProfile?.grade || '';
+  const trackStr = userProfile?.academicTierLabel || userProfile?.academicTier || '';
+  const isUpperSecondary = /6|5|12|11|bovenbouw|senior|vwo|havo/i.test(gradeStr + ' ' + trackStr);
+
   return `Analyze the following study material for the subject "${subjectName}" (exam date: ${examDate}).
 
 First estimate the TOTAL realistic study hours for the whole document, then divide into chapters.
 The sum of all chapter hours MUST equal the totalEstimatedHours.
-Be highly realistic and do not overestimate. Use the STUDENT ACADEMIC PROFILE below to ground your time estimates. (e.g. How long does a single test paper take for a 5 VWO student? Not 15 hours. Usually 2-4 hours).
 ${timeConstraintStr}
 
 ${specialInstructions ? `### USER SPECIAL INSTRUCTIONS ###\nIMPORTANT: The user has provided the following special instructions. You MUST follow them strictly. If they tell you to focus on specific chapters or ignore parts of the material, adapt your chapters and hour estimates accordingly:\n"${specialInstructions}"\n` : ''}
 
-${userProfile ? `### STUDENT ACADEMIC PROFILE ###
-- Country: ${userProfile.countryName || 'Unknown'}
-- Academic Track: ${userProfile.academicTierLabel || 'Unknown'}
-- Grade/Year: ${userProfile.gradeLabel || 'Unknown'}
-- Exam Board: ${userProfile.examBoardLabel || 'N/A'}
-(Use this to scale pacing/hours, to infer national curriculum milestones if the material is sparse, and to determine the exact expected conceptual depth when applying the STRICT PRACTICE QUESTIONS RULE.)
+${userProfile ? `### STUDENT ACADEMIC PROFILE & YEAR ###
+- Country: ${userProfile.countryName || 'Netherlands'}
+- Academic Track: ${userProfile.academicTierLabel || 'VWO'}
+- Current Grade / Year: ${userProfile.gradeLabel || 'Klas 6'} (${userProfile.academicTierLabel || 'VWO'} ${userProfile.gradeLabel || '6'})
+- Exam Board: ${userProfile.examBoardLabel || 'National Curriculum (Centraal Examen / Schoolexamen)'}
+
+MANDATORY PACING INSTRUCTION FOR THIS GRADE:
+The student is in ${userProfile.academicTierLabel || 'VWO'} ${userProfile.gradeLabel || 'Klas 6'}.
+${isUpperSecondary ? 
+`This student is in UPPER SECONDARY / FINAL EXAM YEAR (${userProfile.academicTierLabel || 'VWO'} ${userProfile.gradeLabel || '6'}) in ${userProfile.countryName || 'the Netherlands'}!
+- Tests at this level (SE / CE) are high-stakes and cover dense, multi-topic syllabus units.
+- Allocate realistic study hours: each dense chapter (like DNA, Planten, or advanced topics) requires 3.5 to 6.0 hours of study time.
+- An exam with multiple major chapters should realistically receive 8 to 18+ hours of total study time.
+- Do NOT artificially deflate hours down to 1-2 hours for a senior secondary exam.` : 
+`Calibrate pacing and hour allocations realistically for ${userProfile.academicTierLabel || ''} ${userProfile.gradeLabel || ''}.`}
 ` : ''}
 
 --- STUDY MATERIAL ---

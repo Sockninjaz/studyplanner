@@ -246,7 +246,7 @@ async function runRegenerateSchedule(
       durationMinutes: s._enrichMeta?.durationMinutes || Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000),
     }));
 
-    const enriched = await generateSessionDetails(enrichInputs);
+    const enriched = await generateSessionDetails(enrichInputs, user?.onboardingProfile);
 
     // Apply AI enrichment and strip the temp _enrichMeta field before saving
     for (const session of finalSessionsToSave) {

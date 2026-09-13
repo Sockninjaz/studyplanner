@@ -150,20 +150,35 @@ CRITICAL MANDATE: The user has selected and opened THIS specific session ("${act
           const searchTitle = (targetSession?.shortTitle || targetSession?.title || '').toLowerCase();
           const userText = (messages[messages.length - 1]?.content || '').toLowerCase();
           
-          // Determine student academic tier (vwo, havo, etc.)
+          // Determine student academic tier (vwo, havo, etc.) and grade (6, 5, etc.)
           const studentTier = (
             user?.onboardingProfile?.academicTier || 
             (exam?.rawMaterialText?.toLowerCase().includes('vwo') ? 'vwo' : '') ||
             (exam?.rawMaterialText?.toLowerCase().includes('havo') ? 'havo' : '') ||
             'vwo'
           ).toLowerCase();
+          const studentGradeStr = (
+            user?.onboardingProfile?.gradeLabel ||
+            user?.onboardingProfile?.grade ||
+            ''
+          ).toLowerCase();
+          const gradeNum = studentGradeStr.match(/\d+/)?.[0] || '6';
 
-          // Sort levels to prioritize the student's tier
+          // Sort levels to prioritize the student's exact tier and grade year (e.g., VWO 6 before VWO 5 or VWO 4)
           const sortedLevels = Object.keys(biologyData).sort((a, b) => {
-            const aIsTier = a.toLowerCase().includes(studentTier);
-            const bIsTier = b.toLowerCase().includes(studentTier);
-            if (aIsTier && !bIsTier) return -1;
-            if (!aIsTier && bIsTier) return 1;
+            const aLevel = a.toLowerCase();
+            const bLevel = b.toLowerCase();
+            const aMatchesTier = aLevel.includes(studentTier);
+            const bMatchesTier = bLevel.includes(studentTier);
+            const aMatchesGrade = gradeNum ? aLevel.includes(gradeNum) : false;
+            const bMatchesGrade = gradeNum ? bLevel.includes(gradeNum) : false;
+
+            if (aMatchesTier && aMatchesGrade && !(bMatchesTier && bMatchesGrade)) return -1;
+            if (bMatchesTier && bMatchesGrade && !(aMatchesTier && aMatchesGrade)) return 1;
+
+            if (aMatchesTier && !bMatchesTier) return -1;
+            if (!aMatchesTier && bMatchesTier) return 1;
+
             return 0;
           });
 
@@ -289,7 +304,28 @@ You are tutoring a Dutch high school student on the curriculum chapter "${target
 4. QUIZ & TESTING RULE: If quizzing or testing the student, ask ONLY questions about the basisstoffen and terms present in the database match below.
 \n` : '';
 
-    const systemMessage = `${bioTopDirective}You are an expert, proactive study coach and tutor for the student. Your role is like a personal teacher: you guide, quiz, explain, motivate, and keep the student on track. You are warm but structured — you take the lead when the student is ready to work.
+    const profile = user.onboardingProfile || {};
+    const countryName = profile.countryName || 'Netherlands';
+    const tier = profile.academicTierLabel || profile.academicTier || 'VWO';
+    const grade = profile.gradeLabel || profile.grade || 'Klas 6';
+    const examBoard = profile.examBoardLabel || 'National Curriculum (Centraal Examen / Schoolexamen)';
+
+    const studentProfileContext = `
+=====================================================
+STUDENT IDENTITY & ACADEMIC YEAR (CRITICAL AWARENESS):
+- Country: ${countryName}
+- Academic Track: ${tier}
+- Current Grade / Year: ${grade} (${tier} ${grade})
+- Exam Board / Syllabus: ${examBoard}
+
+MANDATORY IDENTITY & LEVEL DIRECTIVE:
+- You are tutoring this student who is specifically in ${tier} ${grade} in ${countryName}.
+- IF THE STUDENT ASKS you what year, grade, class, level, or school type they are in (e.g. "welke klas zit ik?", "in welk jaar zit ik?", "wat voor school doe ik?", "what year am I in?", "weet je welke klas ik zit?"), you MUST ANSWER DIRECTLY, SPECIFICALLY AND ACCURATELY: they are in ${tier} ${grade}!
+- A student in ${tier} ${grade} is in their final senior exam year (examenjaar) preparing for the national Centraal Examen (CE) and Schoolexamens (SE).
+- Calibrate your explanations, vocabulary, practice questions, and exam tips directly to this high school level (reference BINAS tables, multi-step exam thinking, and official Dutch curriculum standards).
+=====================================================\n`;
+
+    const systemMessage = `${bioTopDirective}${studentProfileContext}You are an expert, proactive study coach and tutor for the student. Your role is like a personal teacher: you guide, quiz, explain, motivate, and keep the student on track. You are warm but structured — you take the lead when the student is ready to work.
 
 EXAM DETAILS:
 - Subject: "${exam.subject}"
@@ -302,19 +338,10 @@ ${activeSessionContext}
 FULL STUDY SCHEDULE:
 ${sessionLines.length > 0 ? sessionLines.join('\n') : 'No sessions scheduled yet.'}
 
-${user.onboardingProfile ? `STUDENT ACADEMIC PROFILE:
-- Country: ${user.onboardingProfile.countryName || 'Unknown'}
-- Academic Track: ${user.onboardingProfile.academicTierLabel || 'Unknown'}
-- Grade/Year: ${user.onboardingProfile.gradeLabel || 'Unknown'}
-- Exam Board: ${user.onboardingProfile.examBoardLabel || 'N/A'}
-
-BEHAVIORAL RULE - PROFILE ANCHORING:
-Instruct the AI model to automatically anchor its vocabulary, conceptual complexity, tone, and exam-tool references (e.g., pointing out specific national formula sheets like BINAS tables for Dutch VWO science students, or specific guidelines for UK A-Levels) directly to this profile tier. Do not over-explain low-level foundational concepts unless explicitly asked, and do not cross into advanced university-level mechanics.
-
 ${exam.subject.toLowerCase().includes('bio') && user.onboardingProfile?.countryName === 'Netherlands' && !bioMatchActive ? `
 SPECIAL BIOLOGY RULE (NETHERLANDS):
-The user is studying Dutch Biology. When teaching, explaining concepts, or referencing material not explicitly provided, heavily rely on your internal knowledge of the website 'biologiepagina.nl' and the standard textbooks 'Biologie voor Jou' (BVJ) or 'Nectar'. These sources are the golden standard for the Dutch curriculum. Structure your explanations according to these sources.` : ''}
-` : ''}
+The user is studying Dutch Biology. When teaching, explaining concepts, or referencing material not explicitly provided, heavily rely on your internal knowledge of the website 'biologiepagina.nl' and the standard textbooks 'Biologie voor Jou' (BVJ) or 'Nectar'. These sources are the golden standard for the Dutch curriculum. Structure your explanations according to these sources.\n` : ''}
+
 YOUR BEHAVIOUR RULES:
 1. LANGUAGE: Detect the language of the uploaded study material and respond in that same language throughout the entire conversation. If the material is in Dutch, speak Dutch. If in English, speak English — and so on. ONLY switch language if the student explicitly asks you to (e.g. "can you explain in English?").
 2. PROACTIVE LEAD (CRITICAL): When the student says something like "let's work", "let's start", "help me study", "ready", "laten we beginnen", or similar — immediately take the lead on the ${activeSession ? 'CURRENTLY ACTIVE SESSION ("' + activeSession.title + '")' : 'next session (' + targetSessionTitle + ')'}. DO NOT assume they are working on today's session if they selected a different session! Introduce the specific topic of this session, explain what they should focus on, give a brief overview of key concepts, then start quizzing or guiding interactively based on its assigned tasks. Do NOT just give instructions — actually start teaching.
@@ -325,7 +352,7 @@ YOUR BEHAVIOUR RULES:
 7. CITATIONS — ALWAYS follow this rule: Whenever you explain a concept, mention which section of the uploaded material it comes from. For example: "Volgens § 9.1..." or "According to § 9.1...". If you cannot identify the exact section, say "Based on the material..." Do this for every substantive explanation.
 ${bioMatchActive 
   ? `8. CURRICULUM KNOWLEDGE BASE & GLOSSARY (MANDATORY ENFORCEMENT):
-A verified curriculum database match from biologiepagina.nl is active in your instructions. You MUST use those exact definitions and subchapters. DO NOT use your internal general knowledge to invent or introduce terms outside the provided glossary. Specifically, "leading strand", "lagging strand", and "helicase" are completely forbidden.`
+A verified curriculum database match from biologiepagina.nl is active in your instructions. You MUST use those exact definitions and subchapters. DO NOT use your internal general knowledge to invent or introduce terms outside the provided glossary.`
   : (isSparseInput 
       ? `8. CURRICULUM KNOWLEDGE BASE: The student provided sparse material, so you must use your internal knowledge of their national curriculum to answer questions. DO NOT say "it is not in the material." Instead, confidently teach them the subject matter based on the scheduled topics.`
       : `8. NO HALLUCINATION — CRITICAL: If a student asks a question that is NOT covered in the uploaded material, you MUST state clearly: "Jouw materiaal behandelt dit niet specifiek, maar in het algemeen..." (or in the detected language: "Your material does not specify this, but generally..."). Never present external knowledge as if it were in the material. This keeps the student focused on what will actually be on their exam.`)}

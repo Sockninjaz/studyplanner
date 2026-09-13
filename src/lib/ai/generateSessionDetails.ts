@@ -71,9 +71,24 @@ TASK GENERATION RULES:
  * All sessions are sent in one API call for efficiency.
  */
 export async function generateSessionDetails(
-  sessions: SessionDetailInput[]
+  sessions: SessionDetailInput[],
+  userProfile?: any
 ): Promise<SessionDetailOutput[]> {
   if (sessions.length === 0) return [];
+
+  const gradeStr = userProfile?.gradeLabel || userProfile?.grade || 'Klas 6';
+  const trackStr = userProfile?.academicTierLabel || userProfile?.academicTier || 'VWO';
+  const country = userProfile?.countryName || 'Netherlands';
+
+  const profileInstruction = `
+\nSTUDENT ACADEMIC LEVEL & CONTEXT:
+- Track: ${trackStr}
+- Grade / Year: ${gradeStr}
+- Country: ${country}
+CALIBRATION DIRECTIVE:
+Calibrate the task style and cognitive depth to this grade. For upper-secondary / final exam years (e.g. VWO 6, HAVO 5, examenjaar), tasks should focus on authentic exam-level problem solving (CE/SE practice), applying reference data (like BINAS tables for Dutch science subjects), and synthesising complex concepts, rather than elementary flashcards.`;
+
+  const systemPrompt = SYSTEM_PROMPT + profileInstruction;
 
   const userMessage = JSON.stringify(sessions.map(s => ({
     index: s.index,
@@ -87,7 +102,7 @@ export async function generateSessionDetails(
 
   try {
     const result = await generateStructuredOutput(
-      SYSTEM_PROMPT,
+      systemPrompt,
       userMessage,
       SessionDetailSchema,
       'sessions'
