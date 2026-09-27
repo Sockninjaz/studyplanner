@@ -7,7 +7,6 @@ import { Sun, Moon, Settings, ChevronDown, LogOut, Star, Sidebar as SidebarIcon,
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useTimer } from '../session/timer-context';
-import SettingsModal from './settings-modal';
 
 interface UserPreferences {
   name?: string;
@@ -56,7 +55,6 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   });
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -207,16 +205,14 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                     <p className="text-xs text-slate-500 truncate">{session?.user?.email}</p>
                   </div>
                   
-                  <button 
-                    onClick={() => {
-                      setIsSettingsOpen(true);
-                      setIsProfileDropdownOpen(false);
-                    }}
+                  <Link 
+                    href="/profile"
+                    onClick={() => setIsProfileDropdownOpen(false)}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   >
                     <Settings size={16} />
                     Settings
-                  </button>
+                  </Link>
                   
                   <Link 
                     href="/upgrade"
@@ -458,15 +454,6 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
           </button>
         </div>
       </aside>
-
-
-      {/* Settings Modal */}
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
-        preferences={userPreferences}
-        onSaved={fetchPreferences}
-      />
     </>
   );
 };

@@ -23,23 +23,27 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Automatically complete past exams before fetching
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    await Exam.updateMany(
-      { user: user._id, isCompleted: { $ne: true }, date: { $lt: startOfToday }, can_study_after_exam: { $ne: true } },
-      { $set: { isCompleted: true, completedAt: now } }
-    );
-
     const exams = await Exam.find({ user: user._id }).sort({ date: 1 }).lean();
     
-    // Attach progress based on sessions
+    // Attach progress in a single batched query
+    const allUserSessions = await StudySession.find({ user: user._id }, 'exam examId isCompleted').lean();
+    const sessionStatsByExam = new Map<string, { total: number; completed: number }>();
+    for (const s of allUserSessions) {
+      const eId = (s.exam || (s as any).examId)?.toString();
+      if (!eId) continue;
+      if (!sessionStatsByExam.has(eId)) {
+        sessionStatsByExam.set(eId, { total: 0, completed: 0 });
+      }
+      const st = sessionStatsByExam.get(eId)!;
+      st.total++;
+      if (s.isCompleted) st.completed++;
+    }
+
     for (let exam of exams) {
-       const sessions = await StudySession.find({ $or: [{ exam: exam._id }, { examId: exam._id }] }).lean();
-       const totalSessions = sessions.length;
-       const completedSessions = sessions.filter((s: any) => s.isCompleted).length;
-       (exam as any).progressPercentage = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+      const stats = sessionStatsByExam.get(exam._id.toString());
+      const totalSessions = stats?.total || 0;
+      const completedSessions = stats?.completed || 0;
+      (exam as any).progressPercentage = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
     }
     
     return NextResponse.json({ data: exams }, { status: 200 });

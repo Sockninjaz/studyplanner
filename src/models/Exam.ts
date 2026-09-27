@@ -46,6 +46,9 @@ const ExamSchema: Schema = new Schema({
   completedAt: { type: Date },
 }, { timestamps: true });
 
+ExamSchema.index({ user: 1, date: 1 });
+ExamSchema.index({ user: 1, isCompleted: 1 });
+
 if (mongoose.models.Exam) {
   delete mongoose.models.Exam;
 }

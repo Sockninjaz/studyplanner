@@ -52,4 +52,8 @@ const StudySessionSchema: Schema = new Schema({
   exam: { type: Schema.Types.ObjectId, ref: 'Exam' },
 });
 
+StudySessionSchema.index({ user: 1, startTime: 1 });
+StudySessionSchema.index({ exam: 1 });
+StudySessionSchema.index({ user: 1, isCompleted: 1 });
+
 export default mongoose.models.StudySession || mongoose.model<IStudySession>('StudySession', StudySessionSchema);

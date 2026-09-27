@@ -15,15 +15,15 @@ import path from 'path';
 // Zod schema for the AI's structured response
 const StudyMaterialSchema = z.object({
   chapters: z.array(z.object({
-    chapter: z.string().describe('The core academic concept/theory being tested (e.g. "Quantum Mechanics", "Electromagnetism"). MUST NOT be the specific story context or application of the test question.'),
+    chapter: z.string().describe('The core academic curriculum / textbook domain (e.g. "Kernfysica en Radioactiviteit", "Medische Beeldvorming", "Mechanica"). MUST NEVER contain question numbers, opgaven, or narrative story/scenario contexts (e.g. STRICTLY FORBIDDEN: "Wijnfraude", "Nuclidetherapie", "Wijnfraude en Radioactieve Isotopen" — use purely the underlying syllabus domain). Merge questions testing the same domain into a single chapter.'),
     difficulty: z.number().min(1).max(5).describe('Difficulty level 1-5'),
     confidence: z.number().min(1).max(5).describe('Expected student confidence 1-5'),
-    user_estimated_total_hours: z.number().min(0.25).max(100).describe('Study hours for this chapter — can be fractional (e.g. 0.5), all chapters must sum to totalEstimatedHours'),
+    user_estimated_total_hours: z.number().min(0.25).max(100).describe('Study hours for this chapter — cleanly rounded to 0.5 hour increments (e.g. 1.5, 2.0, 2.5), all chapters must sum to totalEstimatedHours'),
     formulas: z.array(z.string()).describe('Key formulas, equations, or scientific laws explicitly mentioned in the material for this chapter. Return an empty array if none.'),
   })),
-  summary: z.string().describe('Brief summary of the overall material'),
+  summary: z.string().describe('Brief summary of the overall material and tested curriculum domains'),
   isSuggestedFallback: z.boolean().describe('True if the user provided sparse input and you are generating high-level national curriculum milestones instead of concrete text extraction. False if the provided text was rich and sufficient.'),
-  totalEstimatedHours: z.number().min(0.25).max(100).describe('TOTAL realistic study hours for the whole document (conservative estimate)'),
+  totalEstimatedHours: z.number().min(0.25).max(100).describe('TOTAL realistic study hours for the exam (typically 5 to 9 hours for 6 VWO; do not inflate to 20+ hours)'),
 });
 
 export type MaterialAnalysisResult = z.infer<typeof StudyMaterialSchema>;
@@ -47,6 +47,32 @@ function levenshteinDistance(a: string, b: string): number {
     }
   }
   return matrix[a.length][b.length];
+}
+
+function cleanChapterName(name: string): string {
+  let cleaned = name.trim();
+
+  // Strip opgave / question prefixes e.g. "Opgave 1: ", "Vraag 3 - ", "Exercise 2. "
+  cleaned = cleaned.replace(/^(?:opgave|vraag|toetsvraag|opgaven|exercise|question|problem)\s*\d+[\s:.-]*/i, '');
+
+  // Strip scenario names combined with academic concepts, e.g.:
+  // "Wijnfraude en Radioactieve Isotopen" -> "Radioactieve Isotopen"
+  // "Nuclidetherapie en Alfastralers" -> "Alfastralers en Kernverval"
+  cleaned = cleaned.replace(/^(?:wijnfraude|nuclidetherapie|fietsdynamo|speelgoedraket|autobotsing)\s*(?:en|&|:|-|\/)\s*/i, '');
+  cleaned = cleaned.replace(/\s*(?:en|&|-|\/)\s*(?:wijnfraude|nuclidetherapie|fietsdynamo|speelgoedraket|autobotsing)$/i, '');
+
+  // If the title itself is just the scenario word:
+  if (/^wijnfraude$/i.test(cleaned)) {
+    cleaned = 'Radioactiviteit en Isotopen';
+  } else if (/^nuclidetherapie$/i.test(cleaned)) {
+    cleaned = 'Kernfysica en Stralingsverval';
+  }
+
+  // Capitalize first letter
+  if (cleaned.length > 0) {
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+  return cleaned;
 }
 
 export async function POST(request: NextRequest) {
@@ -338,17 +364,62 @@ export async function POST(request: NextRequest) {
       ];
     }
 
-    // Guarantee clean 0.5-hour step rounding for all chapter hours and total
-    let chaptersSum = 0;
-    analysis.chapters = analysis.chapters.map((ch: any) => {
-      const rounded = Math.max(0.5, Math.round((ch.user_estimated_total_hours || 1) * 2) / 2);
-      chaptersSum += rounded;
-      return {
-        ...ch,
-        user_estimated_total_hours: rounded,
-      };
-    });
-    analysis.totalEstimatedHours = chaptersSum;
+    // 1. Sanitize chapter names to remove question prefixes or accidental story artifacts
+    analysis.chapters = analysis.chapters.map((ch: any) => ({
+      ...ch,
+      chapter: cleanChapterName(ch.chapter || `${subjectName || 'Course'} Topic`),
+    }));
+
+    // 2. Merge identical or duplicate chapters (e.g. if two chapters ended up with the same domain)
+    const mergedChapters: typeof analysis.chapters = [];
+    for (const ch of analysis.chapters) {
+      const existing = mergedChapters.find(
+        (m: any) => m.chapter.toLowerCase() === ch.chapter.toLowerCase()
+      );
+      if (existing) {
+        existing.user_estimated_total_hours = (existing.user_estimated_total_hours || 0) + (ch.user_estimated_total_hours || 0);
+        existing.formulas = Array.from(new Set([...(existing.formulas || []), ...(ch.formulas || [])]));
+        existing.difficulty = Math.max(existing.difficulty || 3, ch.difficulty || 3);
+      } else {
+        mergedChapters.push({ ...ch });
+      }
+    }
+    analysis.chapters = mergedChapters;
+
+    // 3. Realistic Hour Normalization:
+    // Students (even in 6 VWO) preparing for an exam should receive a realistic, manageable recommendation (typically 6-9 hours).
+    // An estimate of 20-30 hours (like 24h) is overwhelmingly high and impractical.
+    // Unless the user explicitly requested a large number of hours in specialInstructions,
+    // normalize total study hours so they do not exceed realistic bounds (max 9-10h for an exam).
+    const rawSum = analysis.chapters.reduce((sum: number, ch: any) => sum + (ch.user_estimated_total_hours || 1), 0);
+    const userRequestedHighHours = specialInstructions && /\b(?:[1-9]\d{1,2})\s*(?:uur|uren|hours|hrs)\b/i.test(specialInstructions);
+
+    if (!userRequestedHighHours && rawSum > 10) {
+      // Scale down proportionally towards a target of ~8.0 hours
+      const targetBudget = 8.0;
+      const ratio = targetBudget / rawSum;
+      let scaledSum = 0;
+      analysis.chapters = analysis.chapters.map((ch: any) => {
+        const rounded = Math.max(0.5, Math.round((ch.user_estimated_total_hours * ratio) * 2) / 2);
+        scaledSum += rounded;
+        return {
+          ...ch,
+          user_estimated_total_hours: rounded,
+        };
+      });
+      analysis.totalEstimatedHours = scaledSum;
+    } else {
+      let chaptersSum = 0;
+      analysis.chapters = analysis.chapters.map((ch: any) => {
+        const rounded = Math.max(0.5, Math.round((ch.user_estimated_total_hours || 1) * 2) / 2);
+        chaptersSum += rounded;
+        return {
+          ...ch,
+          user_estimated_total_hours: rounded,
+        };
+      });
+      analysis.totalEstimatedHours = chaptersSum;
+    }
 
     return NextResponse.json({
       success: true,

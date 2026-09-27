@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
+import { regenerateSchedule } from '@/lib/scheduling/regenerateSchedule';
 
 export async function GET(request: Request) {
   const session = await getServerSession();
@@ -72,12 +73,35 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Session duration must be between 15 and 120 minutes' }, { status: 400 });
     }
 
+    const prevDailyStudyLimit = user.daily_study_limit;
+    const prevSoftDailyLimit = user.soft_daily_limit;
+    const prevAdjustmentPercentage = user.adjustment_percentage;
+    const prevSessionDuration = user.session_duration;
+    const prevEnableDailyLimits = user.enable_daily_limits;
+
+    let studyPrefsChanged = false;
+
     // Update user preferences
-    if (daily_study_limit !== undefined) user.daily_study_limit = daily_study_limit;
-    if (soft_daily_limit !== undefined) user.soft_daily_limit = soft_daily_limit;
-    if (adjustment_percentage !== undefined) user.adjustment_percentage = adjustment_percentage;
-    if (session_duration !== undefined) user.session_duration = session_duration;
-    if (enable_daily_limits !== undefined) user.enable_daily_limits = enable_daily_limits;
+    if (daily_study_limit !== undefined) {
+      if (prevDailyStudyLimit !== daily_study_limit) studyPrefsChanged = true;
+      user.daily_study_limit = daily_study_limit;
+    }
+    if (soft_daily_limit !== undefined) {
+      if (prevSoftDailyLimit !== soft_daily_limit) studyPrefsChanged = true;
+      user.soft_daily_limit = soft_daily_limit;
+    }
+    if (adjustment_percentage !== undefined) {
+      if (prevAdjustmentPercentage !== adjustment_percentage) studyPrefsChanged = true;
+      user.adjustment_percentage = adjustment_percentage;
+    }
+    if (session_duration !== undefined) {
+      if (prevSessionDuration !== session_duration) studyPrefsChanged = true;
+      user.session_duration = session_duration;
+    }
+    if (enable_daily_limits !== undefined) {
+      if (prevEnableDailyLimits !== enable_daily_limits) studyPrefsChanged = true;
+      user.enable_daily_limits = enable_daily_limits;
+    }
     if (openai_api_key !== undefined) user.openai_api_key = openai_api_key;
     
     if (name) user.name = name;
@@ -97,12 +121,35 @@ export async function PUT(request: Request) {
 
     await user.save();
 
-    return NextResponse.json({ message: 'Preferences updated successfully' }, { status: 200 });
+    let scheduleRegenerated = false;
+    if (studyPrefsChanged || body.regenerateSchedule) {
+      try {
+        console.log(`Auto-regenerating schedule for user ${user._id} due to preferences update...`);
+        const result = await regenerateSchedule(user, {
+          daily_max_hours: user.daily_study_limit,
+          daily_study_limit: user.daily_study_limit,
+          soft_daily_limit: user.soft_daily_limit,
+          adjustment_percentage: user.adjustment_percentage,
+          session_duration: user.session_duration,
+          enable_daily_limits: user.enable_daily_limits,
+        }, undefined, 'compress');
+        scheduleRegenerated = true;
+        console.log('Schedule refreshed on preference update:', result?.message);
+      } catch (schedErr) {
+        console.error('Error auto-regenerating schedule after preferences update:', schedErr);
+      }
+    }
+
+    return NextResponse.json({ 
+      message: 'Preferences updated successfully',
+      scheduleRegenerated
+    }, { status: 200 });
   } catch (error) {
     console.error('Error updating user preferences:', error);
     return NextResponse.json({ error: 'Error updating preferences' }, { status: 500 });
   }
 }
+
 
 export async function DELETE(request: Request) {
   const session = await getServerSession();

@@ -50,14 +50,32 @@ async function runRegenerateSchedule(
 ) {
   await dbConnect();
 
-  // Automatically mark exams as completed if their date is strictly before the start of today
+  // Automatically mark exams as completed if their date is in the past
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
-  await Exam.updateMany(
-    { user: user._id, isCompleted: { $ne: true }, date: { $lt: startOfToday }, can_study_after_exam: { $ne: true } },
-    { $set: { isCompleted: true, completedAt: now } }
-  );
+  const allUserExamsForCheck = await Exam.find({ user: user._id, isCompleted: { $ne: true } });
+  const pastExamIds: any[] = [];
+  for (const e of allUserExamsForCheck) {
+    const eDate = new Date(e.date);
+    const eDateStr = eDate.toISOString().split('T')[0];
+    if (eDate < startOfToday || eDateStr < todayStr) {
+      pastExamIds.push(e._id);
+    }
+  }
+
+  if (pastExamIds.length > 0) {
+    await Exam.updateMany(
+      { _id: { $in: pastExamIds } },
+      { $set: { isCompleted: true, completedAt: now } }
+    );
+    await StudySession.updateMany(
+      { user: user._id, exam: { $in: pastExamIds } },
+      { $set: { isCompleted: true } }
+    );
+    console.log(`Auto-marked ${pastExamIds.length} past exams and their sessions as completed.`);
+  }
 
   // Get all active user exams (ignore completed exams so we don't schedule new sessions for them)
   const rawExams = await Exam.find({ user: user._id, isCompleted: { $ne: true } });
@@ -112,15 +130,17 @@ async function runRegenerateSchedule(
   const lockedSessions = completedSessions.filter(s => activeExamIds.some(id => id.toString() === s.exam?.toString()));
 
   const isAllowOverload = action === 'allowOverload';
-  const effectiveMaxHours = isAllowOverload ? 24 : (overridePrefs.daily_max_hours || user.daily_study_limit || 4);
-  const effectiveSoftLimit = isAllowOverload ? 24 : (overridePrefs.soft_daily_limit || user.soft_daily_limit || 2);
+  const effectiveMaxHours = isAllowOverload ? 24 : (overridePrefs.daily_max_hours ?? overridePrefs.daily_study_limit ?? user.daily_study_limit ?? 4);
+  const effectiveSoftLimit = isAllowOverload ? 24 : (overridePrefs.soft_daily_limit ?? user.soft_daily_limit ?? 2);
 
   const userInputs: any = {
     daily_max_hours: effectiveMaxHours,
     soft_daily_limit: effectiveSoftLimit,
-    adjustment_percentage: overridePrefs.adjustment_percentage || user.adjustment_percentage || 25,
-    session_duration: overridePrefs.session_duration || user.session_duration || 30,
-    enable_daily_limits: overridePrefs.enable_daily_limits !== undefined ? overridePrefs.enable_daily_limits : user.enable_daily_limits,
+    adjustment_percentage: overridePrefs.adjustment_percentage ?? user.adjustment_percentage ?? 25,
+    session_duration: overridePrefs.session_duration ?? user.session_duration ?? 30,
+    enable_daily_limits: overridePrefs.enable_daily_limits !== undefined 
+      ? overridePrefs.enable_daily_limits 
+      : (user.enable_daily_limits !== false),
     start_date: new Date(),
     completed_hours: completedHours,
     exams: allExams.map(e => ({

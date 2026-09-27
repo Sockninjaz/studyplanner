@@ -146,6 +146,7 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         // Dispatch event to notify other components
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('preferencesUpdated'));
+          window.dispatchEvent(new CustomEvent('calendarUpdated'));
         }
 
         if (showMessage) {

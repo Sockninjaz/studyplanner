@@ -102,29 +102,29 @@ export default function ExamList() {
               <Link 
                 href={`/exams/${exam._id}`} 
                 key={exam._id}
-                className="group relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                className="group relative bg-white dark:bg-slate-900 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-800 p-4 md:p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
               >
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-start mb-3">
                   <div>
-                    <span className="inline-block px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold rounded-full mb-3 uppercase tracking-wider">
+                    <span className="inline-block px-2 md:px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] md:text-xs font-bold rounded-full mb-2 uppercase tracking-wider">
                       {exam.subject}
                     </span>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-1">
+                    <h3 className={`text-lg md:text-xl font-bold ${isCompleted ? 'line-through text-slate-400' : 'text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400'} transition-colors line-clamp-1`}>
                       {exam.title}
                     </h3>
                   </div>
-                  <div className="h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors flex-shrink-0">
-                    <ChevronRight size={18} />
+                  <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors flex-shrink-0">
+                    <ChevronRight size={16} className="md:w-[18px] md:h-[18px]" />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
+                <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-slate-500 dark:text-slate-400 mb-4 md:mb-6 font-medium">
                   <div className="flex items-center gap-1.5" suppressHydrationWarning>
-                    <Calendar size={16} />
+                    <Calendar size={14} className="md:w-4 md:h-4" />
                     {new Date(exam.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <BookOpen size={16} />
+                    <BookOpen size={14} className="md:w-4 md:h-4" />
                     {exam.studyMaterials?.length || 0} Topics
                   </div>
                 </div>

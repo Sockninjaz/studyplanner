@@ -128,3 +128,25 @@ svg.w-10, svg.h-10 { width: 2.5rem !important; height: 2.5rem !important; max-wi
 svg.w-12, svg.h-12 { width: 3rem !important; height: 3rem !important; max-width: 3rem !important; max-height: 3rem !important; }
 svg.w-16, svg.h-16 { width: 4rem !important; height: 4rem !important; max-width: 4rem !important; max-height: 4rem !important; }
 
+/* ── Mobile utilities ─────────────────────────────────────── */
+
+/* Safe area inset for bottom nav (iPhone home bar) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Prevent iOS from zooming in on input focus (inputs must be >= 16px) */
+@media (max-width: 1023px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="search"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

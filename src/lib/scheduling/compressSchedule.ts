@@ -40,7 +40,10 @@ export function compressSessionsInMemory(sessionsToSave: any[], maxSessionsPerDa
   const result: any[] = [];
 
   for (const [dateStr, daySessions] of Array.from(dateMap.entries())) {
-    if (daySessions.length <= limit) {
+    const totalDailyMins = daySessions.reduce((sum: number, s: any) => sum + (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000, 0);
+    const maxDailyMins = limit * 60;
+
+    if (daySessions.length <= limit && totalDailyMins <= maxDailyMins) {
       result.push(...daySessions);
       continue;
     }
@@ -51,7 +54,7 @@ export function compressSessionsInMemory(sessionsToSave: any[], maxSessionsPerDa
     const chunks = chunkArray(daySessions, limit);
 
     for (const chunk of chunks) {
-      if (chunk.length === 1) {
+      if (chunk.length === 1 && totalDailyMins <= maxDailyMins) {
         result.push(chunk[0]);
         continue;
       }
@@ -77,7 +80,8 @@ export function compressSessionsInMemory(sessionsToSave: any[], maxSessionsPerDa
 
       const totalDurationMs = toMerge.reduce((sum: number, s: any) => sum + (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()), 0);
       const avgDurationMs = totalDurationMs / Math.max(1, toMerge.length);
-      const mergedDurationMs = Math.min(90 * 60 * 1000, Math.max(45 * 60 * 1000, Math.round(avgDurationMs)));
+      const maxChunkDurationMs = (maxDailyMins / Math.max(1, chunks.length)) * 60 * 1000;
+      const mergedDurationMs = Math.min(maxChunkDurationMs, Math.max(30 * 60 * 1000, Math.round(avgDurationMs)));
       const mergedStart = new Date(toMerge[0].startTime);
       const mergedEnd = new Date(mergedStart.getTime() + mergedDurationMs);
 

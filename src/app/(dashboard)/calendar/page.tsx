@@ -1,11 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import useSWR, { useSWRConfig } from 'swr';
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 import Calendar from '@/components/calendar/calendar';
 import CalendarListView from '@/components/calendar/calendar-list-view';
 import AddItemModal from '@/components/calendar/add-item-modal';
 import CreateTaskModal from '@/components/calendar/create-task-modal';
+import TaskDetailModal from '@/components/calendar/task-detail-modal';
 import { useSidebar } from '@/components/shared/sidebar-context';
 
 
@@ -19,6 +23,7 @@ interface UserPreferences {
 
 export default function CalendarPage() {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const { isSidebarCollapsed } = useSidebar();
   const calendarRef = useRef<any>(null);
   const [currentMonthTitle, setCurrentMonthTitle] = useState('');
@@ -27,6 +32,7 @@ export default function CalendarPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [selectedExamId, setSelectedExamId] = useState<string | undefined>(undefined);
   const [selectedExam, setSelectedExam] = useState<any>(null);
@@ -39,16 +45,51 @@ export default function CalendarPage() {
     enable_daily_limits: true,
   });
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isTogglingBlock, setIsTogglingBlock] = useState(false);
+  const { data: blockedData, mutate: mutateBlocked } = useSWR('/api/blocked-days', fetcher);
+  const blockedDays = useMemo(() => new Set<string>(blockedData?.data || []), [blockedData]);
 
   useEffect(() => {
     fetchUserPreferences();
 
-    // Load saved view mode
-    const savedMode = localStorage.getItem('calendarViewMode');
-    if (savedMode === 'list' || savedMode === 'calendar') {
-      setViewMode(savedMode);
+    // On mobile, always force list view
+    const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+    if (isMobile) {
+      setViewMode('list');
+    } else {
+      // Load saved view mode only on desktop
+      const savedMode = localStorage.getItem('calendarViewMode');
+      if (savedMode === 'list' || savedMode === 'calendar') {
+        setViewMode(savedMode);
+      }
     }
-  }, []);
+
+    const handlePreferencesUpdated = (e: any) => {
+      if (e?.detail) {
+        setUserPreferences(e.detail);
+      } else {
+        fetchUserPreferences();
+      }
+      mutate('/api/calendar/events');
+    };
+
+    const handleCalendarUpdate = () => {
+      mutate('/api/calendar/events');
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('preferencesUpdated', handlePreferencesUpdated);
+      window.addEventListener('calendarUpdated', handleCalendarUpdate);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('preferencesUpdated', handlePreferencesUpdated);
+        window.removeEventListener('calendarUpdated', handleCalendarUpdate);
+      }
+    };
+  }, [mutate]);
 
   const handleDatesSet = (info: any) => {
     // Info contains view.title which is the month name (e.g. "February 2026")
@@ -69,15 +110,6 @@ export default function CalendarPage() {
 
   const fetchUserPreferences = async () => {
     try {
-      const savedPrefs = localStorage.getItem('userPreferences');
-      if (savedPrefs) {
-        try {
-          const prefs = JSON.parse(savedPrefs);
-          setUserPreferences(prefs);
-        } catch (error) {
-          console.error('Error parsing localStorage preferences:', error);
-        }
-      }
       const res = await fetch('/api/user/preferences');
       if (res.ok) {
         const data = await res.json();
@@ -88,13 +120,24 @@ export default function CalendarPage() {
           session_duration: data.session_duration || 30,
           enable_daily_limits: data.enable_daily_limits !== false,
         };
-        if (!savedPrefs) {
-          setUserPreferences(serverPrefs);
-          localStorage.setItem('userPreferences', JSON.stringify(serverPrefs));
+        setUserPreferences(serverPrefs);
+        localStorage.setItem('userPreferences', JSON.stringify(serverPrefs));
+      } else {
+        const savedPrefs = localStorage.getItem('userPreferences');
+        if (savedPrefs) {
+          try {
+            setUserPreferences(JSON.parse(savedPrefs));
+          } catch (e) {}
         }
       }
     } catch (error) {
       console.error('Error fetching preferences:', error);
+      const savedPrefs = localStorage.getItem('userPreferences');
+      if (savedPrefs) {
+        try {
+          setUserPreferences(JSON.parse(savedPrefs));
+        } catch (e) {}
+      }
     }
   };
 
@@ -103,11 +146,11 @@ export default function CalendarPage() {
   };
 
   const handleTaskClick = (taskId: string) => {
-    // If you want tasks to also route somewhere or just do nothing for now
-    // We'll leave it empty since tasks can be edited via the 3-dots menu in list view
+    setSelectedTaskId(taskId);
+    setIsTaskDetailModalOpen(true);
   };
 
-  const handleAddItemClick = (date?: string) => {
+  const handleAddItemClick = (date?: string, position?: { x: number; y: number }) => {
     let normalizedDate = new Date().toISOString().split('T')[0];
 
     if (date) {
@@ -122,6 +165,7 @@ export default function CalendarPage() {
     }
 
     setSelectedDate(normalizedDate);
+    setDropdownPosition(position || null);
     setIsAddItemModalOpen(true);
   };
 
@@ -134,6 +178,32 @@ export default function CalendarPage() {
   const handleCloseAddItemModal = () => {
     setIsAddItemModalOpen(false);
     setSelectedDate(undefined);
+    setDropdownPosition(null);
+  };
+
+  const handleToggleBlock = async () => {
+    if (!selectedDate || isTogglingBlock) return;
+    setIsTogglingBlock(true);
+    try {
+      const isCurrentlyBlocked = blockedDays.has(selectedDate);
+      const res = await fetch('/api/blocked-days', {
+        method: isCurrentlyBlocked ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: selectedDate }),
+      });
+      if (res.ok) {
+        await mutateBlocked();
+        await mutate('/api/calendar/events');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('calendarUpdated'));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to toggle block on day:', err);
+    } finally {
+      setIsTogglingBlock(false);
+      setIsAddItemModalOpen(false);
+    }
   };
 
   const handleAddExam = () => {
@@ -145,19 +215,9 @@ export default function CalendarPage() {
     }
   };
 
-  const handleExamView = async (examId: string) => {
-    try {
-      const mongoId = examId.replace('exam-', '');
-      const response = await fetch(`/api/exams/${mongoId}`);
-      if (response.ok) {
-        const examData = await response.json();
-        setSelectedExam(examData.data);
-        setSelectedExamId(examId);
-        router.push(`/exams/${examData.data._id}`);
-      }
-    } catch (error) {
-      console.error('Failed to fetch exam:', error);
-    }
+  const handleExamView = (examId: string) => {
+    const mongoId = examId.replace('exam-', '');
+    router.push(`/exams/${mongoId}`);
   };
 
   const handleExamEdit = (examId: string) => {
@@ -210,7 +270,11 @@ export default function CalendarPage() {
       });
       if (!res.ok) throw new Error('Failed to regenerate');
       
-      window.location.reload();
+      mutate('/api/calendar/events');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('calendarUpdated'));
+      }
+      setIsRegenerating(false);
     } catch (error) {
       console.error(error);
       alert('Error saving schedule');
@@ -224,15 +288,15 @@ export default function CalendarPage() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-row overflow-hidden">
           <div className="transition-all duration-300 flex flex-col w-full">
-            {/* View Toggle and Header - Clean, no borders */}
-            <div className="bg-[#ffff] dark:bg-slate-900 px-3 py-2 flex items-center justify-between h-14 flex-shrink-0 border-b border-gray-100 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <h1 className="text-lg md:text-xl font-bold text-[#4a4a4a] dark:text-slate-100">
-                  {viewMode === 'calendar' ? currentMonthTitle : viewMode === 'list' ? 'Schedule' : 'Calendar'}
-                </h1>
-              </div>
+            {/* Toolbar — adapts for mobile and desktop */}
+            <div className="bg-white dark:bg-slate-900 px-3 py-2 flex items-center justify-between h-14 flex-shrink-0 border-b border-gray-100 dark:border-slate-800">
+              <h1 className="text-lg font-bold text-[#4a4a4a] dark:text-slate-100">
+                {viewMode === 'calendar' ? currentMonthTitle : 'Schedule'}
+              </h1>
+
               <div className="flex items-center gap-2">
-                <div className={`flex items-center gap-1 mr-1 transition-opacity duration-200 ${viewMode === 'calendar' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                {/* Calendar nav arrows – desktop+calendar only */}
+                <div className={`hidden lg:flex items-center gap-1 mr-1 transition-opacity duration-200 ${viewMode === 'calendar' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                   <button onClick={handlePrev} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -247,46 +311,40 @@ export default function CalendarPage() {
                     Today
                   </button>
                 </div>
-                <div className="flex items-center bg-white dark:bg-slate-800 rounded-md p-0.5 border border-[#4a4a4a] border-opacity-20 shadow-sm">
+
+                {/* List/Calendar toggle – desktop only */}
+                <div className="hidden lg:flex items-center bg-white dark:bg-slate-800 rounded-md p-0.5 border border-[#4a4a4a] border-opacity-20 shadow-sm">
                   <button
-                    onClick={() => {
-                      setViewMode('list');
-                      localStorage.setItem('calendarViewMode', 'list');
-                    }}
-                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'list'
-                      ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
-                      : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-[#4a4a4a] dark:hover:text-white'
-                      }`}
-                  >
-                    List
-                  </button>
+                    onClick={() => { setViewMode('list'); localStorage.setItem('calendarViewMode', 'list'); }}
+                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                      viewMode === 'list' ? 'bg-[rgb(40,57,135)] text-white shadow-sm' : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                    }`}
+                  >List</button>
                   <button
-                    onClick={() => {
-                      setViewMode('calendar');
-                      localStorage.setItem('calendarViewMode', 'calendar');
-                    }}
-                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'calendar'
-                      ? 'bg-[rgb(40,57,135)] text-white shadow-sm'
-                      : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-[#4a4a4a] dark:hover:text-white'
-                      }`}
-                  >
-                    Calendar
-                  </button>
+                    onClick={() => { setViewMode('calendar'); localStorage.setItem('calendarViewMode', 'calendar'); }}
+                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                      viewMode === 'calendar' ? 'bg-[rgb(40,57,135)] text-white shadow-sm' : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                    }`}
+                  >Calendar</button>
                 </div>
+
+                {/* Regenerate – desktop only (mobile has FAB) */}
                 <button
                   onClick={handleRegenerateSchedule}
                   disabled={isRegenerating}
-                  title="Regenerate planner based on current preferences"
-                  className="bg-white dark:bg-slate-800 border border-[#4a4a4a] border-opacity-20 text-[#4a4a4a] dark:text-slate-200 px-2.5 py-1 rounded text-xs hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Regenerate schedule"
+                  className="hidden lg:flex bg-white dark:bg-slate-800 border border-[#4a4a4a] border-opacity-20 text-[#4a4a4a] dark:text-slate-200 px-2.5 py-1 rounded text-xs hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors items-center gap-1.5 shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   {isRegenerating ? 'Regenerating...' : 'Regenerate'}
                 </button>
+
+                {/* Add Exam – desktop only (mobile has FAB) */}
                 <button
                   onClick={() => router.push('/exams/create')}
-                  className="bg-[rgb(54,65,86)] text-white px-3 py-1 rounded hover:bg-opacity-90 transition-colors flex items-center gap-1.5 shadow-sm text-xs font-medium"
+                  className="hidden lg:flex bg-[rgb(54,65,86)] text-white px-3 py-1 rounded hover:bg-opacity-90 transition-colors items-center gap-1.5 shadow-sm text-xs font-medium"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -315,10 +373,12 @@ export default function CalendarPage() {
                   <Calendar
                     ref={calendarRef}
                     onSessionClick={handleSessionClick}
+                    onTaskClick={handleTaskClick}
                     onAddItemClick={handleAddItemClick}
                     sidebarOpen={false}
                     sidebarCollapsed={isSidebarCollapsed}
                     onDatesSet={handleDatesSet}
+                    blockedDays={blockedDays}
                   />
                 </div>
               )}
@@ -329,12 +389,45 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Add Item Modal */}
+      {/* ── Mobile FABs: Add Exam + Regenerate (above bottom nav) ── */}
+      <div className="lg:hidden fixed bottom-24 right-4 z-40 flex flex-col items-end gap-3">
+        {/* Regenerate Schedule */}
+        <button
+          onClick={handleRegenerateSchedule}
+          disabled={isRegenerating}
+          title="Regenerate schedule"
+          className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-lg rounded-2xl px-4 py-3 font-semibold text-sm active:scale-95 transition-all disabled:opacity-50"
+        >
+          <svg className={`w-5 h-5 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {isRegenerating ? 'Regenerating…' : 'Regenerate'}
+        </button>
+
+        {/* Add Exam */}
+        <button
+          onClick={() => router.push('/exams/create')}
+          className="flex items-center gap-2 bg-[rgb(54,65,86)] text-white shadow-lg rounded-2xl px-5 py-3.5 font-semibold text-sm active:scale-95 transition-all"
+        >
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Exam
+        </button>
+      </div>
+
+      {/* Add Item Dropdown */}
       <AddItemModal
+        key={selectedDate || 'day-dropdown'}
         isOpen={isAddItemModalOpen}
         onClose={handleCloseAddItemModal}
         onAddExam={handleAddExam}
         onAddTask={handleAddTask}
+        date={selectedDate}
+        anchorPosition={dropdownPosition}
+        isBlocked={selectedDate ? blockedDays.has(selectedDate) : false}
+        onToggleBlock={handleToggleBlock}
+        isTogglingBlock={isTogglingBlock}
       />
 
       {/* Create Task Modal */}
@@ -342,9 +435,26 @@ export default function CalendarPage() {
         isOpen={isTaskModalOpen}
         onClose={() => {
           setIsTaskModalOpen(false);
+          setSelectedTaskId(null);
           setSelectedDate(undefined);
         }}
         selectedDate={selectedDate}
+        editingTaskId={selectedTaskId}
+      />
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        isOpen={isTaskDetailModalOpen}
+        onClose={() => {
+          setIsTaskDetailModalOpen(false);
+          setSelectedTaskId(null);
+        }}
+        taskId={selectedTaskId}
+        onEdit={(taskId) => {
+          setSelectedTaskId(taskId);
+          setIsTaskDetailModalOpen(false);
+          setIsTaskModalOpen(true);
+        }}
       />
 
       {/* Exam Modal - View */}

@@ -39,14 +39,61 @@ export default function ExamDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   
-  const { data: examData, error: examError, isLoading: examLoading } = useSWR(id ? `/api/exams/${id}` : null, fetcher);
-  const { data: sessionsData, error: sessionsError, isLoading: sessionsLoading } = useSWR(id ? `/api/sessions?examId=${id}` : null, fetcher);
+  const { data: examData, error: examError, isLoading: examLoading, mutate: mutateExam } = useSWR(id ? `/api/exams/${id}` : null, fetcher);
+  const { data: sessionsData, error: sessionsError, isLoading: sessionsLoading, mutate: mutateSessions } = useSWR(id ? `/api/sessions?examId=${id}` : null, fetcher);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTogglingCompletion, setIsTogglingCompletion] = useState(false);
 
   const exam: Exam | null = examData?.data || null;
   const sessions: StudySession[] = sessionsData?.data || [];
+
+  const handleToggleCompletion = async () => {
+    if (!exam || isTogglingCompletion) return;
+    const targetStatus = !exam.isCompleted;
+    setIsTogglingCompletion(true);
+
+    // 1. Instant optimistic UI update (0ms latency)
+    mutateExam(
+      { ...examData, data: { ...exam, isCompleted: targetStatus } },
+      false
+    );
+
+    if (targetStatus) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+
+    try {
+      const res = await fetch(`/api/exams/${exam._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCompleted: targetStatus })
+      });
+
+      if (!res.ok) throw new Error('Failed to update completion status');
+
+      // Revalidate to sync fresh state
+      await mutateExam();
+      await mutateSessions();
+      mutate('/api/exams');
+      mutate('/api/calendar/events');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('calendarUpdated'));
+      }
+    } catch (e) {
+      console.error(e);
+      // Revert on error
+      mutateExam();
+      alert('Failed to update completion status');
+    } finally {
+      setIsTogglingCompletion(false);
+    }
+  };
 
   const handleDeleteExam = async () => {
     if (!exam) return;
@@ -108,43 +155,22 @@ export default function ExamDetailPage() {
           
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
-              onClick={async () => {
-                try {
-                  const res = await fetch(`/api/exams/${exam._id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ isCompleted: !exam.isCompleted })
-                  });
-                  if (res.ok) {
-                    if (!exam.isCompleted) {
-                      confetti({
-                        particleCount: 100,
-                        spread: 70,
-                        origin: { y: 0.6 }
-                      });
-                    }
-                    mutate(id ? `/api/exams/${id}` : null);
-                    mutate(id ? `/api/sessions?examId=${id}` : null);
-                  }
-                } catch (e) {
-                  console.error(e);
-                  alert('Failed to update completion status');
-                }
-              }}
-              className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium transition-colors shadow-sm border ${
+              onClick={handleToggleCompletion}
+              disabled={isTogglingCompletion}
+              className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium transition-all duration-200 shadow-sm border ${
                 exam.isCompleted 
-                  ? 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/30' 
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                  ? 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/30 active:scale-95' 
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 active:scale-95'
               }`}
             >
               {exam.isCompleted ? (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   Completed
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   Mark as Done
                 </>
               )}

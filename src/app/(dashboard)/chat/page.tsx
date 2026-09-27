@@ -348,63 +348,74 @@ export default function ChatPage() {
   const selectedExam = exams.find((e) => e._id === selectedExamId);
 
   return (
-    <div className="flex flex-col h-screen bg-neutral-light/50 dark:bg-slate-950 p-2 lg:p-4">
-      {/* Header Controls */}
-      <div className="flex flex-col md:flex-row gap-2 mb-2 bg-white dark:bg-slate-900 px-3 py-2 rounded-xl shadow-sm border border-neutral-dark/10 dark:border-slate-700">
-        <div className="flex-1">
-          <label className="block text-[10px] font-semibold text-neutral-dark/60 dark:text-slate-400 uppercase tracking-wider mb-1">
-            Select Exam Context
-          </label>
-          <select
-            value={selectedExamId}
-            onChange={(e) => setSelectedExamId(e.target.value)}
-            className="w-full bg-neutral-light dark:bg-slate-800 border-none rounded-lg py-1.5 px-3 text-sm text-neutral-dark dark:text-slate-100 font-medium focus:ring-2 focus:ring-primary/20 appearance-none"
-          >
-            <option value="">-- Choose an Exam --</option>
-            {exams.map((exam) => (
-              <option key={exam._id} value={exam._id}>
-                {exam.subject}
-              </option>
-            ))}
-          </select>
+    <div className="flex flex-col h-full bg-white sm:bg-neutral-light/50 dark:bg-slate-950 sm:p-2 md:p-4">
+      {/* Mobile-optimized Header */}
+      <div className="flex items-center justify-between sm:mb-2 bg-white dark:bg-slate-900 px-4 py-3 sm:py-2 sm:rounded-xl sm:shadow-sm border-b sm:border border-neutral-dark/10 dark:border-slate-700 shrink-0 z-10">
+        <div className="flex-1 hidden sm:block">
+          {/* Left spacing on desktop */}
         </div>
-          <div className="w-full md:w-auto flex gap-2">
-            <div className="w-48">
-              <label className="block text-[10px] font-semibold text-neutral-dark/60 dark:text-slate-400 uppercase tracking-wider mb-1">
-                AI Model
-              </label>
-              <select
-                value={aiIntegration}
-                onChange={(e) => setAiIntegration(e.target.value)}
-                className="w-full bg-neutral-light dark:bg-slate-800 border-none rounded-lg py-1.5 px-3 text-sm text-neutral-dark dark:text-slate-100 font-medium focus:ring-2 focus:ring-primary/20 appearance-none"
-              >
-                <option value="gpt-4o-mini">OpenAI GPT-4o-mini (Fast)</option>
-                <option value="gpt-4o">OpenAI GPT-4o (Smart)</option>
-              </select>
-            </div>
-            {selectedExamId && (
-              <div className="flex-none flex items-end">
-                <button
-                  onClick={() => setShowMaterial(!showMaterial)}
-                  className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-all shadow-sm ${
-                    showMaterial 
-                      ? 'bg-primary text-white hover:bg-primary-dark' 
-                      : 'bg-[rgb(54,65,86)] text-white hover:bg-opacity-90'
-                  }`}
-                >
-                  {showMaterial ? 'Hide Material' : '📖 View Source'}
-                </button>
-              </div>
-            )}
+        
+        {/* Center Title / Exam Selector */}
+        <div className="flex-1 flex justify-start sm:justify-center relative">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 -ml-3 sm:ml-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer relative">
+            <span className="font-semibold text-[16px] sm:text-[15px] text-neutral-dark dark:text-slate-200">
+              {selectedExam ? selectedExam.subject : 'Select an Exam'}
+            </span>
+            <svg className="w-4 h-4 text-neutral-dark/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+            </svg>
+            <select
+              value={selectedExamId}
+              onChange={(e) => setSelectedExamId(e.target.value)}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            >
+              <option value="" disabled>-- Choose an Exam --</option>
+              {exams.map((exam) => (
+                <option key={exam._id} value={exam._id}>
+                  {exam.subject}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
+
+        {/* Right Actions */}
+        <div className="flex-1 flex justify-end gap-2 items-center">
+          <div className="hidden sm:block">
+            <select
+              value={aiIntegration}
+              onChange={(e) => setAiIntegration(e.target.value)}
+              className="bg-transparent border-none py-1 px-2 text-xs text-neutral-dark/60 dark:text-slate-400 focus:ring-0 cursor-pointer"
+            >
+              <option value="gpt-4o-mini">GPT-4o-mini</option>
+              <option value="gpt-4o">GPT-4o</option>
+            </select>
+          </div>
+          {selectedExamId && (
+            <button
+              onClick={() => setShowMaterial(!showMaterial)}
+              className={`p-2 sm:px-3 sm:py-1.5 text-sm rounded-lg font-medium transition-all ${
+                showMaterial 
+                  ? 'bg-primary text-white hover:bg-primary-dark shadow-sm' 
+                  : 'text-neutral-dark/70 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
+              title="Toggle Source Material"
+            >
+              <span className="hidden sm:inline">{showMaterial ? 'Hide Source' : '📖 Source'}</span>
+              <svg className="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
   
         {/* Main Workspace (Split Screen container) */}
-        <div className="flex-1 flex gap-4 overflow-hidden">
+        <div className="flex-1 flex sm:gap-4 overflow-hidden relative">
           
           {/* Chat Area */}
-          <div className={`flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-neutral-dark/10 dark:border-slate-700 overflow-hidden transition-all duration-300 ${
-            showMaterial ? 'w-full lg:w-1/2 hidden lg:flex' : 'w-full'
+          <div className={`flex flex-col bg-white dark:bg-slate-900 sm:rounded-xl sm:shadow-sm sm:border border-neutral-dark/10 dark:border-slate-700 overflow-hidden transition-all duration-300 ${
+            showMaterial ? 'w-full md:w-1/2 hidden md:flex' : 'w-full'
           }`}>
             {!selectedExamId ? (
               <div className="flex-1 flex items-center justify-center flex-col text-neutral-dark/40 dark:text-slate-500 p-6">
@@ -447,10 +458,10 @@ export default function ChatPage() {
                     messages.map((m) => (
                       <div key={m.id} className={`flex flex-col gap-2 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
                         {/* Main Message Bubble */}
-                        <div className={`group relative max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm ${
+                        <div className={`group relative max-w-[92%] sm:max-w-[75%] px-4 py-2.5 shadow-sm ${
                             m.role === 'user'
-                              ? 'bg-[rgb(54,65,86)] text-white rounded-br-sm'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-sm border border-slate-200 dark:border-slate-700/80'
+                              ? 'bg-[rgb(54,65,86)] text-white rounded-2xl rounded-br-sm'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl rounded-bl-sm border border-slate-200 dark:border-slate-700/50'
                           }`}>
                           {m.content === '' && m.role === 'assistant' ? (
                             <div className="flex gap-1 py-1">
@@ -459,7 +470,7 @@ export default function ChatPage() {
                               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                             </div>
                           ) : (
-                            <div className={`text-sm leading-relaxed prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:p-0 ${
+                            <div className={`text-[15px] sm:text-sm leading-relaxed prose prose-sm sm:prose-base max-w-none prose-p:leading-relaxed prose-pre:p-0 ${
                               m.role === 'user'
                                 ? 'prose-invert text-white prose-p:text-white prose-headings:text-white prose-strong:text-white prose-code:text-white'
                                 : 'dark:prose-invert text-slate-800 dark:text-slate-100'
@@ -472,7 +483,7 @@ export default function ChatPage() {
                           {m.role === 'assistant' && (
                             <button 
                               onClick={() => setActiveThreadId(activeThreadId === m.id ? null : m.id)}
-                              className={`absolute -right-8 bottom-0 p-1.5 rounded-full text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-opacity ${
+                              className={`absolute right-0 sm:-right-8 bottom-0 p-1.5 rounded-full text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-opacity ${
                                 activeThreadId === m.id || (m.inlineChats && m.inlineChats.length > 0)
                                   ? 'opacity-100 bg-slate-200 dark:bg-slate-600'
                                   : 'opacity-0 group-hover:opacity-100 bg-slate-100 dark:bg-slate-700'
@@ -597,57 +608,65 @@ export default function ChatPage() {
                   )}
                   <div ref={messagesEndRef} />
                 </div>
-  
-                {/* Input Area */}
-                <div className="px-4 pb-4 pt-2">
-                  <div className="relative flex items-center">
-                    <textarea
-                      ref={inputRef}
-                      value={input}
-                      onChange={(e) => {
-                        setInput(e.target.value);
-                        e.target.style.height = 'auto';
-                        e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
-                      }}
-                      onKeyDown={handleKeyDown}
-                      rows={1}
-                      placeholder={`Ask a question about ${selectedExam?.subject || 'your exam'}...`}
-                      className="w-full bg-neutral-light/50 dark:bg-slate-800 border-2 border-neutral-dark/10 dark:border-slate-700 rounded-[20px] py-2.5 pl-4 pr-12 text-sm text-neutral-dark dark:text-slate-100 focus:outline-none focus:border-primary/50 focus:bg-white dark:focus:bg-slate-700 transition-all shadow-sm resize-none overflow-y-auto"
-                      style={{ minHeight: '44px', maxHeight: '200px' }}
-                    />
-                    {isLoading ? (
-                      <button
-                        onClick={stopGeneration}
-                        className="absolute right-1.5 bottom-1.5 p-1.5 bg-slate-500 text-white rounded-full hover:bg-slate-600 transition-all shadow-md"
-                        title="Stop generating"
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <rect x="6" y="6" width="12" height="12" rx="2" />
-                        </svg>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          sendMessage();
-                          if (inputRef.current) inputRef.current.style.height = 'auto';
-                        }}
-                        disabled={!input.trim()}
-                        className="absolute right-1.5 bottom-1.5 p-1.5 bg-[rgb(54,65,86)] text-white rounded-full hover:bg-opacity-90 disabled:opacity-50 transition-all shadow-md"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </div>
               </>
             )}
+            
+            {/* Input Area (Always visible, but disabled if no exam) */}
+            <div className="px-3 sm:px-4 pb-4 pt-2 border-t sm:border-t-0 border-neutral-dark/5 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto">
+              <div className={`relative flex items-end max-w-4xl mx-auto bg-neutral-light/30 dark:bg-slate-800 border sm:border-2 border-neutral-dark/10 dark:border-slate-700 rounded-3xl p-1 shadow-sm transition-colors ${!selectedExamId ? 'opacity-50' : 'focus-within:border-neutral-dark/30 dark:focus-within:border-slate-500'}`}>
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                  }}
+                  onKeyDown={handleKeyDown}
+                  disabled={!selectedExamId || isLoading}
+                  rows={1}
+                  placeholder={!selectedExamId ? "Select an exam to chat..." : `Message ${selectedExam?.subject || 'AI'}...`}
+                  className="w-full bg-transparent py-2.5 pl-4 pr-12 text-base sm:text-sm text-neutral-dark dark:text-slate-100 focus:outline-none resize-none overflow-y-auto disabled:cursor-not-allowed"
+                  style={{ minHeight: '44px', maxHeight: '200px' }}
+                />
+                <div className="absolute right-1.5 bottom-1.5">
+                  {isLoading ? (
+                    <button
+                      onClick={stopGeneration}
+                      className="p-1.5 sm:p-2 bg-slate-500 text-white rounded-full hover:bg-slate-600 transition-all shadow-sm flex items-center justify-center"
+                      title="Stop generating"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <rect x="6" y="6" width="12" height="12" rx="2" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        sendMessage();
+                        if (inputRef.current) inputRef.current.style.height = 'auto';
+                      }}
+                      disabled={!input.trim() || !selectedExamId}
+                      className="p-1.5 sm:p-2 bg-[rgb(54,65,86)] text-white rounded-full hover:bg-opacity-90 disabled:opacity-30 disabled:bg-slate-400 transition-all shadow-sm flex items-center justify-center"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="text-center mt-2 hidden sm:block">
+                <span className="text-[11px] text-neutral-dark/40 dark:text-slate-500">
+                  AI can make mistakes. Consider verifying important information.
+                </span>
+              </div>
+            </div>
           </div>
   
           {/* Source Material Viewer */}
           {showMaterial && (
-            <div className="w-full lg:w-1/2 flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-neutral-dark/10 dark:border-slate-700 overflow-hidden animate-in slide-in-from-right-8 duration-300">
+            <div className="w-full md:w-1/2 flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-neutral-dark/10 dark:border-slate-700 overflow-hidden animate-in slide-in-from-right-8 duration-300">
               <div className="px-4 py-2.5 border-b border-neutral-dark/5 dark:border-slate-700 flex justify-between items-center bg-neutral-light/30 dark:bg-slate-800/50">
                 <h3 className="font-bold text-base text-neutral-dark dark:text-slate-200">Source Material</h3>
                 <button 

@@ -211,6 +211,13 @@ export default function StudyHubPage() {
     loadPrefs();
 
     if (typeof window !== 'undefined') {
+      const handleUpdate = () => {
+        fetchSessions();
+        loadPrefs();
+      };
+      window.addEventListener('calendarUpdated', handleUpdate);
+      window.addEventListener('preferencesUpdated', handleUpdate);
+
       const params = new URLSearchParams(window.location.search);
       const sessionId = params.get('session');
       if (sessionId) {
@@ -281,6 +288,11 @@ export default function StudyHubPage() {
         };
         fetchSpecificSession();
       }
+
+      return () => {
+        window.removeEventListener('calendarUpdated', handleUpdate);
+        window.removeEventListener('preferencesUpdated', handleUpdate);
+      };
     }
   }, [fetchSessions]);
 
@@ -572,14 +584,47 @@ export default function StudyHubPage() {
 
   const examColor = getExamColor(selectedSession?.exam);
 
+  // Mobile: track which panel is visible
+  const [mobileView, setMobileView] = useState<'list' | 'session'>('list');
+
+  // When a session is selected on mobile, switch to session view
+  const handleSelectSessionMobile = useCallback(async (session: StudySession) => {
+    await handleSelectSession(session);
+    setMobileView('session');
+  }, [handleSelectSession]);
+
   return (
-    <div className="h-screen flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden">
-      {/* 3-column layout */}
+    <div className="h-[100dvh] flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden">
+      {/* Mobile Header */}
+      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
+        {mobileView === 'session' && selectedSession ? (
+          <button
+            onClick={() => {
+              setMobileView('list');
+              setSelectedSession(null);
+              if (typeof window !== 'undefined') window.history.replaceState({}, '', '/today');
+            }}
+            className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 dark:text-slate-300"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            Back
+          </button>
+        ) : (
+          <h1 className="text-lg font-bold text-gray-800 dark:text-white">Study Hub</h1>
+        )}
+        <span className="text-xs text-gray-400 dark:text-slate-500">{today}</span>
+      </div>
+
+      {/* Desktop: 3-column layout / Mobile: single panel */}
       <div className="flex flex-1 min-h-0 gap-0">
 
         {/* ── LEFT: Today's Sessions + Tasks + Timer ─────────────────────────── */}
-        <div className="w-72 flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
+        {/* On mobile: hidden when viewing a session. On desktop: always visible as fixed column */}
+        <div className={`
+          lg:w-72 lg:flex-shrink-0 lg:flex flex-col border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden
+          ${mobileView === 'list' ? 'flex flex-1 w-full' : 'hidden'}
+        `}>
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex-shrink-0 hidden lg:flex">
             {selectedSession ? (
               <button
                 onClick={() => {
@@ -605,7 +650,6 @@ export default function StudyHubPage() {
           </div>
           {!selectedSession ? (
             <>
-
           {/* Session list */}
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5 min-h-0">
             {loadingSessions ? (
@@ -622,16 +666,11 @@ export default function StudyHubPage() {
             ) : (
               sessions.map(s => {
                 const color = getExamColor(s.exam);
-                const isSelected = false;
                 return (
                   <button
                     key={s._id}
-                    onClick={() => handleSelectSession(s)}
-                    className={`w-full text-left rounded-xl p-3 transition-all border ${
-                      isSelected
-                        ? 'border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 shadow-sm'
-                        : 'border-transparent hover:border-gray-200 dark:hover:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/50'
-                    } ${s.isCompleted ? 'opacity-50' : ''}`}
+                    onClick={() => handleSelectSessionMobile(s)}
+                    className={`w-full text-left rounded-xl p-3 transition-all border border-transparent hover:border-gray-200 dark:hover:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 ${s.isCompleted ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-start gap-2.5">
                       <div
@@ -840,7 +879,11 @@ export default function StudyHubPage() {
         </div>
 
         {/* ── CENTER: AI Chat ─────────────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden">
+        {/* On mobile: shown when a session is selected (alongside the timer/tasks), stacked */}
+        <div className={`
+          flex-1 flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden
+          ${mobileView === 'session' ? 'flex' : 'hidden lg:flex'}
+        `}>
           <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">
               AI Tutor

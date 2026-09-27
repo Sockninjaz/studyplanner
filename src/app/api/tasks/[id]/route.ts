@@ -22,7 +22,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, description, isCompleted } = body;
+    const { name, description, isCompleted, date } = body;
 
     const task = await Task.findOne({
       _id: params.id,
@@ -33,9 +33,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    if (name !== undefined) task.name = name;
-    if (description !== undefined) task.description = description;
+    if (name !== undefined) task.name = name.trim();
+    if (description !== undefined) task.description = description.trim();
     if (isCompleted !== undefined) task.isCompleted = isCompleted;
+    if (date !== undefined) task.date = new Date(date);
 
     await task.save();
 

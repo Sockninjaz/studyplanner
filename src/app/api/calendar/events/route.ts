@@ -21,22 +21,7 @@ export async function GET(request: Request) {
     }
 
     // Get all exams for the user
-    let exams = await Exam.find({ user: user._id });
-
-    // Filter out exams completed more than 24 hours ago
-    const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
-    exams = exams.filter(exam => {
-      if (exam.isCompleted) {
-        if (exam.completedAt) {
-          return new Date(exam.completedAt) >= twentyFourHoursAgo;
-        }
-        return false; // hide if completed but missing timestamp (legacy)
-      }
-      return true; // keep if not completed
-    });
-    
+    const exams = await Exam.find({ user: user._id });
     const validExamIds = new Set(exams.map(e => e._id.toString()));
 
     // Get all study sessions for the user, but only for valid exams

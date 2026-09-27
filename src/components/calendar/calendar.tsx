@@ -6,23 +6,37 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useRouter } from 'next/navigation';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface CalendarProps {
   onSessionClick?: (sessionId: string) => void;
-  onAddItemClick?: (date: string) => void;
+  onTaskClick?: (taskId: string) => void;
+  onAddItemClick?: (date: string, position?: { x: number; y: number }) => void;
   sidebarOpen?: boolean;
   sidebarCollapsed?: boolean;
   onDatesSet?: (info: any) => void;
+  blockedDays?: Set<string>;
 }
 
-const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClick, sidebarOpen, sidebarCollapsed, onDatesSet }, ref) => {
+const Calendar = forwardRef<any, CalendarProps>(({ 
+  onSessionClick, 
+  onTaskClick, 
+  onAddItemClick, 
+  sidebarOpen, 
+  sidebarCollapsed, 
+  onDatesSet,
+  blockedDays 
+}, ref) => {
+  const router = useRouter();
   const { data, error, isLoading, mutate } = useSWR('/api/calendar/events', fetcher);
   const calendarRef = useRef<FullCalendar>(null);
   // Keep a ref to the latest onAddItemClick so dayCellDidMount closures always use the current callback
   const onAddItemClickRef = useRef(onAddItemClick);
   onAddItemClickRef.current = onAddItemClick;
+  const blockedDaysRef = useRef(blockedDays);
+  blockedDaysRef.current = blockedDays;
 
   useImperativeHandle(ref, () => ({
     getApi: () => calendarRef.current?.getApi(),
@@ -69,9 +83,11 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
 
     if (typeof window !== 'undefined') {
       window.addEventListener('calendarUpdated', handleUpdate);
+      window.addEventListener('preferencesUpdated', handleUpdate);
       window.addEventListener('examDeleted', handleUpdate);
       return () => {
         window.removeEventListener('calendarUpdated', handleUpdate);
+        window.removeEventListener('preferencesUpdated', handleUpdate);
         window.removeEventListener('examDeleted', handleUpdate);
       };
     }
@@ -85,6 +101,7 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
       }, 300);
     }
   }, [sidebarOpen, sidebarCollapsed]);
+
 
   if (error) {
     return (
@@ -122,6 +139,7 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
   return (
     <div className="h-full bg-white dark:bg-slate-900">
       <FullCalendar
+        key={Array.from(blockedDays || []).sort().join(',')}
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
@@ -132,6 +150,25 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
         height="100%"
         dayMaxEvents={5}
         datesSet={onDatesSet}
+        dateClick={(info) => {
+          if (onAddItemClickRef.current) {
+            onAddItemClickRef.current(info.dateStr, {
+              x: info.jsEvent.clientX,
+              y: info.jsEvent.clientY
+            });
+          }
+        }}
+        dayCellClassNames={(arg) => {
+          const d = arg.date;
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          const dStr = `${year}-${month}-${day}`;
+          if (blockedDaysRef.current?.has(dStr)) {
+            return ['fc-day-blocked'];
+          }
+          return [];
+        }}
         eventTimeFormat={{
           hour: 'numeric',
           minute: '2-digit',
@@ -143,10 +180,15 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
         eventClick={(info) => {
           info.jsEvent.preventDefault();
           if (info.event.extendedProps?.type === 'exam') {
-            window.location.href = '/exams';
+            const examId = info.event.extendedProps?.examId;
+            router.push(examId ? `/exams/${examId}` : '/exams');
           } else if (info.event.extendedProps?.type === 'session' && info.event.extendedProps?.sessionId) {
             if (onSessionClick) {
               onSessionClick(info.event.extendedProps.sessionId);
+            }
+          } else if (info.event.extendedProps?.type === 'task' && info.event.extendedProps?.taskId) {
+            if (onTaskClick) {
+              onTaskClick(info.event.extendedProps.taskId);
             }
           }
         }}
@@ -185,14 +227,35 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
               e.preventDefault();
             });
 
+            // Check if day is blocked
+            if (blockedDaysRef.current?.has(dateStr)) {
+              const blockedBadge = document.createElement('span');
+              blockedBadge.className = 'fc-blocked-badge text-[9.5px] font-semibold text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/50 rounded px-1 ml-auto mr-1 select-none pointer-events-none';
+              blockedBadge.textContent = 'Blocked';
+              dayTop.appendChild(blockedBadge);
+            }
+
             addButton.addEventListener('click', (e) => {
               e.stopPropagation();
               e.preventDefault();
               if (onAddItemClickRef.current) {
-                onAddItemClickRef.current(dateStr);
+                onAddItemClickRef.current(dateStr, {
+                  x: e.clientX,
+                  y: e.clientY
+                });
               }
             });
           }
+        }}
+        eventClassNames={(arg) => {
+          const classes: string[] = [];
+          if (arg.event.extendedProps?.isCompleted) {
+            classes.push('fc-event-completed');
+          }
+          if (arg.event.extendedProps?.type === 'task') {
+            classes.push('fc-event-task');
+          }
+          return classes;
         }}
         eventDidMount={(info) => {
           const event = info.event;
@@ -202,6 +265,8 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
             if (event.extendedProps?.isCompleted) {
               info.el.style.textDecoration = 'line-through';
               info.el.style.opacity = '0.7';
+              const titleEl = info.el.querySelector('.fc-event-title') as HTMLElement | null;
+              if (titleEl) titleEl.style.textDecoration = 'line-through';
             } else {
               info.el.style.textDecoration = 'underline';
             }
@@ -209,11 +274,57 @@ const Calendar = forwardRef<any, CalendarProps>(({ onSessionClick, onAddItemClic
             if (event.extendedProps?.isCompleted) {
               info.el.style.textDecoration = 'line-through';
               info.el.style.opacity = '0.7';
+              const titleEl = info.el.querySelector('.fc-event-title') as HTMLElement | null;
+              if (titleEl) titleEl.style.textDecoration = 'line-through';
+            }
+          } else if (event.extendedProps?.type === 'task') {
+            if (event.extendedProps?.isCompleted) {
+              info.el.style.textDecoration = 'line-through';
+              info.el.style.opacity = '0.7';
+              const titleEl = info.el.querySelector('.fc-event-title') as HTMLElement | null;
+              if (titleEl) titleEl.style.textDecoration = 'line-through';
             }
           }
         }}
       />
       <style jsx global>{`
+        .fc-event-completed,
+        .fc-event-completed .fc-event-title,
+        .fc-event-completed .fc-event-main,
+        .fc-event-completed .fc-event-title-container {
+          text-decoration: line-through !important;
+          opacity: 0.7 !important;
+        }
+        .fc-day-blocked {
+          background-color: rgba(244, 63, 94, 0.04) !important;
+          background-image: repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 6px,
+            rgba(244, 63, 94, 0.04) 6px,
+            rgba(244, 63, 94, 0.04) 12px
+          ) !important;
+        }
+        :global(.dark) .fc-day-blocked {
+          background-color: rgba(244, 63, 94, 0.08) !important;
+          background-image: repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 6px,
+            rgba(244, 63, 94, 0.08) 6px,
+            rgba(244, 63, 94, 0.08) 12px
+          ) !important;
+        }
+        .fc-event-task {
+          cursor: pointer !important;
+          border-radius: 5px !important;
+          font-weight: 500 !important;
+          transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+        }
+        .fc-event-task:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35) !important;
+        }
         .fc {
           --fc-border-color: #e5e7eb;
           --fc-button-text-color: #374151;

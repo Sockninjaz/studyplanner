@@ -84,11 +84,13 @@ export default function CalendarListView({
     };
 
     window.addEventListener('calendarUpdated', handleCalendarUpdate);
+    window.addEventListener('preferencesUpdated', handleCalendarUpdate);
     window.addEventListener('examDeleted', handleExamDeletion);
     document.addEventListener('click', handleClickOutside);
 
     return () => {
       window.removeEventListener('calendarUpdated', handleCalendarUpdate);
+      window.removeEventListener('preferencesUpdated', handleCalendarUpdate);
       window.removeEventListener('examDeleted', handleExamDeletion);
       document.removeEventListener('click', handleClickOutside);
     };
@@ -509,8 +511,8 @@ export default function CalendarListView({
                               ? `border-opacity-30 bg-opacity-10 hover:bg-opacity-20`
                               : event.type === 'task'
                                 ? event.isCompleted
-                                  ? 'border-green-200 bg-green-50 hover:bg-green-100'
-                                  : 'border-amber-200 bg-amber-50 hover:bg-amber-100'
+                                  ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40'
+                                  : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40'
                               : event.isCompleted
                                   ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40'
                                   : 'border-[#4a4a4a] dark:border-slate-600 border-opacity-20 bg-[#f8f6ef] dark:bg-slate-800 hover:bg-opacity-80 dark:hover:bg-slate-700'
@@ -544,7 +546,7 @@ export default function CalendarListView({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
                               <h4
-                                className={`text-sm font-medium truncate ${event.isCompleted ? 'line-through' : ''
+                                className={`text-sm font-medium truncate ${event.isCompleted ? 'line-through opacity-70' : ''
                                   } ${event.type === 'exam' ? '' : 'text-[#4a4a4a] dark:text-slate-200'}`}
                                 style={{
                                   color: event.type === 'exam' ? eventColor : undefined
