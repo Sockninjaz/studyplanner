@@ -621,7 +621,7 @@ export default function StudyHubPage() {
         {/* ── LEFT: Today's Sessions + Tasks + Timer ─────────────────────────── */}
         {/* On mobile: hidden when viewing a session. On desktop: always visible as fixed column */}
         <div className={`
-          lg:w-[240px] lg:flex-shrink-0 lg:flex flex-col border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden
+          lg:w-[260px] lg:flex-shrink-0 lg:flex flex-col border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden
           ${mobileView === 'list' ? 'flex flex-1 w-full' : 'hidden'}
         `}>
           <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex-shrink-0 hidden lg:flex">
@@ -728,27 +728,27 @@ export default function StudyHubPage() {
 
                   {/* Circular timer */}
                   <div className="relative flex items-center justify-center mt-2 mb-2">
-                    <svg width="100" height="100" className="-rotate-90">
+                    <svg width="140" height="140" className="-rotate-90">
                       <circle
-                        cx="50" cy="50" r="44"
+                        cx="70" cy="70" r="60"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="4"
+                        strokeWidth="6"
                         className="text-gray-100 dark:text-slate-800"
                       />
                       <circle
-                        cx="50" cy="50" r="44"
+                        cx="70" cy="70" r="60"
                         fill="none"
                         stroke={examColor}
-                        strokeWidth="4"
+                        strokeWidth="6"
                         strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 44}`}
-                        strokeDashoffset={`${2 * Math.PI * 44 * (1 - timerProgress / 100)}`}
+                        strokeDasharray={`${2 * Math.PI * 60}`}
+                        strokeDashoffset={`${2 * Math.PI * 60 * (1 - timerProgress / 100)}`}
                         style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                       />
                     </svg>
                     <div className="absolute text-center flex flex-col items-center justify-center">
-                      <span className="text-xl font-bold tabular-nums text-gray-800 dark:text-slate-100">
+                      <span className="text-2xl font-bold tabular-nums text-gray-800 dark:text-slate-100">
                         {formatTime(timerSeconds)}
                       </span>
                       <p className="text-[10px] text-gray-400 dark:text-slate-600">
