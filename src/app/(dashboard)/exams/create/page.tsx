@@ -655,7 +655,7 @@ function CreateExamContent() {
                           type="button" 
                           onClick={handleAnalyze}
                           disabled={isAnalyzing}
-                          className="mt-3 w-full bg-indigo-600 text-white py-2.5 px-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg disabled:opacity-50 transition-all shrink-0 text-sm flex items-center justify-center gap-2 cursor-pointer"
+                          className="mt-3 w-full bg-indigo-600 text-slate-900 py-2.5 px-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg disabled:opacity-50 transition-all shrink-0 text-sm flex items-center justify-center gap-2 cursor-pointer"
                         >
                           {isAnalyzing ? (
                             <>
@@ -784,7 +784,7 @@ function CreateExamContent() {
               <button type="button" onClick={() => router.push('/calendar')} className="px-4 py-2 font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-sm">
                 Cancel
               </button>
-              <button type="submit" disabled={isSubmitting || !aiAnalysis} className="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all flex items-center gap-2 text-sm">
+              <button type="submit" disabled={isSubmitting || !aiAnalysis} className="px-5 py-2 bg-indigo-600 text-slate-900 font-bold rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all flex items-center gap-2 text-sm">
                 {isSubmitting ? (
                   <><svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> Saving...</>
                 ) : (editId ? 'Save Exam' : 'Create Study Plan')}

@@ -453,7 +453,7 @@ export default function ChatPage() {
               onClick={toggleMaterial}
               className={`p-2 sm:px-3 sm:py-1.5 text-sm rounded-lg font-medium transition-all ${
                 showMaterial 
-                  ? 'bg-indigo-600 text-white shadow-sm' 
+                  ? 'bg-indigo-600 text-slate-900 shadow-sm' 
                   : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
               }`}
               title="Toggle Source Material"
@@ -532,7 +532,7 @@ export default function ChatPage() {
                         {/* Main Message Bubble */}
                         <div className={`group relative max-w-[92%] sm:max-w-[75%] px-4 py-2.5 shadow-sm ${
                             m.role === 'user'
-                              ? 'bg-indigo-600 dark:bg-indigo-600 text-white rounded-2xl rounded-br-sm shadow-sm border border-transparent'
+                              ? 'bg-indigo-600 dark:bg-indigo-600 text-slate-900 rounded-2xl rounded-br-sm shadow-sm border border-transparent'
                               : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl rounded-bl-sm border border-slate-200 dark:border-slate-700/50'
                           }`}>
                           {m.content === '' && m.role === 'assistant' ? (
@@ -601,7 +601,7 @@ export default function ChatPage() {
                                     {im.role === 'assistant' && (
                                       <div className="absolute -left-4 top-[14px] w-4 h-[2px] bg-slate-200 dark:bg-slate-700" />
                                     )}
-                                    <div className={`z-10 px-3.5 py-2 text-sm rounded-xl shadow-sm overflow-x-auto ${im.role === 'user' ? 'bg-indigo-600 dark:bg-indigo-600 text-white rounded-br-sm border border-transparent' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-bl-sm'}`}>
+                                    <div className={`z-10 px-3.5 py-2 text-sm rounded-xl shadow-sm overflow-x-auto ${im.role === 'user' ? 'bg-indigo-600 dark:bg-indigo-600 text-slate-900 rounded-br-sm border border-transparent' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-bl-sm'}`}>
                                       {im.content === '' && im.role === 'assistant' ? (
                                         <div className="flex gap-1 py-1">
                                           <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />

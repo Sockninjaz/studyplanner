@@ -327,7 +327,7 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         <button
           onClick={() => savePreferences()}
           disabled={isSaving}
-          className="w-full bg-indigo-600 dark:bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-indigo-600 dark:bg-indigo-500 text-slate-900 py-2 px-4 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSaving ? 'Saving...' : 'Save Preferences'}
         </button>

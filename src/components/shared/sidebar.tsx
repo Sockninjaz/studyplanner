@@ -187,7 +187,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                   {session?.user?.image ? (
                     <img src={session.user.image} alt="Profile" className="w-6 h-6 rounded-full flex-shrink-0" />
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-slate-900 text-xs font-bold flex-shrink-0">
                       {session?.user?.name?.charAt(0) || 'U'}
                     </div>
                   )}
@@ -200,7 +200,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
               {session?.user?.image ? (
                 <img src={session.user.image} alt="Profile" className="w-6 h-6 rounded-full" />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-slate-900 text-xs font-bold">
                   {session?.user?.name?.charAt(0) || 'U'}
                 </div>
               )}

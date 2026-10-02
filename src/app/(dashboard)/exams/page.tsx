@@ -15,7 +15,7 @@ export default function ExamsPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Exams</h1>
           <button
             onClick={handleAddExam}
-            className="bg-indigo-600 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition-colors shadow-sm text-sm md:text-base"
+            className="bg-indigo-600 text-slate-900 px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition-colors shadow-sm text-sm md:text-base"
           >
             + Add Exam
           </button>
