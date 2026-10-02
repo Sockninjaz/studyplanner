@@ -1,6 +1,18 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import remarkBreaks from 'remark-breaks';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+
+const preprocessMath = (content: string) => {
+  if (!content) return '';
+  return content
+    .replace(/\\\(([\s\S]*?)\\\)/g, (match, p1) => `$${p1}$`)
+    .replace(/\\\[([\s\S]*?)\\\]/g, (match, p1) => `$$${p1}$$`);
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -881,61 +893,68 @@ export default function StudyHubPage() {
         {/* ── CENTER: AI Chat ─────────────────────────────────────────────────── */}
         {/* On mobile: shown when a session is selected (alongside the timer/tasks), stacked */}
         <div className={`
-          flex-1 flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden
+          flex-1 flex flex-col bg-white dark:bg-slate-900 overflow-hidden
           ${mobileView === 'session' ? 'flex' : 'hidden lg:flex'}
         `}>
-
 
           {/* Messages */}
           <div
             ref={chatContainerRef}
             onScroll={handleChatScroll}
-            className="flex-1 overflow-y-auto no-scrollbar px-5 py-4 space-y-4 min-h-0"
+            className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4 min-h-0"
           >
             {!selectedSession ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-300 dark:text-slate-700 text-center select-none">
-                <svg className="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              <div className="flex flex-col items-center justify-center h-full text-neutral-dark/40 dark:text-slate-500 p-6 text-center select-none">
+                <svg className="w-16 h-16 mb-4 opacity-50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <p className="text-base">Select a session to chat with your AI tutor</p>
+                <p className="font-medium text-base text-neutral-dark dark:text-slate-300">Select a session to start chatting</p>
+                <p className="text-xs text-neutral-dark/70 dark:text-slate-400 mt-1">The AI will use your study materials and session context.</p>
               </div>
             ) : fetchingHistory ? (
               <div className="flex justify-center py-8">
-                <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-4 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
               </div>
             ) : chatMessages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="flex flex-col items-center justify-center h-full text-center max-w-md mx-auto opacity-70 p-6 select-none">
                 <div
-                  className="w-12 h-12 rounded-full mb-4 flex items-center justify-center"
-                  style={{ backgroundColor: examColor + '33' }}
+                  className="w-10 h-10 rounded-full mb-3 shadow-sm flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                  style={{ backgroundColor: examColor || 'var(--sidebar-bg)' }}
                 >
-                  <div className="w-6 h-6 rounded-full" style={{ backgroundColor: examColor }} />
+                  {(selectedSession.exam?.subject || selectedSession.subject)?.charAt(0)?.toUpperCase() || '✨'}
                 </div>
-                <p className="text-base font-medium text-gray-600 dark:text-slate-300">
-                  Ready to help with {selectedSession.exam?.subject || selectedSession.subject}
+                <p className="text-base font-semibold text-neutral-dark dark:text-slate-200">
+                  Ask about {selectedSession.exam?.subject || selectedSession.subject}
                 </p>
-                <p className="text-sm text-gray-400 dark:text-slate-600 mt-2 max-w-md">
-                  Ask me anything about this session: "{selectedSession.title}"
+                <p className="text-xs text-neutral-dark/70 dark:text-slate-400 mt-1">
+                  I am your study tutor. Ask me anything about "{selectedSession.title}", concepts, or exam prep!
                 </p>
               </div>
             ) : (
               chatMessages.map(m => (
-                <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={m.id} className={`flex flex-col gap-2 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  {/* Main Message Bubble */}
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    className={`group relative max-w-[90%] sm:max-w-[80%] px-4 py-2.5 shadow-sm ${
                       m.role === 'user'
-                        ? 'bg-slate-900 dark:bg-[#27272a] text-white rounded-br-sm border border-transparent dark:border-zinc-700/50 shadow-sm'
-                        : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 rounded-bl-sm border border-gray-100 dark:border-slate-700 shadow-sm'
+                        ? 'bg-indigo-600 dark:bg-indigo-600 text-white dark:text-slate-900 rounded-2xl rounded-br-sm border border-transparent'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl rounded-bl-sm border border-slate-200 dark:border-slate-700/50'
                     }`}
                   >
                     {m.content === '' && m.role === 'assistant' ? (
                       <div className="flex gap-1 py-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                       </div>
                     ) : (
-                      <span className="whitespace-pre-wrap">{m.content}</span>
+                      <div className={`text-[15px] sm:text-sm leading-relaxed prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:p-0 ${
+                        m.role === 'user'
+                          ? 'text-white dark:text-slate-900 prose-p:text-white dark:prose-p:text-slate-900 prose-headings:text-white dark:prose-headings:text-slate-900 prose-strong:text-white dark:prose-strong:text-slate-900 prose-code:text-white dark:prose-code:text-slate-900'
+                          : 'dark:prose-invert text-slate-800 dark:text-slate-100'
+                      }`}>
+                        <ReactMarkdown remarkPlugins={[remarkMath, remarkBreaks]} rehypePlugins={[rehypeKatex]}>{preprocessMath(m.content)}</ReactMarkdown>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -945,8 +964,8 @@ export default function StudyHubPage() {
           </div>
 
           {/* Chat input */}
-          <div className="px-5 pb-5 pt-2 flex-shrink-0">
-            <div className="relative flex items-center">
+          <div className="px-3 sm:px-4 pb-4 pt-2 border-t sm:border-t-0 border-neutral-dark/5 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto flex-shrink-0">
+            <div className={`flex items-end gap-2 max-w-4xl mx-auto bg-neutral-light/30 dark:bg-slate-800/80 border sm:border-2 border-neutral-dark/10 dark:border-slate-700 rounded-3xl p-1.5 sm:p-2 shadow-sm transition-colors ${!selectedSession ? 'opacity-50' : 'focus-within:border-neutral-dark/30 dark:focus-within:border-slate-500'}`}>
               <textarea
                 ref={chatInputRef}
                 value={chatInput}
@@ -960,7 +979,6 @@ export default function StudyHubPage() {
                     e.preventDefault();
                     if (!chatLoading) {
                       sendChatMessage();
-                      // Reset height after sending
                       if (chatInputRef.current) {
                         chatInputRef.current.style.height = 'auto';
                       }
@@ -970,33 +988,36 @@ export default function StudyHubPage() {
                 rows={1}
                 placeholder={selectedSession ? `Ask about ${selectedSession.exam?.subject || selectedSession.subject}…` : 'Select a session first'}
                 disabled={!selectedSession}
-                className="w-full bg-gray-50 dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-[20px] py-2.5 pl-4 pr-12 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed resize-none overflow-y-auto transition-all shadow-sm"
-                style={{ minHeight: '44px', maxHeight: '200px' }}
+                className="flex-1 bg-transparent py-2 pl-3 sm:pl-4 pr-1 text-base sm:text-sm text-neutral-dark dark:text-slate-100 focus:outline-none resize-none overflow-y-auto disabled:cursor-not-allowed"
+                style={{ minHeight: '40px', maxHeight: '200px' }}
               />
-              {chatLoading ? (
-                <button
-                  onClick={stopGeneration}
-                  className="absolute right-1.5 bottom-1.5 p-1.5 bg-slate-500 text-white rounded-full hover:bg-slate-600 transition-colors flex-shrink-0 shadow-md"
-                  title="Stop generating"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <rect x="6" y="6" width="12" height="12" rx="2" />
-                  </svg>
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    sendChatMessage();
-                    if (chatInputRef.current) chatInputRef.current.style.height = 'auto';
-                  }}
-                  disabled={!selectedSession || !chatInput.trim()}
-                  className="absolute right-1.5 bottom-1.5 p-1.5 bg-slate-700 text-white rounded-full hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0 shadow-md"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </button>
-              )}
+              <div className="shrink-0 flex items-center justify-center">
+                {chatLoading ? (
+                  <button
+                    onClick={stopGeneration}
+                    className="w-10 h-10 bg-slate-600 dark:bg-slate-500 text-white rounded-full hover:bg-slate-700 transition-all shadow-sm flex items-center justify-center active:scale-95"
+                    title="Stop generating"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <rect x="6" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      sendChatMessage();
+                      if (chatInputRef.current) chatInputRef.current.style.height = 'auto';
+                    }}
+                    disabled={!selectedSession || !chatInput.trim()}
+                    className="w-10 h-10 bg-slate-900 dark:bg-[#27272a] text-white rounded-full hover:bg-opacity-90 disabled:opacity-40 transition-all shadow-sm flex items-center justify-center active:scale-95"
+                  >
+                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="19" x2="12" y2="5" />
+                      <polyline points="5 12 12 5 19 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

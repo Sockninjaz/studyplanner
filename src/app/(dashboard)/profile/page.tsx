@@ -428,7 +428,7 @@ export default function ProfilePage() {
                     <button
                       onClick={handleUpdatePassword}
                       disabled={isUpdatingPwd || !pwdCurrent || !pwdNew || !pwdConfirm}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-slate-900 font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white dark:text-slate-900 font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
                     >
                       {isUpdatingPwd ? 'Updating...' : 'Update Password'}
                     </button>
