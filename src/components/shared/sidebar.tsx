@@ -174,15 +174,14 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
   return (
     <>
       <aside
-        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-white duration-300 ease-linear lg:static lg:translate-x-0 ${isCollapsed ? 'w-16' : 'w-48'} flex-col`}
-        style={{ backgroundColor: 'rgb(54, 65, 86)' }}
+        className={`absolute left-0 top-0 z-20 flex h-screen overflow-y-hidden text-slate-800 dark:text-zinc-100 duration-300 ease-linear lg:static lg:translate-x-0 ${isCollapsed ? 'w-16' : 'w-48'} flex-col bg-[#F9F8F3] dark:bg-[#1e293b] border-r border-[#EAE7DC] dark:border-slate-700/80 shadow-sm`}
       >
         <div className={`flex items-center justify-between relative ${isCollapsed ? 'px-2 py-3 flex-col gap-3' : 'pl-2 pr-3 py-3 gap-1'}`}>
           {!isCollapsed ? (
-            <div className="relative flex-1 min-w-0" ref={dropdownRef}>
-              <button 
-                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="w-full flex items-center py-1.5 px-2 rounded-lg hover:bg-white/10 transition-colors"
+            <div className="relative flex-1 min-w-0">
+              <Link 
+                href="/profile"
+                className="w-full flex items-center py-1.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {session?.user?.image ? (
@@ -192,48 +191,9 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                       {session?.user?.name?.charAt(0) || 'U'}
                     </div>
                   )}
-                  <span className="text-[13px] font-semibold truncate flex-shrink min-w-0">{session?.user?.name || 'User'}</span>
-                  <ChevronDown size={14} className={`text-slate-400 transition-transform flex-shrink-0 ml-0.5 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                  <span className="text-[13px] font-semibold truncate flex-shrink min-w-0 text-slate-800 dark:text-white">{session?.user?.name || 'User'}</span>
                 </div>
-              </button>
-
-              {/* Dropdown Menu */}
-              {isProfileDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50 animate-in fade-in slide-in-from-top-2">
-                  <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 mb-2">
-                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{session?.user?.name || 'User'}</p>
-                    <p className="text-xs text-slate-500 truncate">{session?.user?.email}</p>
-                  </div>
-                  
-                  <Link 
-                    href="/profile"
-                    onClick={() => setIsProfileDropdownOpen(false)}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    <Settings size={16} />
-                    Settings
-                  </Link>
-                  
-                  <Link 
-                    href="/upgrade"
-                    onClick={() => setIsProfileDropdownOpen(false)}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors font-medium"
-                  >
-                    <Star size={16} />
-                    Upgrade Plan
-                  </Link>
-                  
-                  <div className="h-px bg-slate-100 dark:bg-slate-800 my-2"></div>
-                  
-                  <button 
-                    onClick={() => signOut()}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
-                  >
-                    <LogOut size={16} />
-                    Log out
-                  </button>
-                </div>
-              )}
+              </Link>
             </div>
           ) : (
             <div className="mx-auto">
@@ -252,7 +212,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
             <div className={`flex flex-shrink-0 ${isCollapsed ? 'w-full justify-center' : ''}`}>
               <button
                 onClick={onToggle}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
+                className="text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-white p-1 rounded-lg transition-colors"
                 title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
                 <SidebarIcon size={18} strokeWidth={2} className="opacity-80" />
@@ -267,7 +227,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
               <div>
                 <ul className="mb-4 flex flex-col gap-0.5">
                   <li>
-                    <Link href="/today" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-300 ease-in-out ${pathname.startsWith('/today') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
+                    <Link href="/today" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-200 ease-in-out ${pathname.startsWith('/today') ? 'bg-[#ECE8DF] text-slate-900 dark:bg-white/10 dark:text-white font-semibold' : 'text-slate-600 hover:bg-black/5 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
                       <svg width="16" height="16" className="w-4 h-4 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -275,7 +235,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/calendar" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-300 ease-in-out ${pathname.startsWith('/calendar') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
+                    <Link href="/calendar" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-200 ease-in-out ${pathname.startsWith('/calendar') ? 'bg-[#ECE8DF] text-slate-900 dark:bg-white/10 dark:text-white font-semibold' : 'text-slate-600 hover:bg-black/5 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
                       <svg width="16" height="16" className="w-4 h-4 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
@@ -283,7 +243,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/chat" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-300 ease-in-out ${pathname.startsWith('/chat') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
+                    <Link href="/chat" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-200 ease-in-out ${pathname.startsWith('/chat') ? 'bg-[#ECE8DF] text-slate-900 dark:bg-white/10 dark:text-white font-semibold' : 'text-slate-600 hover:bg-black/5 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
                       <svg width="16" height="16" className="w-4 h-4 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                       </svg>
@@ -291,7 +251,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/exams" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-300 ease-in-out ${pathname.startsWith('/exams') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
+                    <Link href="/exams" className={`group relative flex items-center gap-2.5 rounded-md py-1.5 px-2.5 font-medium text-[13px] duration-200 ease-in-out ${pathname.startsWith('/exams') ? 'bg-[#ECE8DF] text-slate-900 dark:bg-white/10 dark:text-white font-semibold' : 'text-slate-600 hover:bg-black/5 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
                       <svg width="16" height="16" className="w-4 h-4 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
                       </svg>
@@ -304,24 +264,24 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
 
             {isCollapsed && (
               <div className="space-y-1">
-                <Link href="/calendar" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/calendar') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`} title="Schedule">
+                <Link href="/calendar" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/calendar') ? 'bg-[#ECE8DF] text-slate-900 dark:bg-white/10 dark:text-white' : 'text-slate-500 hover:bg-black/5 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white'}`} title="Schedule">
                   <svg width="24" height="24" className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </Link>
-                <Link href="/today" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/today') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`} title="Today">
+                <Link href="/today" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/today') ? 'bg-[#ECE8DF] text-slate-900 dark:bg-white/10 dark:text-white' : 'text-slate-500 hover:bg-black/5 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white'}`} title="Today">
                   <svg width="24" height="24" className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </Link>
-                <Link href="/chat" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/chat') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`} title="Chat">
+                <Link href="/chat" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/chat') ? 'bg-[#ECE8DF] text-slate-900 dark:bg-white/10 dark:text-white' : 'text-slate-500 hover:bg-black/5 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white'}`} title="Chat">
                   <svg width="24" height="24" className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                 </Link>
-                <Link href="/exams" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/exams') ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`} title="Exams">
+                <Link href="/exams" className={`flex justify-center py-3 rounded-lg transition-colors ${pathname.startsWith('/exams') ? 'bg-[#ECE8DF] text-slate-900 dark:bg-white/10 dark:text-white' : 'text-slate-500 hover:bg-black/5 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white'}`} title="Exams">
                   <svg width="24" height="24" className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477 4.5 1.253" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </Link>
               </div>
@@ -330,10 +290,10 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
             {!isCollapsed && (
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-1.5 px-2.5 group/header cursor-pointer">
-                  <h3 className="text-[11px] uppercase tracking-wider font-semibold text-gray-400">My Exams</h3>
+                  <h3 className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 dark:text-zinc-500">My Exams</h3>
                   <button
                     onClick={openCreateModal}
-                    className="text-gray-400 hover:text-white p-1 rounded-md transition-colors opacity-0 group-hover/header:opacity-100 flex items-center justify-center"
+                    className="text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-white p-1 rounded-md transition-colors opacity-0 group-hover/header:opacity-100 flex items-center justify-center"
                     title="Add Exam"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,9 +303,9 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                 </div>
                 <ul className="mb-4 flex flex-col gap-0.5">
                   {loading ? (
-                    <li className="px-2.5 py-2 text-xs text-white opacity-60">Loading exams...</li>
+                    <li className="px-2.5 py-2 text-xs text-slate-400 dark:text-zinc-500">Loading exams...</li>
                   ) : exams.length === 0 ? (
-                    <li className="px-4 py-3 text-base text-white opacity-60">No exams scheduled</li>
+                    <li className="px-4 py-3 text-sm text-slate-400 dark:text-zinc-500">No exams scheduled</li>
                   ) : (
                     exams.map((exam, index) => {
                       // Use stored color or stable fallback
@@ -380,7 +340,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
 
                       return (
                         <li key={exam._id}>
-                          <div className="w-full flex flex-col items-start rounded-md font-medium text-white duration-300 ease-in-out hover:bg-white hover:bg-opacity-10 group">
+                          <div className="w-full flex flex-col items-start rounded-md font-medium text-slate-700 dark:text-zinc-200 duration-200 ease-in-out hover:bg-black/5 dark:hover:bg-white/10 group">
                             <div className="w-full relative flex items-center">
                               <Link
                                 href={`/exams/${exam._id}`}
@@ -390,7 +350,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                                   className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                   style={{ backgroundColor: examColor }}
                                 />
-                                <span className={`text-[13px] truncate min-w-0 ${exam.isCompleted ? 'line-through text-slate-400' : ''}`} title={exam.subject}>
+                                <span className={`text-[13px] truncate min-w-0 text-slate-700 dark:text-zinc-200 ${exam.isCompleted ? 'line-through text-slate-400 dark:text-zinc-500' : ''}`} title={exam.subject}>
                                   {exam.subject}
                                 </span>
                               </Link>
@@ -399,7 +359,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                                   e.stopPropagation();
                                   handleDeleteExam(exam._id);
                                 }}
-                                className="px-2 py-1 text-gray-400 hover:text-red-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity absolute right-0"
+                                className="px-2 py-1 text-slate-400 hover:text-red-500 dark:text-zinc-400 dark:hover:text-red-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity absolute right-0"
                                 aria-label={`Delete ${exam.subject}`}
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
@@ -407,7 +367,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                             </div>
                             
                             {isActiveTimer && !isCollapsed && timerContext.activeSessionId && timerContext.mode === 'session' && (
-                              <div className="pl-7 pb-1.5 flex items-center gap-1.5 text-[11px] text-gray-400">
+                              <div className="pl-7 pb-1.5 flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-zinc-500">
                                 <svg className={`w-3 h-3 ${timerContext.isPaused ? 'text-amber-400' : 'text-green-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   {timerContext.isPaused ? (
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -435,7 +395,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
         <div className={`mt-auto ${isCollapsed ? 'px-2 py-2' : 'px-3 py-3'}`}>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className={`flex items-center justify-center w-full rounded-md text-slate-300 hover:text-white hover:bg-white hover:bg-opacity-10 transition-colors ${
+            className={`flex items-center justify-center w-full rounded-md text-slate-600 hover:text-slate-900 hover:bg-black/5 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors ${
               isCollapsed ? 'p-1.5' : 'py-1.5 px-2.5 gap-2'
             }`}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}

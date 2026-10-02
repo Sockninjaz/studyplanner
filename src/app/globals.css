@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --primary-color: 40, 57, 135;
-  --primary-rgb: rgb(40, 57, 135);
+  --primary-color: 158, 194, 154;
+  --primary-rgb: rgb(158, 194, 154);
   --secondary-color: 253, 231, 76;
   --secondary-rgb: rgb(253, 231, 76);
   --accent-color: 66, 191, 221;
@@ -13,12 +13,16 @@
   --accent-2-rgb: rgb(250, 175, 205);
   --neutral-dark: #4a4a4a;
   --neutral-light: #f8f6ef;
+  --sidebar-bg: #F9F8F3;
+  --sidebar-border: #EAE7DC;
 }
 
 /* Dark mode variables override */
 .dark {
   --neutral-dark: #f8f6ef; /* Invert neutral colors for custom CSS classes */
   --neutral-light: #1e1e2e;
+  --sidebar-bg: #1e293b;
+  --sidebar-border: #334155;
 }
 
 @layer base {

@@ -62,17 +62,17 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h2 className="mb-6 text-center text-2xl font-bold">Register</h2>
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-slate-900 p-4">
+      <div className="w-full max-w-md rounded-lg bg-white p-6 sm:p-8 shadow-md dark:bg-slate-800">
+        <h2 className="mb-6 text-center text-2xl font-bold dark:text-white">Register</h2>
         <form onSubmit={handleSubmit}>
           {error && <p className="mb-4 text-center text-sm text-red-500">{error}</p>}
           <div className="mb-4">
-            <label className="mb-2 block text-sm font-bold text-gray-700" htmlFor="name">
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300" htmlFor="name">
               Name
             </label>
             <input
-              className="focus:shadow-outline w-full appearance-none rounded border py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none"
+              className="focus:shadow-outline w-full appearance-none rounded border border-gray-300 py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
               id="name"
               type="text"
               placeholder="Name"
@@ -82,11 +82,11 @@ export default function RegisterPage() {
             />
           </div>
           <div className="mb-4">
-            <label className="mb-2 block text-sm font-bold text-gray-700" htmlFor="email">
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300" htmlFor="email">
               Email
             </label>
             <input
-              className="focus:shadow-outline w-full appearance-none rounded border py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none"
+              className="focus:shadow-outline w-full appearance-none rounded border border-gray-300 py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
               id="email"
               type="email"
               placeholder="Email"
@@ -96,11 +96,11 @@ export default function RegisterPage() {
             />
           </div>
           <div className="mb-4">
-            <label className="mb-2 block text-sm font-bold text-gray-700" htmlFor="password">
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300" htmlFor="password">
               Password
             </label>
             <input
-              className="focus:shadow-outline w-full appearance-none rounded border py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none"
+              className="focus:shadow-outline w-full appearance-none rounded border border-gray-300 py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
               id="password"
               type="password"
               placeholder="******************"
@@ -110,11 +110,11 @@ export default function RegisterPage() {
             />
           </div>
           <div className="mb-6">
-            <label className="mb-2 block text-sm font-bold text-gray-700" htmlFor="confirmPassword">
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300" htmlFor="confirmPassword">
               Confirm Password
             </label>
             <input
-              className="focus:shadow-outline mb-3 w-full appearance-none rounded border py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none"
+              className="focus:shadow-outline mb-3 w-full appearance-none rounded border border-gray-300 py-2 px-3 leading-tight text-gray-700 shadow focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
               id="confirmPassword"
               type="password"
               placeholder="******************"

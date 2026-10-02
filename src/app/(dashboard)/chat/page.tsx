@@ -64,6 +64,52 @@ export default function ChatPage() {
   // Track whether the user has manually scrolled up during generation
   const userScrolledUp = useRef(false);
 
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const deltaY = e.touches[0].clientY - touchStartRef.current.y;
+    const deltaX = Math.abs(e.touches[0].clientX - touchStartRef.current.x);
+    // If dragging downward significantly and mostly vertical, collapse keyboard
+    if (deltaY > 25 && deltaY > deltaX) {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+        active.blur();
+      }
+    }
+  };
+
+  // Close source material on back gesture
+  useEffect(() => {
+    if (!showMaterial) return;
+    window.history.pushState({ __subState: 'chat-material' }, '');
+    const handlePopState = () => {
+      setShowMaterial(false);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [showMaterial]);
+
+  const toggleMaterial = () => {
+    if (showMaterial) {
+      setShowMaterial(false);
+      if (typeof window !== 'undefined' && window.history.state?.__subState === 'chat-material') {
+        window.history.back();
+      }
+    } else {
+      setShowMaterial(true);
+    }
+  };
+
   // Auto-select first exam or exam from query params if none selected
   useEffect(() => {
     if (!selectedExamId && exams.length > 0) {
@@ -147,6 +193,10 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    // On touch/mobile devices, blur the input so virtual keyboard closes
+    if (typeof window !== 'undefined' && !window.matchMedia('(pointer: fine)').matches) {
+      inputRef.current?.blur();
+    }
     // When the user sends a new message, re-enable auto-scroll
     userScrolledUp.current = false;
 
@@ -218,7 +268,9 @@ export default function ChatPage() {
     } finally {
       abortControllerRef.current = null;
       setIsLoading(false);
-      inputRef.current?.focus();
+      if (typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+        inputRef.current?.focus();
+      }
     }
   };
 
@@ -246,6 +298,9 @@ export default function ChatPage() {
 
     setInlineInput('');
     setIsInlineLoading(true);
+    if (typeof window !== 'undefined' && !window.matchMedia('(pointer: fine)').matches) {
+      inlineInputRef.current?.blur();
+    }
 
     const assistantInlineId = (Date.now() + 1).toString();
     setMessages(prev => prev.map(m => {
@@ -319,7 +374,9 @@ export default function ChatPage() {
     } finally {
       abortControllerRef.current = null;
       setIsInlineLoading(false);
-      inlineInputRef.current?.focus();
+      if (typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+        inlineInputRef.current?.focus();
+      }
     }
   };
 
@@ -348,20 +405,20 @@ export default function ChatPage() {
   const selectedExam = exams.find((e) => e._id === selectedExamId);
 
   return (
-    <div className="flex flex-col h-full bg-white sm:bg-neutral-light/50 dark:bg-slate-950 sm:p-2 md:p-4">
-      {/* Mobile-optimized Header */}
-      <div className="flex items-center justify-between sm:mb-2 bg-white dark:bg-slate-900 px-4 py-3 sm:py-2 sm:rounded-xl sm:shadow-sm border-b sm:border border-neutral-dark/10 dark:border-slate-700 shrink-0 z-10">
+    <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-900">
+      {/* Header */}
+      <div className="flex items-center justify-between bg-white dark:bg-[#1e293b] px-4 py-3 border-b border-slate-200 dark:border-slate-700 shrink-0 z-10 h-14">
         <div className="flex-1 hidden sm:block">
           {/* Left spacing on desktop */}
         </div>
         
         {/* Center Title / Exam Selector */}
         <div className="flex-1 flex justify-start sm:justify-center relative">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 -ml-3 sm:ml-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer relative">
-            <span className="font-semibold text-[16px] sm:text-[15px] text-neutral-dark dark:text-slate-200">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 -ml-3 sm:ml-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer relative group">
+            <span className="font-semibold text-[15px] text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 transition-colors">
               {selectedExam ? selectedExam.subject : 'Select an Exam'}
             </span>
-            <svg className="w-4 h-4 text-neutral-dark/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
             </svg>
             <select
@@ -385,7 +442,7 @@ export default function ChatPage() {
             <select
               value={aiIntegration}
               onChange={(e) => setAiIntegration(e.target.value)}
-              className="bg-transparent border-none py-1 px-2 text-xs text-neutral-dark/60 dark:text-slate-400 focus:ring-0 cursor-pointer"
+              className="bg-transparent border-none py-1 px-2 text-xs text-slate-500 dark:text-slate-400 focus:ring-0 cursor-pointer"
             >
               <option value="gpt-4o-mini">GPT-4o-mini</option>
               <option value="gpt-4o">GPT-4o</option>
@@ -393,11 +450,11 @@ export default function ChatPage() {
           </div>
           {selectedExamId && (
             <button
-              onClick={() => setShowMaterial(!showMaterial)}
+              onClick={toggleMaterial}
               className={`p-2 sm:px-3 sm:py-1.5 text-sm rounded-lg font-medium transition-all ${
                 showMaterial 
-                  ? 'bg-primary text-white hover:bg-primary-dark shadow-sm' 
-                  : 'text-neutral-dark/70 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                  ? 'bg-indigo-600 text-white shadow-sm' 
+                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
               }`}
               title="Toggle Source Material"
             >
@@ -411,11 +468,11 @@ export default function ChatPage() {
       </div>
   
         {/* Main Workspace (Split Screen container) */}
-        <div className="flex-1 flex sm:gap-4 overflow-hidden relative">
+        <div className="flex-1 flex overflow-hidden relative">
           
           {/* Chat Area */}
-          <div className={`flex flex-col bg-white dark:bg-slate-900 sm:rounded-xl sm:shadow-sm sm:border border-neutral-dark/10 dark:border-slate-700 overflow-hidden transition-all duration-300 ${
-            showMaterial ? 'w-full md:w-1/2 hidden md:flex' : 'w-full'
+          <div className={`flex flex-col bg-white dark:bg-slate-900 overflow-hidden ${
+            showMaterial ? 'w-full md:w-1/2 border-r border-slate-200 dark:border-slate-800 hidden md:flex' : 'w-full'
           }`}>
             {!selectedExamId ? (
               <div className="flex-1 flex items-center justify-center flex-col text-neutral-dark/40 dark:text-slate-500 p-6">
@@ -436,7 +493,22 @@ export default function ChatPage() {
             ) : (
               <>
                 {/* Messages List */}
-                <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div 
+                  ref={messagesContainerRef} 
+                  onScroll={handleMessagesScroll} 
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onPointerDown={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (!target.closest('button, a, input, textarea')) {
+                      if (document.activeElement instanceof HTMLElement && 
+                          (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                        document.activeElement.blur();
+                      }
+                    }
+                  }}
+                  className="flex-1 overflow-y-auto p-4 space-y-4"
+                >
                   {isFetchingHistory ? (
                     <div className="flex justify-center py-8">
                       <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -445,7 +517,7 @@ export default function ChatPage() {
                     <div className="flex flex-col items-center justify-center h-full text-center max-w-md mx-auto opacity-70 p-6">
                       <div
                         className="w-10 h-10 rounded-full mb-3 shadow-sm flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                        style={{ backgroundColor: selectedExam?.color || 'rgb(54, 65, 86)' }}
+                        style={{ backgroundColor: selectedExam?.color || 'var(--sidebar-bg)' }}
                       >
                         {selectedExam?.subject?.charAt(0)?.toUpperCase() || '✨'}
                       </div>
@@ -460,7 +532,7 @@ export default function ChatPage() {
                         {/* Main Message Bubble */}
                         <div className={`group relative max-w-[92%] sm:max-w-[75%] px-4 py-2.5 shadow-sm ${
                             m.role === 'user'
-                              ? 'bg-[rgb(54,65,86)] text-white rounded-2xl rounded-br-sm'
+                              ? 'bg-indigo-600 dark:bg-indigo-600 text-white rounded-2xl rounded-br-sm shadow-sm border border-transparent'
                               : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl rounded-bl-sm border border-slate-200 dark:border-slate-700/50'
                           }`}>
                           {m.content === '' && m.role === 'assistant' ? (
@@ -529,7 +601,7 @@ export default function ChatPage() {
                                     {im.role === 'assistant' && (
                                       <div className="absolute -left-4 top-[14px] w-4 h-[2px] bg-slate-200 dark:bg-slate-700" />
                                     )}
-                                    <div className={`z-10 px-3.5 py-2 text-sm rounded-xl shadow-sm overflow-x-auto ${im.role === 'user' ? 'bg-[rgb(54,65,86)] text-white rounded-br-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-bl-sm'}`}>
+                                    <div className={`z-10 px-3.5 py-2 text-sm rounded-xl shadow-sm overflow-x-auto ${im.role === 'user' ? 'bg-indigo-600 dark:bg-indigo-600 text-white rounded-br-sm border border-transparent' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-bl-sm'}`}>
                                       {im.content === '' && im.role === 'assistant' ? (
                                         <div className="flex gap-1 py-1">
                                           <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
@@ -551,7 +623,7 @@ export default function ChatPage() {
                             
                             {/* Thread Input */}
                             {activeThreadId === m.id && (
-                              <div className="relative flex items-center mt-1 z-10">
+                              <div className="flex items-end gap-1.5 mt-1 z-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-1 shadow-sm">
                                 <textarea
                                   ref={inlineInputRef}
                                   value={inlineInput}
@@ -571,15 +643,15 @@ export default function ChatPage() {
                                   }}
                                   rows={1}
                                   placeholder="Reply in thread..."
-                                  className="w-full text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-3 pr-10 focus:outline-none focus:border-primary/50 transition-all shadow-sm resize-none"
+                                  className="flex-1 text-sm bg-transparent py-2 pl-3 pr-1 text-slate-800 dark:text-slate-100 focus:outline-none resize-none"
                                 />
                                 {isInlineLoading ? (
                                   <button
                                     onClick={stopGeneration}
-                                    className="absolute right-1.5 bottom-1.5 p-1.5 bg-slate-500 text-white rounded-full hover:bg-slate-600 transition-all shadow-sm"
+                                    className="shrink-0 w-8 h-8 bg-slate-500 text-white rounded-full hover:bg-slate-600 transition-all shadow-sm flex items-center justify-center active:scale-95"
                                     title="Stop generating"
                                   >
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                                       <rect x="6" y="6" width="12" height="12" rx="2" />
                                     </svg>
                                   </button>
@@ -590,10 +662,11 @@ export default function ChatPage() {
                                       if (inlineInputRef.current) inlineInputRef.current.style.height = 'auto';
                                     }}
                                     disabled={!inlineInput.trim()}
-                                    className="absolute right-1.5 bottom-1.5 p-1.5 bg-[rgb(54,65,86)] text-white rounded-full hover:bg-opacity-90 disabled:opacity-50 transition-colors shadow-sm"
+                                    className="shrink-0 w-8 h-8 bg-slate-900 dark:bg-[#27272a] text-white rounded-full hover:bg-opacity-90 disabled:opacity-40 transition-all shadow-sm flex items-center justify-center active:scale-95"
                                   >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                                      <line x1="12" y1="19" x2="12" y2="5" />
+                                      <polyline points="5 12 12 5 19 12" />
                                     </svg>
                                   </button>
                                 )}
@@ -613,7 +686,7 @@ export default function ChatPage() {
             
             {/* Input Area (Always visible, but disabled if no exam) */}
             <div className="px-3 sm:px-4 pb-4 pt-2 border-t sm:border-t-0 border-neutral-dark/5 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto">
-              <div className={`relative flex items-end max-w-4xl mx-auto bg-neutral-light/30 dark:bg-slate-800 border sm:border-2 border-neutral-dark/10 dark:border-slate-700 rounded-3xl p-1 shadow-sm transition-colors ${!selectedExamId ? 'opacity-50' : 'focus-within:border-neutral-dark/30 dark:focus-within:border-slate-500'}`}>
+              <div className={`flex items-end gap-2 max-w-4xl mx-auto bg-neutral-light/30 dark:bg-slate-800/80 border sm:border-2 border-neutral-dark/10 dark:border-slate-700 rounded-3xl p-1.5 sm:p-2 shadow-sm transition-colors ${!selectedExamId ? 'opacity-50' : 'focus-within:border-neutral-dark/30 dark:focus-within:border-slate-500'}`}>
                 <textarea
                   ref={inputRef}
                   value={input}
@@ -626,14 +699,14 @@ export default function ChatPage() {
                   disabled={!selectedExamId || isLoading}
                   rows={1}
                   placeholder={!selectedExamId ? "Select an exam to chat..." : `Message ${selectedExam?.subject || 'AI'}...`}
-                  className="w-full bg-transparent py-2.5 pl-4 pr-12 text-base sm:text-sm text-neutral-dark dark:text-slate-100 focus:outline-none resize-none overflow-y-auto disabled:cursor-not-allowed"
-                  style={{ minHeight: '44px', maxHeight: '200px' }}
+                  className="flex-1 bg-transparent py-2 pl-3 sm:pl-4 pr-1 text-base sm:text-sm text-neutral-dark dark:text-slate-100 focus:outline-none resize-none overflow-y-auto disabled:cursor-not-allowed"
+                  style={{ minHeight: '40px', maxHeight: '200px' }}
                 />
-                <div className="absolute right-1.5 bottom-1.5">
+                <div className="shrink-0 flex items-center justify-center">
                   {isLoading ? (
                     <button
                       onClick={stopGeneration}
-                      className="p-1.5 sm:p-2 bg-slate-500 text-white rounded-full hover:bg-slate-600 transition-all shadow-sm flex items-center justify-center"
+                      className="w-10 h-10 bg-slate-600 dark:bg-slate-500 text-white rounded-full hover:bg-slate-700 transition-all shadow-sm flex items-center justify-center active:scale-95"
                       title="Stop generating"
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -647,10 +720,16 @@ export default function ChatPage() {
                         if (inputRef.current) inputRef.current.style.height = 'auto';
                       }}
                       disabled={!input.trim() || !selectedExamId}
-                      className="p-1.5 sm:p-2 bg-[rgb(54,65,86)] text-white rounded-full hover:bg-opacity-90 disabled:opacity-30 disabled:bg-slate-400 transition-all shadow-sm flex items-center justify-center"
+                      className={`w-10 h-10 rounded-full transition-all shadow-sm flex items-center justify-center active:scale-95 ${
+                        input.trim() && selectedExamId
+                          ? 'bg-slate-900 dark:bg-[#27272a] text-white hover:bg-opacity-90 shadow-md'
+                          : 'bg-slate-200 dark:bg-slate-700/60 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                      }`}
+                      title="Send message"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12h14M12 5l7 7-7 7" />
+                      <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5" />
+                        <polyline points="5 12 12 5 19 12" />
                       </svg>
                     </button>
                   )}
@@ -670,7 +749,7 @@ export default function ChatPage() {
               <div className="px-4 py-2.5 border-b border-neutral-dark/5 dark:border-slate-700 flex justify-between items-center bg-neutral-light/30 dark:bg-slate-800/50">
                 <h3 className="font-bold text-base text-neutral-dark dark:text-slate-200">Source Material</h3>
                 <button 
-                  onClick={() => setShowMaterial(false)}
+                  onClick={toggleMaterial}
                   className="p-1.5 hover:bg-neutral-dark/10 dark:hover:bg-slate-700 rounded-full transition-colors text-neutral-dark/60 dark:text-slate-400"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

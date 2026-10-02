@@ -15,15 +15,46 @@ export default function ExamList() {
   const [activeTab, setActiveTab] = useState<Tab>('upcoming');
   const [celebratedExams, setCelebratedExams] = useState<Set<string>>(new Set());
 
+  const exams = data?.data || [];
+
   useEffect(() => {
-    // Only run on client
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('celebratedExams');
-      if (stored) {
-        setCelebratedExams(new Set(JSON.parse(stored)));
+    // Only run on client after data is loaded
+    if (typeof window === 'undefined' || !exams || exams.length === 0) return;
+
+    let storedCelebrated: string[] = [];
+    const stored = localStorage.getItem('celebratedExams');
+    if (stored) {
+      try {
+        storedCelebrated = JSON.parse(stored);
+      } catch (e) {
+        // Ignore parse error
       }
     }
-  }, []);
+    
+    const celebratedSet = new Set(storedCelebrated);
+    let newlyCelebrated = false;
+
+    exams.forEach((exam: any) => {
+      // Check if progress is 100% or exam is marked completed, and we haven't celebrated yet
+      if ((exam.progressPercentage === 100 || exam.isCompleted) && !celebratedSet.has(exam._id)) {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6']
+        });
+        celebratedSet.add(exam._id);
+        newlyCelebrated = true;
+      }
+    });
+
+    if (newlyCelebrated) {
+      localStorage.setItem('celebratedExams', JSON.stringify(Array.from(celebratedSet)));
+      setCelebratedExams(celebratedSet);
+    } else if (celebratedExams.size === 0 && celebratedSet.size > 0) {
+      setCelebratedExams(celebratedSet);
+    }
+  }, [exams]);
 
   if (error) return <div className="text-red-500">Failed to load exams. Please try again.</div>;
   if (isLoading) return (
@@ -31,25 +62,6 @@ export default function ExamList() {
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
     </div>
   );
-
-  const exams = data?.data || [];
-  
-  // Confetti trigger
-  exams.forEach((exam: any) => {
-    if (exam.progressPercentage === 100 && !celebratedExams.has(exam._id)) {
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6']
-      });
-      const newCelebrated = new Set(celebratedExams).add(exam._id);
-      setCelebratedExams(newCelebrated);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('celebratedExams', JSON.stringify(Array.from(newCelebrated)));
-      }
-    }
-  });
   
   const upcomingExams = exams.filter((exam: any) => !exam.isCompleted);
   const completedExams = exams.filter((exam: any) => exam.isCompleted);

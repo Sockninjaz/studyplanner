@@ -135,7 +135,7 @@ export default function ProfilePage() {
   const initials = session?.user?.name?.charAt(0)?.toUpperCase() || 'U';
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-950 no-scrollbar pb-24 lg:pb-12">
+    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-900 no-scrollbar pb-24 lg:pb-12">
       
       {/* Hero header - full width but centers content */}
       <div className="px-5 pt-8 pb-6">
@@ -153,7 +153,14 @@ export default function ProfilePage() {
           )}
           <div className="text-center">
             <h1 className="text-slate-900 dark:text-white text-xl md:text-2xl font-bold">{session?.user?.name || 'User'}</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base">{session?.user?.email}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base mb-3">{session?.user?.email}</p>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full text-sm font-medium transition-colors"
+            >
+              <LogOut size={16} />
+              Log Out
+            </button>
           </div>
         </div>
       </div>

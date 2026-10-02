@@ -344,7 +344,7 @@ export default function CalendarPage() {
                 {/* Add Exam – desktop only (mobile has FAB) */}
                 <button
                   onClick={() => router.push('/exams/create')}
-                  className="hidden lg:flex bg-[rgb(54,65,86)] text-white px-3 py-1 rounded hover:bg-opacity-90 transition-colors items-center gap-1.5 shadow-sm text-xs font-medium"
+                  className="hidden lg:flex bg-slate-900 hover:bg-slate-800 dark:bg-[#27272a] dark:hover:bg-[#3f3f46] text-white px-3 py-1 rounded transition-colors items-center gap-1.5 shadow-sm text-xs font-medium border border-transparent dark:border-zinc-700/50"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -407,7 +407,7 @@ export default function CalendarPage() {
         {/* Add Exam */}
         <button
           onClick={() => router.push('/exams/create')}
-          className="flex items-center gap-2 bg-[rgb(54,65,86)] text-white shadow-lg rounded-2xl px-5 py-3.5 font-semibold text-sm active:scale-95 transition-all"
+          className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-[#27272a] dark:hover:bg-[#3f3f46] text-white shadow-lg rounded-2xl px-5 py-3.5 font-semibold text-sm active:scale-95 transition-all border border-transparent dark:border-zinc-700/50"
         >
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

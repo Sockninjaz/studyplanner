@@ -9,7 +9,7 @@ export default function ExamsPage() {
   const handleAddExam = () => router.push('/exams/create');
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-950">
+    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-900">
       <div className="p-4 md:p-6 2xl:p-10 max-w-screen-2xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Exams</h1>

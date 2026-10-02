@@ -79,7 +79,7 @@ export default function UpgradePage() {
         </div>
 
         {/* Pro Tier */}
-        <div className="bg-gradient-to-b from-indigo-900 to-slate-900 dark:from-indigo-950 dark:to-slate-950 rounded-3xl p-1 relative shadow-2xl flex flex-col transform md:-translate-y-4">
+        <div className="bg-gradient-to-b from-indigo-900 to-slate-900 dark:from-indigo-950 dark:to-slate-900 rounded-3xl p-1 relative shadow-2xl flex flex-col transform md:-translate-y-4">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <span className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-lg">
               <Zap size={14} className="fill-white" />

@@ -98,11 +98,11 @@ export default function MobileHomePage() {
   const overallPct = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-950 no-scrollbar">
+    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-900 no-scrollbar">
       {/* Header */}
-      <div className="bg-[rgb(54,65,86)] px-5 pt-6 pb-8">
-        <p className="text-slate-300 text-sm">{today}</p>
-        <h1 className="text-white text-2xl font-bold mt-1">Good{
+      <div className="bg-white dark:bg-[#1e293b] px-5 pt-6 pb-8 border-b border-slate-200/80 dark:border-slate-700 shadow-sm">
+        <p className="text-slate-500 dark:text-zinc-400 text-sm">{today}</p>
+        <h1 className="text-slate-900 dark:text-white text-2xl font-bold mt-1">Good{
           (() => {
             const h = new Date().getHours();
             if (h < 12) return ' morning';
@@ -113,18 +113,18 @@ export default function MobileHomePage() {
 
         {/* Overall progress pill */}
         {!loading && totalSessions > 0 && (
-          <div className="mt-5 bg-white/10 rounded-2xl p-4">
+          <div className="mt-5 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white font-semibold text-sm">Overall Progress</span>
-              <span className="text-white font-bold text-sm">{overallPct}%</span>
+              <span className="text-slate-700 dark:text-zinc-200 font-semibold text-sm">Overall Progress</span>
+              <span className="text-slate-900 dark:text-white font-bold text-sm">{overallPct}%</span>
             </div>
-            <div className="w-full h-2.5 bg-white/20 rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-white transition-all duration-700"
+                className="h-full rounded-full bg-slate-900 dark:bg-white transition-all duration-700"
                 style={{ width: `${overallPct}%` }}
               />
             </div>
-            <p className="text-slate-300 text-xs mt-2">
+            <p className="text-slate-500 dark:text-zinc-400 text-xs mt-2">
               {completedSessions} of {totalSessions} sessions completed
             </p>
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import SessionSidebar from './session-sidebar';
 import CreateTaskModal from './create-task-modal';
@@ -58,6 +58,18 @@ export default function CalendarListView({
   const [selectedTaskDate, setSelectedTaskDate] = useState<string>('');
   const [openTaskMenuId, setOpenTaskMenuId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const hasScrolledRef = useRef(false);
+
+  useEffect(() => {
+    if (!isLoading && Object.keys(groupedEvents).length > 0 && !hasScrolledRef.current) {
+      const todayString = new Date().toDateString();
+      const todayElement = document.getElementById(`date-${todayString}`);
+      if (todayElement) {
+        todayElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+        hasScrolledRef.current = true;
+      }
+    }
+  }, [groupedEvents, isLoading]);
 
   const blockedDays: Set<string> = new Set(
     blockedData?.data?.map((d: string) => {
@@ -371,6 +383,7 @@ export default function CalendarListView({
             Object.entries(groupedEvents).map(([date, events]) => (
               <div
                 key={date}
+                id={`date-${date}`}
                 className="border-b border-[#4a4a4a] dark:border-slate-700 border-opacity-20 pb-6 last:border-b-0"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, date)}
@@ -412,7 +425,7 @@ export default function CalendarListView({
                         onAddItemClick(`${year}-${month}-${day}`);
                       }
                     }}
-                    className="text-[rgb(54,65,86)] dark:text-slate-300 hover:text-opacity-80 transition-colors"
+                    className="text-slate-800 dark:text-zinc-200 hover:text-opacity-80 transition-colors"
                     title="Add exam"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -555,9 +568,9 @@ export default function CalendarListView({
                                 {event.title}
                               </h4>
                               {event.isCompleted && (
-                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                  Completed
-                                </span>
+                                  <span className="text-[10px] uppercase font-bold tracking-wide bg-green-100/50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-800/50 px-2 py-0.5 rounded-full">
+                                    Completed
+                                  </span>
                               )}
                             </div>
 

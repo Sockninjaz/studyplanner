@@ -41,8 +41,8 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-slate-900">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md dark:bg-slate-800">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-slate-900 p-4">
+      <div className="w-full max-w-md rounded-lg bg-white p-6 sm:p-8 shadow-md dark:bg-slate-800">
         <h2 className="mb-6 text-center text-2xl font-bold dark:text-white">Login</h2>
         {success && <p className="mb-4 text-center text-sm text-green-500">{success}</p>}
         {error && <p className="mb-4 text-center text-sm text-red-500">{error}</p>}

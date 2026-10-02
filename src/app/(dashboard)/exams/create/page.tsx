@@ -427,23 +427,13 @@ function CreateExamContent() {
   return (
     <div className="h-full overflow-hidden bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 flex flex-col">
       <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col min-h-0">
-        <div className="mb-4 flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{editId ? 'Edit Exam' : 'Create New Exam'}</h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{editId ? 'Modify your exam details and rebuild the schedule.' : 'Let the AI build a perfectly optimized study schedule for you.'}</p>
-          </div>
-          <button onClick={() => router.push('/calendar')} className="text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-            Cancel
-          </button>
-        </div>
-
         <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700 flex-1 flex flex-col min-h-0 overflow-hidden">
           <form id="exam-form" onSubmit={handleSubmit} className="flex flex-col h-full min-h-0">
             <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 h-full">
                 {/* Basics Section */}
                 <section className="space-y-4 flex flex-col">
-                  <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 border-b border-slate-100 dark:border-slate-700 pb-2 shrink-0">1. Basics</h2>
+                  <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 border-b border-slate-100 dark:border-slate-700 pb-2 shrink-0">{editId ? 'Edit Exam' : 'Create New Exam'}</h2>
                   
                   <div className="space-y-4">
                     <div>
@@ -453,7 +443,7 @@ function CreateExamContent() {
                         id="subject"
                         value={subject}
                         onChange={(e) => setSubject(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm text-sm"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm text-sm"
                         placeholder="e.g. Organic Chemistry"
                         required
                       />
@@ -465,7 +455,7 @@ function CreateExamContent() {
                         id="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm text-sm"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm text-sm"
                         required
                       />
                     </div>
@@ -487,7 +477,7 @@ function CreateExamContent() {
                       step="1"
                       value={difficulty}
                       onChange={(e) => handleDifficultyChange(parseInt(e.target.value))}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 accent-blue-600"
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 accent-indigo-600"
                     />
                     <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">
                       <span>1 (Easiest)</span>
@@ -509,8 +499,8 @@ function CreateExamContent() {
                         <div 
                           className={`relative rounded-2xl border-2 border-dashed transition-all p-3 flex flex-col min-h-[140px] overflow-hidden ${
                             isDragging 
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-inner' 
-                              : 'border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800/40 hover:border-blue-400 hover:bg-slate-100/60 dark:hover:bg-slate-800'
+                              ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 shadow-inner' 
+                              : 'border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800/40 hover:border-indigo-400 hover:bg-slate-100/60 dark:hover:bg-slate-800'
                           } ${uploadedFiles.length === 0 ? 'items-center justify-center flex-1' : ''}`}
                           onDrop={(e) => {
                             e.preventDefault();
@@ -553,7 +543,7 @@ function CreateExamContent() {
                               <div className="w-full flex flex-col gap-1.5 overflow-y-auto max-h-36 pr-0.5">
                                 {uploadedFiles.map((f, i) => (
                                   <div key={i} className="bg-white dark:bg-slate-700/90 rounded-lg px-2.5 py-1.5 flex items-center gap-2 shadow-xs border border-slate-200 dark:border-slate-600 w-full shrink-0">
-                                    <div className="bg-blue-100 dark:bg-blue-900/40 p-1 rounded text-blue-600 dark:text-blue-400 shrink-0">
+                                    <div className="bg-indigo-100 dark:bg-indigo-900/40 p-1 rounded text-indigo-600 dark:text-indigo-400 shrink-0">
                                       {f.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'heic', 'bmp', 'gif', 'svg'].some(ext => f.name.toLowerCase().endsWith(`.${ext}`)) ? (
                                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                       ) : (
@@ -581,7 +571,7 @@ function CreateExamContent() {
                                 ))}
                               </div>
                               <label
-                                className="cursor-pointer relative overflow-hidden py-2 px-3 flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-blue-50/50 dark:hover:bg-slate-700 transition-colors w-full shrink-0 shadow-xs font-medium text-xs"
+                                className="cursor-pointer relative overflow-hidden py-2 px-3 flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 hover:border-indigo-500 dark:hover:border-indigo-400 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-indigo-50/50 dark:hover:bg-slate-700 transition-colors w-full shrink-0 shadow-xs font-medium text-xs"
                               >
                                 <input
                                   type="file"
@@ -595,13 +585,13 @@ function CreateExamContent() {
                                     e.target.value = '';
                                   }}
                                 />
-                                <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                <svg className="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                 <span>Add more files or drop here</span>
                               </label>
                             </div>
                           ) : (
                             <div className="text-center py-4 space-y-2.5 w-full pointer-events-none">
-                              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto transition-transform group-hover:scale-105">
+                              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto transition-transform group-hover:scale-105">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                               </div>
                               <div>
@@ -622,7 +612,7 @@ function CreateExamContent() {
                         <div className="w-full mt-4 space-y-3 shrink-0">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                              <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                               Using a textbook?
                             </p>
                           </div>
@@ -635,7 +625,7 @@ function CreateExamContent() {
                                 value={bookTitle}
                                 onChange={(e) => setBookTitle(e.target.value)}
                                 placeholder="e.g. Campbell Biology"
-                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white shadow-sm text-sm"
                               />
                             </div>
                             <div>
@@ -645,7 +635,7 @@ function CreateExamContent() {
                                 value={bookEdition}
                                 onChange={(e) => setBookEdition(e.target.value)}
                                 placeholder="e.g. 7th edition AP"
-                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white shadow-sm text-sm"
                               />
                             </div>
                           </div>
@@ -656,7 +646,7 @@ function CreateExamContent() {
                               value={rawTextInput}
                               onChange={(e) => setRawTextInput(e.target.value)}
                               placeholder="e.g. Chapter 1 to 4, or paste your entire syllabus here..."
-                              className="w-full h-16 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white shadow-sm text-sm"
+                              className="w-full h-16 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white shadow-sm text-sm"
                             />
                           </div>
                         </div>
@@ -665,7 +655,7 @@ function CreateExamContent() {
                           type="button" 
                           onClick={handleAnalyze}
                           disabled={isAnalyzing}
-                          className="mt-3 w-full bg-blue-600 text-white py-2.5 px-4 rounded-xl font-bold shadow-md hover:bg-blue-700 hover:shadow-lg disabled:opacity-50 transition-all shrink-0 text-sm flex items-center justify-center gap-2 cursor-pointer"
+                          className="mt-3 w-full bg-indigo-600 text-white py-2.5 px-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg disabled:opacity-50 transition-all shrink-0 text-sm flex items-center justify-center gap-2 cursor-pointer"
                         >
                           {isAnalyzing ? (
                             <>
@@ -693,8 +683,8 @@ function CreateExamContent() {
                     ) : isAnalyzing ? (
                       <div className="flex-1 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-800/30 flex flex-col items-center justify-center gap-4 min-h-[150px]">
                         <div className="relative w-10 h-10">
-                          <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-900 rounded-full"></div>
-                          <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="absolute inset-0 border-4 border-indigo-200 dark:border-indigo-900 rounded-full"></div>
+                          <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                         </div>
                         <div className="text-center px-4">
                           <p className="text-sm font-bold text-slate-800 dark:text-slate-200">AI is building your study plan...</p>
@@ -711,7 +701,7 @@ function CreateExamContent() {
                       </h3>
                       <p className="text-xs text-green-700 dark:text-green-500 mt-0.5">Review and tweak recommendations.</p>
                     </div>
-                    <button type="button" onClick={() => setAiAnalysis(null)} className="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800/50 px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                    <button type="button" onClick={() => setAiAnalysis(null)} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800/50 px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                       Edit Material
                     </button>
@@ -721,7 +711,7 @@ function CreateExamContent() {
                     <div>
                       <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Total Study Hours</p>
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        {difficulty !== 3 && <span className="text-blue-500 font-semibold mr-1">Adjusted.</span>}
+                        {difficulty !== 3 && <span className="text-indigo-500 font-semibold mr-1">Adjusted.</span>}
                         Base AI suggestion: {aiAnalysis.totalEstimatedHours}h
                       </p>
                     </div>
@@ -730,7 +720,7 @@ function CreateExamContent() {
                         type="number"
                         value={adjustedTotalHours || 0}
                         onChange={(e) => handleGlobalHoursChange(parseFloat(e.target.value) || 0)}
-                        className="w-16 px-1 py-0.5 text-lg font-extrabold text-blue-600 dark:text-blue-400 bg-transparent border-none focus:ring-0 text-center"
+                        className="w-16 px-1 py-0.5 text-lg font-extrabold text-indigo-600 dark:text-indigo-400 bg-transparent border-none focus:ring-0 text-center"
                         min="1"
                         step="0.5"
                       />
@@ -744,12 +734,12 @@ function CreateExamContent() {
                       {localChapters.map((ch: any, idx: number) => {
                         const displayHours = getDisplayHours(idx);
                         return (
-                          <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 flex items-center gap-1.5 shadow-sm hover:border-blue-300 transition-colors">
+                          <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 flex items-center gap-1.5 shadow-sm hover:border-indigo-300 transition-colors">
                             <input
                               type="text"
                               value={ch.chapter}
                               onChange={(e) => handleChapterNameChange(idx, e.target.value)}
-                              className="flex-1 font-semibold text-xs text-slate-800 dark:text-slate-200 bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-1.5 py-0.5 min-w-0"
+                              className="flex-1 font-semibold text-xs text-slate-800 dark:text-slate-200 bg-transparent border-none focus:ring-2 focus:ring-indigo-500 rounded px-1.5 py-0.5 min-w-0"
                             />
                             <div className="flex items-center gap-1 shrink-0 bg-slate-50 dark:bg-slate-900 rounded-md p-0.5 border border-slate-100 dark:border-slate-700">
                               <button type="button" onClick={() => handleChapterWeightChange(idx, -1)} className="w-5 h-5 rounded hover:bg-white dark:hover:bg-slate-700 shadow-sm flex items-center justify-center font-bold text-slate-500 text-xs">-</button>
@@ -770,13 +760,13 @@ function CreateExamContent() {
                         onChange={(e) => setNewChapterName(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddChapter(); } }}
                         placeholder="Add missing material manually..."
-                        className="flex-1 text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200"
+                        className="flex-1 text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200"
                       />
                       <button
                         type="button"
                         onClick={handleAddChapter}
                         disabled={!newChapterName.trim()}
-                        className="px-3 py-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold text-xs rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 disabled:opacity-50 transition-colors"
+                        className="px-3 py-1.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 font-bold text-xs rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50 disabled:opacity-50 transition-colors"
                       >
                         Add
                       </button>
@@ -794,7 +784,7 @@ function CreateExamContent() {
               <button type="button" onClick={() => router.push('/calendar')} className="px-4 py-2 font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-sm">
                 Cancel
               </button>
-              <button type="submit" disabled={isSubmitting || !aiAnalysis} className="px-5 py-2 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all flex items-center gap-2 text-sm">
+              <button type="submit" disabled={isSubmitting || !aiAnalysis} className="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all flex items-center gap-2 text-sm">
                 {isSubmitting ? (
                   <><svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> Saving...</>
                 ) : (editId ? 'Save Exam' : 'Create Study Plan')}
@@ -822,7 +812,7 @@ function CreateExamContent() {
                 <button
                   onClick={() => submitRegenerateAction('compress')}
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-left"
+                  className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors text-left"
                 >
                   <div>
                     <div className="font-bold">Compress Chapters to Fit</div>

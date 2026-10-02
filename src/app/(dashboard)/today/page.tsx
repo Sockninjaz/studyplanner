@@ -594,7 +594,7 @@ export default function StudyHubPage() {
   }, [handleSelectSession]);
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden">
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
         {mobileView === 'session' && selectedSession ? (
@@ -727,31 +727,31 @@ export default function StudyHubPage() {
                   </div>
 
                   {/* Circular timer */}
-                  <div className="relative flex items-center justify-center">
-                    <svg width="180" height="180" className="-rotate-90">
+                  <div className="relative flex items-center justify-center mt-2 mb-2">
+                    <svg width="140" height="140" className="-rotate-90">
                       <circle
-                        cx="90" cy="90" r="78"
+                        cx="70" cy="70" r="60"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="7"
+                        strokeWidth="6"
                         className="text-gray-100 dark:text-slate-800"
                       />
                       <circle
-                        cx="90" cy="90" r="78"
+                        cx="70" cy="70" r="60"
                         fill="none"
                         stroke={examColor}
-                        strokeWidth="7"
+                        strokeWidth="6"
                         strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 78}`}
-                        strokeDashoffset={`${2 * Math.PI * 78 * (1 - timerProgress / 100)}`}
+                        strokeDasharray={`${2 * Math.PI * 60}`}
+                        strokeDashoffset={`${2 * Math.PI * 60 * (1 - timerProgress / 100)}`}
                         style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                       />
                     </svg>
-                    <div className="absolute text-center">
-                      <span className="text-3xl font-bold tabular-nums text-gray-800 dark:text-slate-100">
+                    <div className="absolute text-center flex flex-col items-center justify-center">
+                      <span className="text-2xl font-bold tabular-nums text-gray-800 dark:text-slate-100">
                         {formatTime(timerSeconds)}
                       </span>
-                      <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1">
+                      <p className="text-[10px] text-gray-400 dark:text-slate-600">
                         {formatDuration(currentActualDuration)} session
                       </p>
                     </div>
@@ -881,19 +881,10 @@ export default function StudyHubPage() {
         {/* ── CENTER: AI Chat ─────────────────────────────────────────────────── */}
         {/* On mobile: shown when a session is selected (alongside the timer/tasks), stacked */}
         <div className={`
-          flex-1 flex flex-col bg-gray-50 dark:bg-slate-950 overflow-hidden
+          flex-1 flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden
           ${mobileView === 'session' ? 'flex' : 'hidden lg:flex'}
         `}>
-          <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">
-              AI Tutor
-            </h2>
-            {selectedSession?.exam && (
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 truncate">
-                {selectedSession.exam.subject} · "{selectedSession.title}"
-              </p>
-            )}
-          </div>
+
 
           {/* Messages */}
           <div
@@ -933,10 +924,9 @@ export default function StudyHubPage() {
                   <div
                     className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                       m.role === 'user'
-                        ? 'text-white rounded-br-sm'
+                        ? 'bg-slate-900 dark:bg-[#27272a] text-white rounded-br-sm border border-transparent dark:border-zinc-700/50 shadow-sm'
                         : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 rounded-bl-sm border border-gray-100 dark:border-slate-700 shadow-sm'
                     }`}
-                    style={m.role === 'user' ? { backgroundColor: 'rgb(54, 65, 86)' } : {}}
                   >
                     {m.content === '' && m.role === 'assistant' ? (
                       <div className="flex gap-1 py-1">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -50,12 +51,95 @@ const navItems = [
 export default function MobileNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let maxVvHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    let lastWidth = window.innerWidth;
+
+    const checkKeyboardState = () => {
+      const activeEl = document.activeElement;
+      const isInputActive = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
+
+      if (!isInputActive) {
+        setIsKeyboardOpen(false);
+        return;
+      }
+
+      if (window.visualViewport) {
+        const currentVvHeight = window.visualViewport.height;
+        // If orientation or resize changed width, reset baseline
+        if (window.innerWidth !== lastWidth) {
+          lastWidth = window.innerWidth;
+          maxVvHeight = currentVvHeight;
+        } else if (currentVvHeight > maxVvHeight) {
+          maxVvHeight = currentVvHeight;
+        }
+
+        const heightDiff = maxVvHeight - currentVvHeight;
+        const isOpen = heightDiff > 150;
+        
+        // If viewport returned to normal height but element is still focused (e.g. Android keyboard closed via down chevron)
+        if (!isOpen && isInputActive && heightDiff < 50) {
+          (activeEl as HTMLElement).blur();
+        }
+
+        setIsKeyboardOpen(isOpen);
+      } else {
+        setIsKeyboardOpen(isInputActive);
+      }
+    };
+
+    const handleFocusIn = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        setIsKeyboardOpen(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      // Defer check to see if another input was focused or if focus truly left
+      setTimeout(() => {
+        const activeEl = document.activeElement;
+        const isInputActive = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
+        if (!isInputActive) {
+          setIsKeyboardOpen(false);
+        }
+      }, 50);
+    };
+
+    const handleViewportResize = () => {
+      checkKeyboardState();
+    };
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('resize', handleViewportResize);
+    }
+    window.addEventListener('resize', handleViewportResize);
+
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+      if (vv) {
+        vv.removeEventListener('resize', handleViewportResize);
+      }
+      window.removeEventListener('resize', handleViewportResize);
+    };
+  }, []);
 
   const isProfileActive = pathname.startsWith('/profile');
   const initials = session?.user?.name?.charAt(0)?.toUpperCase() || 'U';
 
+  if (isKeyboardOpen) return null;
+
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[rgb(54,65,86)] border-t border-white/10 safe-area-pb">
+    <nav className="lg:hidden shrink-0 z-50 bg-[#F9F8F3] dark:bg-[#1e293b] border-t border-[#EAE7DC] dark:border-slate-700 safe-area-pb shadow-lg">
       <div className="flex items-center h-20">
 
         {navItems.map((item) => {
@@ -65,10 +149,10 @@ export default function MobileNav() {
               key={item.href}
               href={item.href}
               className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors h-full ${
-                isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                isActive ? 'text-slate-900 dark:text-white font-semibold' : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
-              <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-white/15' : ''}`}>
+              <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-[#ECE8DF] dark:bg-white/15' : ''}`}>
                 {item.icon}
               </div>
               <span className="text-[11px] font-medium leading-none">{item.label}</span>
@@ -80,10 +164,10 @@ export default function MobileNav() {
         <Link
           href="/profile"
           className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors h-full ${
-            isProfileActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+            isProfileActive ? 'text-slate-900 dark:text-white font-semibold' : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
           }`}
         >
-          <div className={`p-1.5 rounded-xl transition-colors ${isProfileActive ? 'bg-white/15' : ''}`}>
+          <div className={`p-1.5 rounded-xl transition-colors ${isProfileActive ? 'bg-[#ECE8DF] dark:bg-white/15' : ''}`}>
             {session?.user?.image ? (
               <img
                 src={session.user.image}

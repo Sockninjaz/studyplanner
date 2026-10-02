@@ -9,6 +9,21 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        indigo: {
+          50: '#f7fbf6',
+          100: '#ebf5ea',
+          200: '#d3ebd1',
+          300: '#afd9ac',
+          400: '#a3cfa0',
+          500: '#a5cba1',
+          600: '#9EC29A', // Primary Target
+          700: '#7ea17b',
+          800: '#617d5e',
+          900: '#4b6149',
+          950: '#283626',
+        },
+      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":
