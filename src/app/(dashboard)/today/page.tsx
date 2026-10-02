@@ -621,7 +621,7 @@ export default function StudyHubPage() {
         {/* ── LEFT: Today's Sessions + Tasks + Timer ─────────────────────────── */}
         {/* On mobile: hidden when viewing a session. On desktop: always visible as fixed column */}
         <div className={`
-          lg:w-[260px] lg:flex-shrink-0 lg:flex flex-col border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden
+          lg:w-[260px] lg:flex-none lg:flex flex-col border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden
           ${mobileView === 'list' ? 'flex flex-1 w-full' : 'hidden'}
         `}>
           <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex-shrink-0 hidden lg:flex">
