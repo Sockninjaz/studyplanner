@@ -29,8 +29,8 @@ export default function OnboardingPage() {
             <path d="M13 20h14M20 13v14" stroke="url(#splashGrad)" strokeWidth="2.5" strokeLinecap="round"/>
             <defs>
               <linearGradient id="splashGrad" x1="0" y1="0" x2="40" y2="40">
-                <stop offset="0%" stopColor="#7c6cfc"/>
-                <stop offset="100%" stopColor="#42bfdd"/>
+                <stop offset="0%" stopColor="#9EC29A"/>
+                <stop offset="100%" stopColor="#7ea17b"/>
               </linearGradient>
             </defs>
           </svg>

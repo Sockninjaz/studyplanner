@@ -5,13 +5,13 @@
 
 /* Tokens */
 :root {
-  --ob-accent: #7c6cfc;
-  --ob-accent-2: #42bfdd;
-  --ob-bg: #0a0f1e;
+  --ob-accent: #9EC29A;
+  --ob-accent-2: #7ea17b;
+  --ob-bg: #0F172A;
   --ob-surface: rgba(255, 255, 255, 0.05);
   --ob-surface-hover: rgba(255, 255, 255, 0.09);
   --ob-border: rgba(255, 255, 255, 0.1);
-  --ob-border-focus: rgba(124, 108, 252, 0.6);
+  --ob-border-focus: rgba(158, 194, 154, 0.6);
   --ob-text: #f0f0ff;
   --ob-text-muted: rgba(240, 240, 255, 0.55);
   --ob-radius: 16px;
@@ -65,7 +65,7 @@
 .ob-bg-blob--1 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, #7c6cfc, transparent);
+  background: radial-gradient(circle, #9EC29A, transparent);
   top: -150px;
   left: -100px;
   animation-duration: 20s;
@@ -74,7 +74,7 @@
 .ob-bg-blob--2 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, #42bfdd, transparent);
+  background: radial-gradient(circle, #7ea17b, transparent);
   bottom: -100px;
   right: -80px;
   animation-duration: 25s;
@@ -84,7 +84,7 @@
 .ob-bg-blob--3 {
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, #faafd5, transparent);
+  background: radial-gradient(circle, #d3ebd1, transparent);
   top: 50%;
   left: 60%;
   animation-duration: 18s;
