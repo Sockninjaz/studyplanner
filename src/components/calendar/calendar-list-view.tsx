@@ -448,7 +448,7 @@ export default function CalendarListView({
                           onAddItemClick(`${year}-${month}-${day}`);
                         }
                       }}
-                      className="text-xs font-medium text-[rgb(40,57,135)] hover:bg-[rgb(40,57,135)] hover:bg-opacity-10 px-2.5 py-1 rounded-md border border-[rgb(40,57,135)] border-opacity-30 transition-colors"
+                      className="text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2.5 py-1 rounded-md border border-indigo-200 dark:border-indigo-800 transition-colors"
                     >
                       + Add Exam
                     </button>

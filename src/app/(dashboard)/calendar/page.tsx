@@ -317,13 +317,13 @@ export default function CalendarPage() {
                   <button
                     onClick={() => { setViewMode('list'); localStorage.setItem('calendarViewMode', 'list'); }}
                     className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                      viewMode === 'list' ? 'bg-[rgb(40,57,135)] text-white shadow-sm' : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                      viewMode === 'list' ? 'bg-indigo-600 text-white shadow-sm' : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
                   >List</button>
                   <button
                     onClick={() => { setViewMode('calendar'); localStorage.setItem('calendarViewMode', 'calendar'); }}
                     className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                      viewMode === 'calendar' ? 'bg-[rgb(40,57,135)] text-white shadow-sm' : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                      viewMode === 'calendar' ? 'bg-indigo-600 text-white shadow-sm' : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
                   >Calendar</button>
                 </div>
@@ -344,7 +344,7 @@ export default function CalendarPage() {
                 {/* Add Exam – desktop only (mobile has FAB) */}
                 <button
                   onClick={() => router.push('/exams/create')}
-                  className="hidden lg:flex bg-slate-900 hover:bg-slate-800 dark:bg-[#27272a] dark:hover:bg-[#3f3f46] text-white px-3 py-1 rounded transition-colors items-center gap-1.5 shadow-sm text-xs font-medium border border-transparent dark:border-zinc-700/50"
+                  className="hidden lg:flex bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded transition-colors items-center gap-1.5 shadow-sm text-xs font-medium border border-transparent"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -407,7 +407,7 @@ export default function CalendarPage() {
         {/* Add Exam */}
         <button
           onClick={() => router.push('/exams/create')}
-          className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-[#27272a] dark:hover:bg-[#3f3f46] text-white shadow-lg rounded-2xl px-5 py-3.5 font-semibold text-sm active:scale-95 transition-all border border-transparent dark:border-zinc-700/50"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg rounded-2xl px-5 py-3.5 font-semibold text-sm active:scale-95 transition-all border border-transparent"
         >
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
