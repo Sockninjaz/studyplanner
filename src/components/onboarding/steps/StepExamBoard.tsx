@@ -68,7 +68,7 @@ export default function StepExamBoard({ state, onNext }: StepExamBoardProps) {
         {boards.map((board) => {
           const isSelected = selectedId === board.id;
           const isAnimating = animatingId === board.id;
-          const color = BOARD_COLORS[board.id] ?? '#7c6cfc';
+          const color = BOARD_COLORS[board.id] ?? '#9EC29A';
 
           return (
             <button

@@ -83,8 +83,8 @@ export default function StepComplete({ state }: StepCompleteProps) {
               <path d="M24 40l12 12 20-22" stroke="url(#grad)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" className="ob-success-check" />
               <defs>
                 <linearGradient id="grad" x1="0" y1="0" x2="80" y2="80">
-                  <stop offset="0%" stopColor="#7c6cfc" />
-                  <stop offset="100%" stopColor="#42bfdd" />
+                  <stop offset="0%" stopColor="#9EC29A" />
+                  <stop offset="100%" stopColor="#7ea17b" />
                 </linearGradient>
               </defs>
             </svg>

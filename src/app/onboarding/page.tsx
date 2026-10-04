@@ -3,13 +3,18 @@
 import './onboarding.css';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { Sun, Moon } from 'lucide-react';
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [checked, setChecked] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // If the user already has a profile token, skip onboarding
     const token = localStorage.getItem('studyplanner_profile');
     if (token) {
@@ -20,32 +25,30 @@ export default function OnboardingPage() {
   }, [router]);
 
   if (!checked) {
-    // Tiny splash while we check localStorage
     return (
-      <div className="ob-splash">
-        <div className="ob-splash-logo">
-          <svg viewBox="0 0 40 40" fill="none" width="40" height="40" aria-hidden="true">
-            <circle cx="20" cy="20" r="18" stroke="url(#splashGrad)" strokeWidth="2.5"/>
-            <path d="M13 20h14M20 13v14" stroke="url(#splashGrad)" strokeWidth="2.5" strokeLinecap="round"/>
-            <defs>
-              <linearGradient id="splashGrad" x1="0" y1="0" x2="40" y2="40">
-                <stop offset="0%" stopColor="#9EC29A"/>
-                <stop offset="100%" stopColor="#7ea17b"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
+      <div className="ob-splash bg-[#F8FAFC] dark:bg-slate-950 flex items-center justify-center min-h-screen">
+        <div className="w-9 h-9 border-3 border-indigo-200 dark:border-slate-800 border-t-indigo-600 dark:border-t-indigo-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <main className="ob-root" aria-label="Study Planner onboarding">
-      {/* Ambient background blobs */}
-      <div className="ob-bg" aria-hidden="true">
-        <div className="ob-bg-blob ob-bg-blob--1" />
-        <div className="ob-bg-blob ob-bg-blob--2" />
-        <div className="ob-bg-blob ob-bg-blob--3" />
+    <main className="ob-root bg-[#F8FAFC] dark:bg-slate-950 relative min-h-screen flex items-center justify-center p-4 sm:p-6" aria-label="Study Planner onboarding">
+      {/* Dark / Light Mode Switch in the corner */}
+      <div className="fixed top-5 right-5 z-50">
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm cursor-pointer"
+          title={mounted && theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          type="button"
+          aria-label="Toggle theme"
+        >
+          {mounted && theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-amber-400" />
+          ) : (
+            <Moon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+          )}
+        </button>
       </div>
 
       <OnboardingWizard />

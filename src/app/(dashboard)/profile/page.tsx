@@ -314,27 +314,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
-
-              {/* Session duration */}
-              <div className="pt-2">
-                <div className="flex justify-between items-end mb-2">
-                  <label className="font-semibold text-sm text-slate-900 dark:text-white block">Session Duration</label>
-                  <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{preferences.session_duration} min</span>
-                </div>
-                <input
-                  type="range"
-                  min="15"
-                  max="120"
-                  step="15"
-                  value={preferences.session_duration}
-                  onChange={(e) => updatePref({ session_duration: Number(e.target.value) })}
-                  className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer dark:bg-slate-800 accent-indigo-600"
-                />
-                <div className="flex justify-between text-[10px] text-slate-400 mt-1.5 font-medium">
-                  <span>15 min</span>
-                  <span>120 min</span>
-                </div>
-              </div>
             </div>
           </div>
         )}

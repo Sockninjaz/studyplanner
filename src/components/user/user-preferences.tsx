@@ -268,30 +268,6 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
         </div>
 
         <div>
-          <label htmlFor="session-duration" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-            Session Duration (Minutes)
-          </label>
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              id="session-duration"
-              min="15"
-              max="120"
-              step="15"
-              value={preferences.session_duration}
-              onChange={(e) => handleInputChange('session_duration', parseInt(e.target.value))}
-              className="flex-1"
-            />
-            <span className="text-lg font-bold text-green-600 dark:text-green-400 w-12">
-              {preferences.session_duration}
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-            Length of each study session (15-120 minutes)
-          </p>
-        </div>
-
-        <div>
           <label htmlFor="adjustment-percent" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
             Max Difficulty Adjustment (%)
           </label>
