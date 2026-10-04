@@ -293,7 +293,7 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
                   <h3 className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 dark:text-zinc-500">My Exams</h3>
                   <button
                     onClick={openCreateModal}
-                    className="text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-white p-1 rounded-md transition-colors opacity-0 group-hover/header:opacity-100 flex items-center justify-center"
+                    className="bg-indigo-600 text-white dark:text-zinc-900 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 p-1 rounded-full transition-colors flex items-center justify-center shadow-sm"
                     title="Add Exam"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

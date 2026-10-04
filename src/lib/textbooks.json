@@ -283,5 +283,322 @@
       "H14 Toepassingen van de differentiaalrekening",
       "H15 Examentraining"
     ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde A 12e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Rekenvaardigheden",
+      "H2 Tabellen en grafieken",
+      "H3 Lineaire verbanden",
+      "H4 Handig tellen",
+      "H5 Veranderingen",
+      "H6 Procenten en diagrammen",
+      "H7 Statistiek",
+      "H8 Exponentiële groei"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde A 12e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H9 Kansrekening",
+      "H10 Exponentiële en logaritmische formules",
+      "H11 Logisch redeneren",
+      "H12 Toepassingen",
+      "H13 Examentraining"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde B 12e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Formules en grafieken",
+      "H2 Veranderingen",
+      "H3 Hoeken en afstanden",
+      "H4 Werken met formules",
+      "H5 Machten en exponenten",
+      "H6 De afgeleide functie",
+      "H7 Lijnen en cirkels",
+      "H8 Goniometrie"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde B 12e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H9 Exponentiële en logaritmische formules",
+      "H10 Meetkunde met vectoren",
+      "H11 Differentiaalrekening",
+      "H12 Examentraining"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Nova Natuurkunde 4e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Bewegen",
+      "H2 Krachten",
+      "H3 Eigenschappen van stoffen en materialen",
+      "H4 Trillingen en cirkelbewegingen",
+      "H5 Zonnestelsel en heelal"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Nova Natuurkunde 4e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H6 Medische beeldvorming",
+      "H7 Arbeid en energie",
+      "H8 Elektromagnetisme",
+      "H9 Elektrische schakelingen",
+      "H10 Zonnestelsel en heelal"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Systematische Natuurkunde 8e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Bewegen",
+      "H2 Elektriciteit",
+      "H3 Krachten",
+      "H4 Trillingen en golven",
+      "H5 Straling"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Systematische Natuurkunde 8e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H6 Kracht en beweging",
+      "H7 Arbeid en energie",
+      "H8 Materialen",
+      "H9 Aarde en heelal"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Chemie Overal 7e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Scheikunde is overal",
+      "H2 Stoffen en reacties",
+      "H3 Koolstofchemie",
+      "H4 Zouten",
+      "H5 Moleculaire stoffen",
+      "H6 Zuren en basen"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Chemie Overal 7e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H7 Reacties in beweging",
+      "H8 Ruimtelijke bouw",
+      "H9 Redox",
+      "H10 Polymeren",
+      "H11 Nieuwe materialen",
+      "H12 Groene chemie"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Nova Scheikunde 4e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Stoffen",
+      "H2 Chemische reacties",
+      "H3 Rekenen aan reacties",
+      "H4 Zouten",
+      "H5 Koolstofchemie",
+      "H6 Zuren en basen"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Nova Scheikunde 4e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H7 Reactiesnelheid en evenwicht",
+      "H8 Zouten in water",
+      "H9 Redoxreacties",
+      "H10 Kunststoffen",
+      "H11 Duurzaam produceren"
+    ]
+  },
+  {
+    "subject": "biologie",
+    "title": "Biologie voor Jou 8e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "Thema 1 Inleiding in de biologie",
+      "Thema 2 Voortplanting",
+      "Thema 3 Genetica",
+      "Thema 4 Evolutie",
+      "Thema 5 Ecologie",
+      "Thema 6 Mens en milieu"
+    ]
+  },
+  {
+    "subject": "biologie",
+    "title": "Biologie voor Jou 8e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "Thema 7 Voeding en vertering",
+      "Thema 8 Gaswisseling en uitscheiding",
+      "Thema 9 Transport",
+      "Thema 10 Bescherming",
+      "Thema 11 Zenuwstelsel",
+      "Thema 12 Zintuigen",
+      "Thema 13 Hormonale regulatie",
+      "Thema 14 Planten"
+    ]
+  },
+  {
+    "subject": "biologie",
+    "title": "Nectar 5e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Cellen",
+      "H2 Voortplanting",
+      "H3 Genetica",
+      "H4 Evolutie",
+      "H5 Gedrag",
+      "H6 Ecologie",
+      "H7 Mens en milieu"
+    ]
+  },
+  {
+    "subject": "biologie",
+    "title": "Nectar 5e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H8 Stofwisseling",
+      "H9 Voeding en vertering",
+      "H10 Transport",
+      "H11 Gaswisseling en uitscheiding",
+      "H12 Regelingsstelsels",
+      "H13 Bescherming"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Nova Natuurkunde 4e editie",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Bewegen",
+      "H2 Krachten",
+      "H3 Energie",
+      "H4 Elektriciteit",
+      "H5 Trillingen en geluid"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Nova Natuurkunde 4e editie",
+    "track": "VWO 5",
+    "chapters": [
+      "H6 Cirkelbeweging en gravitatie",
+      "H7 Elektrische en magnetische velden",
+      "H8 Elektromagnetische straling en materie",
+      "H9 Ioniserende straling",
+      "H10 Medische beeldvorming"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Nova Natuurkunde 4e editie",
+    "track": "VWO 6",
+    "chapters": [
+      "H11 Astrofysica",
+      "H12 Quantumwereld",
+      "H13 Mechanica in toepassingen",
+      "H14 Geofysica"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Nova Scheikunde 4e editie",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Stoffen",
+      "H2 Bindingstypen",
+      "H3 Chemisch rekenen",
+      "H4 Zouten",
+      "H5 Koolstofchemie",
+      "H6 Reactiekinetiek en evenwichten"
+    ]
+  },
+  {
+    "subject": "aardrijkskunde",
+    "title": "buitenNLand 4e editie",
+    "track": "VWO Bovenbouw",
+    "chapters": [
+      "H1 Systeem aarde",
+      "H2 Zuid-Amerika",
+      "H3 Klimaat en landschap",
+      "H4 Stedelijke gebieden",
+      "H5 Wereld",
+      "H6 Arm en rijk"
+    ]
+  },
+  {
+    "subject": "geschiedenis",
+    "title": "Geschiedeniswerkplaats",
+    "track": "VWO Bovenbouw",
+    "chapters": [
+      "Tijdvak 1 Jagers en boeren",
+      "Tijdvak 2 Grieken en Romeinen",
+      "Tijdvak 3 Monniken en ridders",
+      "Tijdvak 4 Steden en staten",
+      "Tijdvak 5 Ontdekkers en hervormers",
+      "Tijdvak 6 Regenten en vorsten",
+      "Tijdvak 7 Pruiken en revoluties",
+      "Tijdvak 8 Burgers en stoommachines",
+      "Tijdvak 9 Wereldoorlogen",
+      "Tijdvak 10 Televisie en computer",
+      "HC Steden en burgers in de Lage Landen (1050-1700)",
+      "HC Verlichting (1650-1900)",
+      "HC China (1842-2001)",
+      "HC Duitsland in Europa (1918-1991)"
+    ]
+  },
+  {
+    "subject": "economie",
+    "title": "Bedrijfseconomie in Balans",
+    "track": "VWO Bovenbouw",
+    "chapters": [
+      "H1 Ondernemen",
+      "H2 Eenmanszaak en VOF",
+      "H3 NV en BV",
+      "H4 Personeelsbeleid",
+      "H5 Financiële feiten",
+      "H6 Investeringsselectie",
+      "H7 Marketing"
+    ]
+  },
+  {
+    "subject": "biologie",
+    "title": "Campbell Biology 12th Edition",
+    "track": "AP / IB / University",
+    "chapters": [
+      "Unit 1: The Chemistry of Life",
+      "Unit 2: The Cell",
+      "Unit 3: Genetics",
+      "Unit 4: Mechanisms of Evolution",
+      "Unit 5: The Evolutionary History of Biological Diversity",
+      "Unit 6: Plant Form and Function",
+      "Unit 7: Animal Form and Function",
+      "Unit 8: Ecology"
+    ]
   }
 ]
