@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
-import { LogOut, Star, ChevronRight, Save, User, Shield, Trash2, Bot, Settings as SettingsIcon, Sun, Moon, Palette } from 'lucide-react';
+import { LogOut, Star, ChevronRight, Save, User, Shield, Trash2, Bot, Settings as SettingsIcon, Sun, Moon, Palette, Compass } from 'lucide-react';
 
 interface UserPreferences {
   name?: string;
@@ -17,9 +18,26 @@ interface UserPreferences {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ redirect: false });
+    } catch (e) {
+      console.error('Logout error:', e);
+    }
+    // Always redirect relative to the current window location to prevent unreachable host errors
+    window.location.href = '/login';
+  };
+
+  const handleRestartOnboarding = () => {
+    localStorage.removeItem('studyplanner_profile');
+    localStorage.removeItem('studyplanner_onboarding');
+    router.push('/onboarding');
+  };
 
   const [preferences, setPreferences] = useState<UserPreferences>({
     daily_study_limit: 4,
@@ -154,13 +172,22 @@ export default function ProfilePage() {
           <div className="text-center">
             <h1 className="text-slate-900 dark:text-white text-xl md:text-2xl font-bold">{session?.user?.name || 'User'}</h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base mb-3">{session?.user?.email}</p>
-            <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full text-sm font-medium transition-colors"
-            >
-              <LogOut size={16} />
-              Log Out
-            </button>
+            <div className="flex items-center justify-center gap-2.5 flex-wrap">
+              <button
+                onClick={handleRestartOnboarding}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-semibold transition-colors cursor-pointer border border-indigo-200/60 dark:border-indigo-800/60"
+              >
+                <Compass size={14} />
+                Restart Onboarding
+              </button>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <LogOut size={14} />
+                Log Out
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -459,8 +486,22 @@ export default function ProfilePage() {
           </a>
           
           <button
-            onClick={() => signOut()}
-            className="w-full flex items-center gap-4 px-4 py-4 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+            onClick={handleRestartOnboarding}
+            className="w-full flex items-center gap-4 px-4 py-4 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors border-b border-gray-50 dark:border-slate-800 cursor-pointer"
+          >
+            <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+              <Compass size={18} className="text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-sm text-indigo-700 dark:text-indigo-300">Restart Onboarding</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Reconfigure country, track, and year</p>
+            </div>
+            <ChevronRight size={16} className="text-slate-300 dark:text-slate-700 flex-shrink-0" />
+          </button>
+          
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-4 px-4 py-4 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
               <LogOut size={18} className="text-red-500" />

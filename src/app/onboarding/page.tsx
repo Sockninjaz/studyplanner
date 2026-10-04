@@ -15,14 +15,8 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     setMounted(true);
-    // If the user already has a profile token, skip onboarding
-    const token = localStorage.getItem('studyplanner_profile');
-    if (token) {
-      router.replace('/today');
-    } else {
-      setChecked(true);
-    }
-  }, [router]);
+    setChecked(true);
+  }, []);
 
   if (!checked) {
     return (
