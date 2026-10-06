@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
-import { LogOut, Star, ChevronRight, Save, User, Shield, Trash2, Bot, Settings as SettingsIcon, Sun, Moon, Palette, Compass } from 'lucide-react';
+import { LogOut, Star, ChevronRight, User, Shield, Trash2, Bot, Settings as SettingsIcon, Sun, Moon, Palette, Compass, Check, Loader2 } from 'lucide-react';
 
 interface UserPreferences {
   name?: string;
@@ -47,7 +47,9 @@ export default function ProfilePage() {
     enable_daily_limits: true,
   });
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Password state
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -73,29 +75,68 @@ export default function ProfilePage() {
   useEffect(() => { 
     fetchPreferences(); 
     setMounted(true);
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+    };
   }, []);
 
-  const handleSavePreferences = async () => {
-    setIsSaving(true);
+  const savePreferencesToServer = async (prefsToSave: UserPreferences) => {
+    setSaveStatus('saving');
     try {
       const res = await fetch('/api/user/preferences', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preferences)
+        body: JSON.stringify(prefsToSave)
       });
       if (res.ok) {
-        localStorage.setItem('userPreferences', JSON.stringify(preferences));
+        localStorage.setItem('userPreferences', JSON.stringify(prefsToSave));
+        setSaveStatus('saved');
+        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+        savedTimeoutRef.current = setTimeout(() => {
+          setSaveStatus('idle');
+        }, 2500);
+      } else {
+        setSaveStatus('idle');
       }
     } catch (e) {
       console.error(e);
+      setSaveStatus('idle');
     } finally {
-      setIsSaving(false);
-      window.dispatchEvent(new CustomEvent('preferencesUpdated', { detail: preferences }));
+      window.dispatchEvent(new CustomEvent('preferencesUpdated', { detail: prefsToSave }));
     }
   };
 
   const updatePref = (updates: Partial<UserPreferences>) => {
-    setPreferences(prev => ({ ...prev, ...updates }));
+    setPreferences(prev => {
+      const next = { ...prev, ...updates };
+      setSaveStatus('saving');
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        savePreferencesToServer(next);
+      }, 500);
+      return next;
+    });
+  };
+
+  const renderSaveStatus = () => {
+    if (saveStatus === 'saving') {
+      return (
+        <span className="text-xs font-medium text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse">
+          <Loader2 size={13} className="animate-spin text-indigo-500" />
+          Saving...
+        </span>
+      );
+    }
+    if (saveStatus === 'saved') {
+      return (
+        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 py-1 px-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 transition-all duration-200">
+          <Check size={13} className="stroke-[2.5]" />
+          Saved
+        </span>
+      );
+    }
+    return null;
   };
 
   const handleUpdatePassword = async () => {
@@ -205,14 +246,7 @@ export default function ProfilePage() {
                 </div>
                 <h2 className="font-bold text-slate-800 dark:text-white text-sm">Personal Information</h2>
               </div>
-              <button
-                onClick={handleSavePreferences}
-                disabled={isSaving}
-                className="text-xs font-semibold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50"
-              >
-                <Save size={14} />
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
+              {renderSaveStatus()}
             </div>
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -272,14 +306,7 @@ export default function ProfilePage() {
                 </div>
                 <h2 className="font-bold text-slate-800 dark:text-white text-sm">Study Preferences</h2>
               </div>
-              <button
-                onClick={handleSavePreferences}
-                disabled={isSaving}
-                className="text-xs font-semibold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50"
-              >
-                <Save size={14} />
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
+              {renderSaveStatus()}
             </div>
             
             <div className="p-4 space-y-6">
@@ -355,14 +382,7 @@ export default function ProfilePage() {
                 </div>
                 <h2 className="font-bold text-slate-800 dark:text-white text-sm">AI Integrations</h2>
               </div>
-              <button
-                onClick={handleSavePreferences}
-                disabled={isSaving}
-                className="text-xs font-semibold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50"
-              >
-                <Save size={14} />
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
+              {renderSaveStatus()}
             </div>
             <div className="p-4 space-y-3">
               <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">OpenAI API Key (BYOK)</label>
