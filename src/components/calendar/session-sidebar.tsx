@@ -42,42 +42,53 @@ export default function SessionSidebar({ sessionId, onClose }: SessionSidebarPro
   }, [sessionId]);
 
   const handleSessionComplete = async () => {
-    if (!sessionId) return;
+    if (!sessionId || !session) return;
 
-    await fetch(`/api/sessions/${sessionId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isCompleted: true }),
-    });
-
-    // Refresh session data
-    const response = await fetch(`/api/sessions/${sessionId}`);
-    const data = await response.json();
-    setSession(data.data);
-
-    // Trigger calendar refresh
+    // Instant optimistic update (0ms UI feedback)
+    setSession((prev: any) => prev ? { ...prev, isCompleted: true } : null);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calendarUpdated'));
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCompleted: true }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data) setSession(data.data);
+      }
+    } catch (e) {
+      console.error('Failed to complete session:', e);
+      setSession((prev: any) => prev ? { ...prev, isCompleted: false } : null);
     }
   };
 
   const handleToggleComplete = async () => {
     if (!sessionId || !session) return;
+    const targetStatus = !session.isCompleted;
 
-    await fetch(`/api/sessions/${sessionId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isCompleted: !session.isCompleted }),
-    });
-
-    // Refresh session data
-    const response = await fetch(`/api/sessions/${sessionId}`);
-    const data = await response.json();
-    setSession(data.data);
-
-    // Trigger calendar refresh
+    // Instant optimistic update (0ms UI feedback)
+    setSession((prev: any) => prev ? { ...prev, isCompleted: targetStatus } : null);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calendarUpdated'));
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCompleted: targetStatus }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data) setSession(data.data);
+      }
+    } catch (e) {
+      console.error('Failed to toggle session complete:', e);
+      setSession((prev: any) => prev ? { ...prev, isCompleted: !targetStatus } : null);
     }
   };
 

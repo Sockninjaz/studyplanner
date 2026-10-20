@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import StudySession from '@/models/StudySession';
 import User from '@/models/User';
@@ -7,9 +8,10 @@ import Exam from '@/models/Exam';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -17,15 +19,15 @@ export async function GET(
   await dbConnect();
 
   try {
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean();
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const studySession = await StudySession.findOne({
-      _id: params.id,
+      _id: id,
       user: user._id,
-    }).populate('exam');
+    }).populate('exam').lean();
 
     if (!studySession) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
@@ -40,9 +42,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -50,7 +53,7 @@ export async function PUT(
   await dbConnect();
 
   try {
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean();
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -58,12 +61,12 @@ export async function PUT(
     const body = await request.json();
     const updatedSession = await StudySession.findOneAndUpdate(
       {
-        _id: params.id,
+        _id: id,
         user: user._id,
       },
       body,
       { new: true }
-    );
+    ).lean();
 
     if (!updatedSession) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });

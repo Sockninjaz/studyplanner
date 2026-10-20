@@ -15,7 +15,7 @@ export interface IOnboardingProfile {
 }
 
 export interface IUser extends Document {
-  name: string;
+  name?: string;
   email: string;
   // Note: Password will be hashed and should not be stored in plain text
   password?: string;
@@ -25,11 +25,31 @@ export interface IUser extends Document {
   session_duration?: number; // Duration of each study session in minutes (default: 30)
   enable_daily_limits?: boolean; // Whether to enforce daily maximums (default 2)
   openai_api_key?: string; // BYOK (Bring Your Own Key) for OpenAI
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   onboardingProfile?: IOnboardingProfile;
+  // Remembered subject textbooks (e.g. { subject: "Natuurkunde", textbook: "Pulsar 3e editie" })
+  subject_textbooks?: Array<{
+    subject: string;
+    textbook: string;
+    updatedAt?: Date;
+  }>;
+  // Share & Parent updates (Pillar 1 & 3)
+  share_token?: string;
+  share_token_created_at?: Date;
+  parent_emails?: string[];
+  // Subscription & Pro tier (Pillar 4)
+  is_pro?: boolean;
+  subscription_status?: 'free' | 'active' | 'past_due' | 'canceled';
+  valid_until?: Date | null;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const UserSchema: Schema = new Schema({
-  name: { type: String, required: true },
+  name: { type: String, required: false },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, select: false },
   daily_study_limit: { type: Number, default: 4, min: 1, max: 12 },
@@ -40,6 +60,8 @@ const UserSchema: Schema = new Schema({
   openai_api_key: { type: String, select: false },
   studySessions: [{ type: Schema.Types.ObjectId, ref: 'StudySession' }],
   exams: [{ type: Schema.Types.ObjectId, ref: 'Exam' }],
+  resetPasswordToken: { type: String, select: false },
+  resetPasswordExpires: { type: Date, select: false },
   onboardingProfile: {
     country: { type: String },
     countryName: { type: String },
@@ -53,6 +75,30 @@ const UserSchema: Schema = new Schema({
     examBoardLabel: { type: String },
     completedAt: { type: Date },
   },
-});
+  // Remembered textbooks per subject
+  subject_textbooks: [{
+    subject: { type: String, required: true },
+    textbook: { type: String, required: true },
+    updatedAt: { type: Date, default: Date.now },
+  }],
+  // Secure unguessable share token for read-only parent route
+  share_token: { type: String, unique: true, sparse: true, index: true },
+  share_token_created_at: { type: Date },
+  parent_emails: [{ type: String, lowercase: true, trim: true }],
+  // Subscription attributes
+  is_pro: { type: Boolean, default: false },
+  subscription_status: { 
+    type: String, 
+    enum: ['free', 'active', 'past_due', 'canceled'], 
+    default: 'free' 
+  },
+  valid_until: { type: Date, default: null },
+  stripe_customer_id: { type: String, sparse: true, index: true },
+  stripe_subscription_id: { type: String, sparse: true },
+}, { timestamps: true });
 
-export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
+export default mongoose.model<IUser>('User', UserSchema);

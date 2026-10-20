@@ -61,9 +61,9 @@ export default function CreateTaskModal({
     
     setIsLoading(true);
     try {
-      const response = await fetch('/api/tasks');
-      const tasks = await response.json();
-      const task = tasks.find((t: any) => t._id === editingTaskId);
+      const response = await fetch(`/api/tasks/${editingTaskId}`);
+      if (!response.ok) throw new Error('Failed to fetch task');
+      const task = await response.json();
       
       if (task) {
         setName(task.name);

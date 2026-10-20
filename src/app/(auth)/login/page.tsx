@@ -111,6 +111,9 @@ function LoginContent() {
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300" htmlFor="password">
                   Password
                 </label>
+                <Link href="/forgot-password" className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                  Forgot password?
+                </Link>
               </div>
               <input
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 py-2.5 px-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-600/15 outline-none transition-all"

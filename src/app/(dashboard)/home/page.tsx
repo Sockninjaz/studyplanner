@@ -49,11 +49,6 @@ function getDaysUntil(dateStr: string): number {
   return Math.ceil((exam.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function formatTime(timeStr: string): string {
-  const d = new Date(timeStr);
-  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-}
-
 export default function MobileHomePage() {
   const router = useRouter();
 
@@ -98,41 +93,43 @@ export default function MobileHomePage() {
   const overallPct = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-900 no-scrollbar">
+    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-900 no-scrollbar pb-24">
       {/* Header */}
       <div className="bg-white dark:bg-[#1e293b] px-5 pt-6 pb-8 border-b border-slate-200/80 dark:border-slate-700 shadow-sm">
-        <p className="text-slate-500 dark:text-zinc-400 text-sm">{today}</p>
-        <h1 className="text-slate-900 dark:text-white text-2xl font-bold mt-1">Good{
-          (() => {
-            const h = new Date().getHours();
-            if (h < 12) return ' morning';
-            if (h < 17) return ' afternoon';
-            return ' evening';
-          })()
-        } 👋</h1>
+        <div className="max-w-2xl md:max-w-3xl mx-auto">
+          <p className="text-slate-500 dark:text-zinc-400 text-sm">{today}</p>
+          <h1 className="text-slate-900 dark:text-white text-2xl md:text-3xl font-bold mt-1">Good{
+            (() => {
+              const h = new Date().getHours();
+              if (h < 12) return ' morning';
+              if (h < 17) return ' afternoon';
+              return ' evening';
+            })()
+          } 👋</h1>
 
-        {/* Overall progress pill */}
-        {!loading && totalSessions > 0 && (
-          <div className="mt-5 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-slate-700 dark:text-zinc-200 font-semibold text-sm">Overall Progress</span>
-              <span className="text-slate-900 dark:text-white font-bold text-sm">{overallPct}%</span>
+          {/* Overall progress pill */}
+          {!loading && totalSessions > 0 && (
+            <div className="mt-5 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-700 dark:text-zinc-200 font-semibold text-sm">Overall Progress</span>
+                <span className="text-slate-900 dark:text-white font-bold text-sm">{overallPct}%</span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-slate-900 dark:bg-white transition-all duration-700"
+                  style={{ width: `${overallPct}%` }}
+                />
+              </div>
+              <p className="text-slate-500 dark:text-zinc-400 text-xs mt-2">
+                {completedSessions} of {totalSessions} sessions completed
+              </p>
             </div>
-            <div className="w-full h-2.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-slate-900 dark:bg-white transition-all duration-700"
-                style={{ width: `${overallPct}%` }}
-              />
-            </div>
-            <p className="text-slate-500 dark:text-zinc-400 text-xs mt-2">
-              {completedSessions} of {totalSessions} sessions completed
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Content cards */}
-      <div className="px-4 -mt-4 space-y-4 pb-6">
+      <div className="max-w-2xl md:max-w-3xl mx-auto px-4 -mt-4 space-y-4 pb-6">
 
         {/* Today's Sessions */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">

@@ -1,6 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import useSWR from 'swr';
+import { useCalendarEvents } from '@/hooks/use-calendar-data';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkBreaks from 'remark-breaks';
@@ -89,9 +92,209 @@ function getDaysUntil(dateStr: string): number {
   return Math.ceil((exam.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function getLocalDateString(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseLocalDateString(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatNextDateShort(dateStr: string, locale: string = 'en-GB'): string {
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+  } catch {
+    return dateStr;
+  }
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function StudyHubPage() {
+  const { t, locale } = useLanguage();
+  const dateLocale = locale === 'nl' ? 'nl-NL' : 'en-US';
+
+  // Prevent SSR/client hydration mismatch for cached SWR calendar data
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Selected date for looking ahead / backwards (defaults to today; URL ?date= is applied on client mount in useEffect)
+  const [selectedDate, setSelectedDate] = useState<string>(() => getLocalDateString());
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const dayStripRef = useRef<HTMLDivElement>(null);
+
+  // Shared cached calendar events to show which days across the month have scheduled sessions
+  const { data: calendarData } = useCalendarEvents();
+
+  const sessionsByDateMap = useMemo(() => {
+    const map = new Map<string, { count: number; colors: string[] }>();
+    if (mounted && calendarData?.data) {
+      for (const ev of calendarData.data) {
+        if (ev.extendedProps?.type === 'session' && ev.start) {
+          const d = new Date(ev.start);
+          const dStr = getLocalDateString(d);
+          const existing = map.get(dStr) || { count: 0, colors: [] };
+          existing.count++;
+          const col = ev.extendedProps?.color || '#6366f1';
+          if (!existing.colors.includes(col)) existing.colors.push(col);
+          map.set(dStr, existing);
+        }
+      }
+    }
+    return map;
+  }, [mounted, calendarData]);
+
+  // Next upcoming study date relative to selectedDate
+  const nextStudyDate = useMemo(() => {
+    if (!mounted) return null;
+    const sorted = Array.from(sessionsByDateMap.keys()).sort();
+    return sorted.find(d => d > selectedDate) || null;
+  }, [mounted, sessionsByDateMap, selectedDate]);
+
+  // Day strip cards: 21 days window (past 3 days to 17 days in future)
+  const dayStripDays = useMemo(() => {
+    const days: Array<{
+      dateStr: string;
+      dayName: string;
+      dayNum: number;
+      monthShort: string;
+      isToday: boolean;
+      isSelected: boolean;
+      hasSessions: boolean;
+      sessionCount: number;
+      sessionColors: string[];
+    }> = [];
+
+    const todayStr = getLocalDateString();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 3);
+
+    for (let i = 0; i < 21; i++) {
+      const cur = new Date(startDate);
+      cur.setDate(startDate.getDate() + i);
+      const curStr = getLocalDateString(cur);
+      const info = sessionsByDateMap.get(curStr);
+
+      days.push({
+        dateStr: curStr,
+        dayName: cur.toLocaleDateString(dateLocale, { weekday: 'short' }),
+        dayNum: cur.getDate(),
+        monthShort: cur.toLocaleDateString(dateLocale, { month: 'short' }),
+        isToday: curStr === todayStr,
+        isSelected: curStr === selectedDate,
+        hasSessions: !!(info && info.count > 0),
+        sessionCount: info?.count || 0,
+        sessionColors: info?.colors || [],
+      });
+    }
+
+    if (!days.some(d => d.dateStr === selectedDate)) {
+      const cur = parseLocalDateString(selectedDate);
+      const info = sessionsByDateMap.get(selectedDate);
+      days.push({
+        dateStr: selectedDate,
+        dayName: cur.toLocaleDateString(dateLocale, { weekday: 'short' }),
+        dayNum: cur.getDate(),
+        monthShort: cur.toLocaleDateString(dateLocale, { month: 'short' }),
+        isToday: selectedDate === todayStr,
+        isSelected: true,
+        hasSessions: !!(info && info.count > 0),
+        sessionCount: info?.count || 0,
+        sessionColors: info?.colors || [],
+      });
+      days.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+    }
+
+    return days;
+  }, [selectedDate, sessionsByDateMap, dateLocale]);
+
+  // Auto-scroll selected day into view in the horizontal strip
+  useEffect(() => {
+    if (dayStripRef.current) {
+      const el = dayStripRef.current.querySelector('[data-selected="true"]');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [selectedDate]);
+
+  const dateHeadingInfo = useMemo(() => {
+    const todayStr = getLocalDateString();
+    const tom = new Date();
+    tom.setDate(tom.getDate() + 1);
+    const tomorrowStr = getLocalDateString(tom);
+    const yest = new Date();
+    yest.setDate(yest.getDate() - 1);
+    const yesterdayStr = getLocalDateString(yest);
+
+    const dateObj = parseLocalDateString(selectedDate);
+    const fullDate = dateObj.toLocaleDateString(dateLocale, {
+      weekday: 'long', day: 'numeric', month: 'long',
+    });
+
+    if (selectedDate === todayStr) {
+      return { main: t('common.today'), date: fullDate, isToday: true };
+    }
+    if (selectedDate === tomorrowStr) {
+      return { main: t('common.tomorrow'), date: fullDate, isToday: false };
+    }
+    if (selectedDate === yesterdayStr) {
+      return { main: t('common.yesterday'), date: fullDate, isToday: false };
+    }
+    return {
+      main: dateObj.toLocaleDateString(dateLocale, { weekday: 'short', day: 'numeric', month: 'short' }),
+      date: fullDate,
+      isToday: false,
+    };
+  }, [selectedDate, dateLocale, t]);
+
+  const handleSelectDate = (newDate: string) => {
+    setSelectedDate(newDate);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('date', newDate);
+      url.searchParams.delete('session');
+      window.history.replaceState({}, '', url.toString());
+    }
+    if (selectedSession?.startTime) {
+      const curSessionDate = getLocalDateString(new Date(selectedSession.startTime));
+      if (curSessionDate !== newDate) {
+        setSelectedSession(null);
+        setMobileView('list');
+      }
+    }
+  };
+
+  const handlePrevDay = () => {
+    const cur = parseLocalDateString(selectedDate);
+    cur.setDate(cur.getDate() - 1);
+    handleSelectDate(getLocalDateString(cur));
+  };
+
+  const handleNextDay = () => {
+    const cur = parseLocalDateString(selectedDate);
+    cur.setDate(cur.getDate() + 1);
+    handleSelectDate(getLocalDateString(cur));
+  };
+
+  const handleJumpToday = () => {
+    handleSelectDate(getLocalDateString(new Date()));
+  };
+
+  const handleFindNextStudyDay = () => {
+    if (nextStudyDate) {
+      handleSelectDate(nextStudyDate);
+    }
+  };
+
   // Session list
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
@@ -185,12 +388,13 @@ export default function StudyHubPage() {
     }));
   }, [isRestored, selectedSession, timerSeconds, timerRunning, timerFinished]);
 
-  // ── Fetch today's sessions ──────────────────────────────────────────────────
+  // ── Fetch sessions for selected date ─────────────────────────────────────────
 
-  const fetchSessions = useCallback(async () => {
+  const fetchSessions = useCallback(async (targetDate?: string) => {
     setLoadingSessions(true);
+    const dateQuery = targetDate || selectedDate;
     try {
-      const res = await fetch('/api/sessions?date=today');
+      const res = await fetch(`/api/sessions?date=${dateQuery}`);
       if (res.ok) {
         const data = await res.json();
         setSessions(data.data || []);
@@ -200,7 +404,11 @@ export default function StudyHubPage() {
     } finally {
       setLoadingSessions(false);
     }
-  }, []);
+  }, [selectedDate]);
+
+  useEffect(() => {
+    fetchSessions(selectedDate);
+  }, [selectedDate]);
 
   // ── Fetch user preferences for session duration ─────────────────────────────
 
@@ -232,6 +440,10 @@ export default function StudyHubPage() {
 
       const params = new URLSearchParams(window.location.search);
       const sessionId = params.get('session');
+      const dateParam = params.get('date');
+      if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+        setSelectedDate(dateParam);
+      }
       if (sessionId) {
         const fetchSpecificSession = async () => {
           try {
@@ -242,6 +454,13 @@ export default function StudyHubPage() {
                 // To avoid dependency cycle, we set it directly if possible, or wait for handleSelectSession
                 setSelectedSession(data.data);
                 setTasks(data.data.tasks || []);
+                setMobileView('session');
+
+                if (data.data.startTime) {
+                  const sDate = getLocalDateString(new Date(data.data.startTime));
+                  setSelectedDate(sDate);
+                  fetchSessions(sDate);
+                }
                 
                 // Initialize timer using localStorage fallback if state isn't ready
                 let duration = Math.min(90, Math.max(30, sessionDuration || 45));
@@ -606,62 +825,191 @@ export default function StudyHubPage() {
   }, [handleSelectSession]);
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden">
-      {/* Mobile Header */}
-      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden">
+      {/* Hidden Native Date Picker for Direct Jump */}
+      <input
+        ref={dateInputRef}
+        type="date"
+        value={selectedDate}
+        onChange={(e) => {
+          if (e.target.value) {
+            handleSelectDate(e.target.value);
+          }
+        }}
+        className="hidden"
+      />
+
+      {/* Mobile Header (Phones only: < 768px) */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
         {mobileView === 'session' && selectedSession ? (
           <button
             onClick={() => {
               setMobileView('list');
               setSelectedSession(null);
-              if (typeof window !== 'undefined') window.history.replaceState({}, '', '/today');
+              if (typeof window !== 'undefined') {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('session');
+                window.history.replaceState({}, '', url.toString());
+              }
             }}
             className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 dark:text-slate-300"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            Back
+            {t('today.backToSessions')}
           </button>
         ) : (
-          <h1 className="text-lg font-bold text-gray-800 dark:text-white">Study Hub</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-bold text-gray-800 dark:text-white">{t('today.title')}</h1>
+            <span suppressHydrationWarning className="text-xs font-semibold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+              {dateHeadingInfo.main}
+            </span>
+          </div>
         )}
-        <span className="text-xs text-gray-400 dark:text-slate-500">{today}</span>
+        <span suppressHydrationWarning className="text-xs text-gray-400 dark:text-slate-500">{dateHeadingInfo.date}</span>
       </div>
 
-      {/* Desktop: 3-column layout / Mobile: single panel */}
+      {/* Desktop / iPad: 2-column layout / Mobile phone: single panel */}
       <div className="flex flex-1 min-h-0 gap-0">
 
-        {/* ── LEFT: Today's Sessions + Tasks + Timer ─────────────────────────── */}
-        {/* On mobile: hidden when viewing a session. On desktop: always visible as fixed column */}
+        {/* ── LEFT: Sessions List + Day Strip + Timer ─────────────────────────── */}
+        {/* On mobile: hidden when viewing a session. On iPad / desktop: always visible as fixed column */}
         <div className={`
-          lg:w-[260px] lg:flex-none lg:flex flex-col border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden
-          ${mobileView === 'list' ? 'flex flex-1 w-full' : 'hidden'}
+          md:w-[280px] lg:w-[290px] md:flex-none flex-col border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden
+          ${mobileView === 'list' ? 'flex flex-1 w-full md:w-[280px] lg:w-[290px] md:flex' : 'hidden md:flex md:w-[280px] lg:w-[290px]'}
         `}>
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex-shrink-0 hidden lg:flex">
+          <div className="px-3 py-2.5 border-b border-gray-100 dark:border-slate-800 flex-shrink-0 hidden md:flex items-center justify-between gap-1">
             {selectedSession ? (
               <button
                 onClick={() => {
-                  if (typeof window !== 'undefined' && window.location.search.includes('session=')) {
-                     window.history.back();
-                  } else {
-                     setSelectedSession(null);
-                     if (typeof window !== 'undefined') {
-                       window.history.replaceState({}, '', '/today');
-                     }
+                  setSelectedSession(null);
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('session');
+                    window.history.replaceState({}, '', url.toString());
                   }
                 }}
-                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 whitespace-nowrap transition-colors"
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 whitespace-nowrap transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                Back
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                {t('common.back')} ({dateHeadingInfo.main})
               </button>
             ) : (
-              <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">
-                Today's Sessions
-              </h2>
+              <>
+                <div className="flex items-center gap-1 min-w-0">
+                  <button
+                    onClick={handlePrevDay}
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    title={t('today.previousDay')}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <h2 suppressHydrationWarning className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {dateHeadingInfo.main}
+                      </h2>
+                      {dateHeadingInfo.isToday && (
+                        <span suppressHydrationWarning className="px-1.5 py-0.2 text-[9px] font-extrabold uppercase bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-md">
+                          {t('common.today')}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                      {loadingSessions ? t('common.loading') : `${sessions.length} ${sessions.length === 1 ? t('common.session') : t('common.sessions')}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleNextDay}
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    title={t('today.nextDay')}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {!dateHeadingInfo.isToday && (
+                    <button
+                      onClick={handleJumpToday}
+                      className="px-2 py-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors"
+                      title={t('today.jumpToToday')}
+                    >
+                      {t('common.today')}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (dateInputRef.current) {
+                        if ('showPicker' in HTMLInputElement.prototype) {
+                          try { (dateInputRef.current as any).showPicker(); } catch { dateInputRef.current.click(); }
+                        } else {
+                          dateInputRef.current.click();
+                        }
+                      }
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    title={t('today.pickDate')}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  </button>
+                </div>
+              </>
             )}
           </div>
           {!selectedSession ? (
             <>
+          {/* Horizontal Scrollable Day Strip to Look Ahead */}
+          <div className="relative px-3 pt-2 pb-1.5 border-b border-gray-100 dark:border-slate-800 flex-shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+            <div 
+              ref={dayStripRef}
+              suppressHydrationWarning
+              className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 scroll-smooth"
+            >
+              {dayStripDays.map(day => {
+                const isSelected = day.dateStr === selectedDate;
+                return (
+                  <button
+                    key={day.dateStr}
+                    data-selected={isSelected}
+                    onClick={() => handleSelectDate(day.dateStr)}
+                    suppressHydrationWarning
+                    className={`flex-shrink-0 flex flex-col items-center justify-center w-11 py-1.5 px-1 rounded-xl transition-all relative ${
+                      isSelected
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-[1.03] font-bold'
+                        : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60'
+                    }`}
+                    title={`${day.dayName}, ${day.dayNum} ${day.monthShort}${day.hasSessions ? ` (${day.sessionCount} ${day.sessionCount === 1 ? t('common.session') : t('common.sessions')})` : ''}`}
+                  >
+                    <span suppressHydrationWarning className={`text-[9px] uppercase font-bold tracking-tight leading-none ${
+                      isSelected ? 'text-indigo-100' : 'text-slate-400 dark:text-slate-500'
+                    }`}>
+                      {day.dayName}
+                    </span>
+                    <span suppressHydrationWarning className="text-sm font-extrabold leading-tight mt-0.5">
+                      {day.dayNum}
+                    </span>
+                    {/* Indicator Dot(s) */}
+                    <div suppressHydrationWarning className="h-2 flex items-center justify-center gap-0.5 mt-0.5">
+                      {day.hasSessions ? (
+                        day.sessionColors.slice(0, 3).map((col, idx) => (
+                          <span
+                            key={idx}
+                            className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'ring-1 ring-white/50' : ''}`}
+                            style={{ backgroundColor: isSelected ? '#ffffff' : col }}
+                          />
+                        ))
+                      ) : day.isToday ? (
+                        <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`} />
+                      ) : (
+                        <span className="w-1 h-1 opacity-0" />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Session list */}
           <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-1.5 min-h-0">
             {loadingSessions ? (
@@ -669,11 +1017,22 @@ export default function StudyHubPage() {
                 <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
               </div>
             ) : sessions.length === 0 ? (
-              <div className="text-center py-10 text-gray-400 dark:text-slate-600">
-                <svg className="w-10 h-10 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p className="text-sm">No sessions today</p>
+              <div className="text-center py-10 px-3 text-gray-400 dark:text-slate-600">
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-5 h-5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('today.noSessions')} {dateHeadingInfo.main}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t('today.freeDay')}</p>
+                {nextStudyDate && (
+                  <button
+                    onClick={handleFindNextStudyDay}
+                    className="mt-4 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-xl transition-colors inline-flex items-center gap-1 shadow-xs"
+                  >
+                    {t('today.nextStudyDay')} ({formatNextDateShort(nextStudyDate, dateLocale)}) &rarr;
+                  </button>
+                )}
               </div>
             ) : (
               sessions.map(s => {
@@ -728,14 +1087,6 @@ export default function StudyHubPage() {
                     <h2 className={`text-sm font-bold text-gray-800 dark:text-slate-100 ${selectedSession.isCompleted ? 'line-through opacity-50' : ''}`}>
                       {selectedSession.exam?.subject || selectedSession.subject}
                     </h2>
-                    <p className={`text-xs mt-0.5 leading-snug line-clamp-3 ${selectedSession.isCompleted ? 'line-through text-gray-400 dark:text-slate-600' : 'text-gray-500 dark:text-slate-400'}`}>
-                      {selectedSession.title}
-                    </p>
-                    {selectedSession.exam?.date && (
-                      <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1">
-                        Exam in {getDaysUntil(selectedSession.exam.date)} days
-                      </p>
-                    )}
                   </div>
 
                   {/* Circular timer */}
@@ -764,7 +1115,7 @@ export default function StudyHubPage() {
                         {formatTime(timerSeconds)}
                       </span>
                       <p className="text-[10px] text-gray-400 dark:text-slate-600">
-                        {formatDuration(currentActualDuration)} session
+                        {formatDuration(currentActualDuration)} {t('common.session')}
                       </p>
                     </div>
                   </div>
@@ -774,7 +1125,7 @@ export default function StudyHubPage() {
                     <button
                       onClick={resetTimer}
                       className="p-2 rounded-full border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Reset"
+                      title={t('today.reset')}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -787,21 +1138,21 @@ export default function StudyHubPage() {
                         className="px-6 py-2.5 rounded-full font-semibold text-white text-sm shadow-md hover:shadow-lg transition-all active:scale-95"
                         style={{ backgroundColor: examColor === 'rgb(253, 231, 76)' ? 'rgb(180, 160, 30)' : examColor }}
                       >
-                        {timerFinished ? 'Restart' : timerSeconds < currentActualDuration * 60 ? 'Resume' : 'Start'}
+                        {timerFinished ? (locale === 'nl' ? 'Opnieuw' : 'Restart') : timerSeconds < currentActualDuration * 60 ? t('today.resume') : t('today.startTimer')}
                       </button>
                     ) : (
                       <button
                         onClick={pauseTimer}
                         className="px-6 py-2.5 rounded-full font-semibold text-white text-sm bg-amber-500 hover:bg-amber-600 shadow-md hover:shadow-lg transition-all active:scale-95"
                       >
-                        Pause
+                        {t('today.pause')}
                       </button>
                     )}
 
                     {/* Round Green Toggle Button */}
                     <button
                       onClick={toggleComplete}
-                      title={selectedSession.isCompleted ? 'Mark as undone' : 'Mark as done'}
+                      title={selectedSession.isCompleted ? t('today.markAsUndone') : t('today.markAsDone')}
                       className={`p-2 rounded-full border transition-all flex items-center justify-center w-10 h-10 ${
                         selectedSession.isCompleted
                           ? 'border-green-500 bg-green-500 text-white hover:bg-green-600 hover:border-green-600 shadow-sm'
@@ -817,7 +1168,7 @@ export default function StudyHubPage() {
                   <div className="text-center mt-2 min-h-6">
                     {selectedSession.isCompleted ? (
                       <p className="text-sm text-green-600 dark:text-green-400 font-bold animate-pulse">
-                        ✅ Session Complete!
+                        ✅ {t('today.sessionComplete')}
                       </p>
                     ) : null}
                   </div>
@@ -829,15 +1180,15 @@ export default function StudyHubPage() {
                 <div className="border-t border-gray-100 dark:border-slate-800 flex-shrink-0">
                   <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500">
-                  Tasks
+                  {t('today.tasks')}
                 </h2>
                 {savingTasks && (
-                  <span className="text-[10px] text-gray-400 dark:text-slate-500 animate-pulse">saving…</span>
+                  <span className="text-[10px] text-gray-400 dark:text-slate-500 animate-pulse">{t('today.savingTasks')}</span>
                 )}
               </div>
               <div className="px-3 py-2 max-h-56 overflow-y-auto no-scrollbar space-y-1.5">
                 {tasks.length === 0 && (
-                  <p className="text-xs text-gray-400 dark:text-slate-600 text-center py-3">No tasks yet</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-600 text-center py-3">{t('today.noTasksYet')}</p>
                 )}
                 {tasks.map(t => (
                   <div
@@ -874,14 +1225,14 @@ export default function StudyHubPage() {
                   value={newTaskText}
                   onChange={e => setNewTaskText(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addTask()}
-                  placeholder="Add a task…"
-                  className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  placeholder={t('today.addTask')}
+                  className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
                 <button
                   onClick={addTask}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-700 text-white text-xs font-medium hover:bg-slate-600 transition-colors"
+                  className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white dark:text-slate-900 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
-                  Add
+                  {t('today.addButton')}
                 </button>
               </div>
             </div>
@@ -894,7 +1245,7 @@ export default function StudyHubPage() {
         {/* On mobile: shown when a session is selected (alongside the timer/tasks), stacked */}
         <div className={`
           flex-1 flex flex-col bg-white dark:bg-slate-900 overflow-hidden
-          ${mobileView === 'session' ? 'flex' : 'hidden lg:flex'}
+          ${mobileView === 'session' ? 'flex' : 'hidden md:flex'}
         `}>
 
           {/* Messages */}
@@ -908,8 +1259,8 @@ export default function StudyHubPage() {
                 <svg className="w-16 h-16 mb-4 opacity-50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <p className="font-medium text-base text-neutral-dark dark:text-slate-300">Select a session to start chatting</p>
-                <p className="text-xs text-neutral-dark/70 dark:text-slate-400 mt-1">The AI will use your study materials and session context.</p>
+                <p className="font-medium text-base text-neutral-dark dark:text-slate-300">{t('today.selectSessionToChat')}</p>
+                <p className="text-xs text-neutral-dark/70 dark:text-slate-400 mt-1">{t('today.selectSessionHint')}</p>
               </div>
             ) : fetchingHistory ? (
               <div className="flex justify-center py-8">
@@ -924,10 +1275,10 @@ export default function StudyHubPage() {
                   {(selectedSession.exam?.subject || selectedSession.subject)?.charAt(0)?.toUpperCase() || '✨'}
                 </div>
                 <p className="text-base font-semibold text-neutral-dark dark:text-slate-200">
-                  Ask about {selectedSession.exam?.subject || selectedSession.subject}
+                  {t('today.askAbout')} {selectedSession.exam?.subject || selectedSession.subject}
                 </p>
                 <p className="text-xs text-neutral-dark/70 dark:text-slate-400 mt-1">
-                  I am your study tutor. Ask me anything about "{selectedSession.title}", concepts, or exam prep!
+                  {t('today.studyBuddyHint')}
                 </p>
               </div>
             ) : (
@@ -986,7 +1337,7 @@ export default function StudyHubPage() {
                   }
                 }}
                 rows={1}
-                placeholder={selectedSession ? `Ask about ${selectedSession.exam?.subject || selectedSession.subject}…` : 'Select a session first'}
+                placeholder={selectedSession ? `${t('today.askPlaceholder')} ${selectedSession.exam?.subject || selectedSession.subject}…` : t('today.selectSessionFirst')}
                 disabled={!selectedSession}
                 className="flex-1 bg-transparent py-2 pl-3 sm:pl-4 pr-1 text-base sm:text-sm text-neutral-dark dark:text-slate-100 focus:outline-none resize-none overflow-y-auto disabled:cursor-not-allowed"
                 style={{ minHeight: '40px', maxHeight: '200px' }}
@@ -996,7 +1347,7 @@ export default function StudyHubPage() {
                   <button
                     onClick={stopGeneration}
                     className="w-10 h-10 bg-slate-600 dark:bg-slate-500 text-white rounded-full hover:bg-slate-700 transition-all shadow-sm flex items-center justify-center active:scale-95"
-                    title="Stop generating"
+                    title={t('today.stopGenerating')}
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <rect x="6" y="6" width="12" height="12" rx="2" />

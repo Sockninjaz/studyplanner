@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Exam from '@/models/Exam';
 import User from '@/models/User';
@@ -8,9 +9,10 @@ import { regenerateSchedule } from '@/lib/scheduling/regenerateSchedule';
 import { separateSessions } from '@/lib/scheduling/sessionUtils';
 import BlockedDay from '@/models/BlockedDay';
 import { isValidCalendarDate } from '@/lib/dateUtils';
+import { stripPromptArtifacts } from '@/lib/ai/prompts';
 
 export async function GET(request: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -18,15 +20,16 @@ export async function GET(request: Request) {
   await dbConnect();
 
   try {
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean();
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const exams = await Exam.find({ user: user._id }).sort({ date: 1 }).lean();
-    
-    // Attach progress in a single batched query
-    const allUserSessions = await StudySession.find({ user: user._id }, 'exam examId isCompleted').lean();
+    // Parallelize queries with lean()
+    const [exams, allUserSessions] = await Promise.all([
+      Exam.find({ user: user._id }).sort({ date: 1 }).lean(),
+      StudySession.find({ user: user._id }, 'exam examId isCompleted').lean()
+    ]);
     const sessionStatsByExam = new Map<string, { total: number; completed: number }>();
     for (const s of allUserSessions) {
       const eId = (s.exam || (s as any).examId)?.toString();
@@ -54,7 +57,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -69,7 +72,9 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     console.log('API received body:', body);
-    const { subject, date, studyMaterials: studyMaterialsData, adjustment_percentage, session_duration, originalFileName, rawMaterialText } = body;
+    const { subject, date, studyMaterials: studyMaterialsData, adjustment_percentage, session_duration, originalFileName, rawMaterialText, userInputNotes } = body;
+    const sanitizedRawMaterialText = stripPromptArtifacts(rawMaterialText);
+    const sanitizedUserInputNotes = stripPromptArtifacts(userInputNotes);
 
     if (!subject || !date || !studyMaterialsData || studyMaterialsData.length === 0) {
       return NextResponse.json(
@@ -143,7 +148,7 @@ export async function POST(request: Request) {
 
     // Estimate tokens (4 chars/token is a safe conservative estimate)
     // 100,000 tokens ≈ 400,000 characters
-    const textLength = rawMaterialText?.length || 0;
+    const textLength = sanitizedRawMaterialText?.length || 0;
     const useRag = textLength > 400000;
 
     let exam = await Exam.findOne({
@@ -156,7 +161,8 @@ export async function POST(request: Request) {
       exam.date = new Date(date);
       exam.studyMaterials = studyMaterials;
       if (originalFileName) exam.originalFileName = originalFileName;
-      if (rawMaterialText) exam.rawMaterialText = rawMaterialText;
+      if (sanitizedRawMaterialText) exam.rawMaterialText = sanitizedRawMaterialText;
+      if (sanitizedUserInputNotes !== undefined) exam.userInputNotes = sanitizedUserInputNotes;
       exam.useRag = useRag;
       await exam.save();
       console.log(`[POST /api/exams] Updated existing active exam ${exam._id} for subject "${subject}"`);
@@ -167,7 +173,8 @@ export async function POST(request: Request) {
         user: user._id,
         studyMaterials,
         originalFileName: originalFileName || undefined,
-        rawMaterialText: rawMaterialText || undefined,
+        rawMaterialText: sanitizedRawMaterialText || undefined,
+        userInputNotes: sanitizedUserInputNotes || undefined,
         useRag,
         color,
       });
@@ -216,12 +223,14 @@ export async function POST(request: Request) {
       enable_daily_limits: body.enable_daily_limits
     };
 
-    let scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString(), 'check');
-    
-    if (!scheduleResult.requiresDecision) {
-      // It fits perfectly! Go ahead and save the generated sessions.
-      scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString(), 'compress');
-    }
+    // Single-pass schedule regeneration: checks overload first and saves immediately if fitting
+    const scheduleResult = await regenerateSchedule(
+      user, 
+      overridePrefs, 
+      exam._id.toString(), 
+      'compress', 
+      { checkOverload: true }
+    );
 
     return NextResponse.json({
       data: {
@@ -235,9 +244,6 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Error in POST /api/exams:', error);
-    try {
-      require('fs').writeFileSync('/tmp/exam_error.log', error.stack || error.toString());
-    } catch (e) {}
     return NextResponse.json({ error: error.message || 'Error creating exam' }, { status: 500 });
   }
 }

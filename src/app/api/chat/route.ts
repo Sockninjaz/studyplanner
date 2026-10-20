@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { openai, createOpenAI } from '@ai-sdk/openai';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
@@ -12,7 +14,14 @@ import StudySession from '@/models/StudySession';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
+    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
+    const rateLimit = checkRateLimit(ip, 'chat', { limit: 30, windowMs: 60 * 60 * 1000 });
+    
+    if (!rateLimit.success) {
+      return new Response('Rate limit exceeded. Please try again later.', { status: 429 });
+    }
+
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return new Response('Unauthorized', { status: 401 });
     }
@@ -58,9 +67,8 @@ export async function POST(req: NextRequest) {
         ? '⏰ Due / Overdue'
         : '📅 Upcoming';
       const dateStr = start.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
-      const timeStr = start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
       
-      let line = `Session ${i + 1} [${status}] — ${dateStr} at ${timeStr}: "${s.title}"`;
+      let line = `Session ${i + 1} [${status}] — ${dateStr}: "${s.title}"`;
       if (s.shortTitle && s.shortTitle !== s.title) {
         line += ` (Chapter: ${s.shortTitle})`;
       }
@@ -361,13 +369,9 @@ A verified curriculum database match from biologiepagina.nl is active in your in
 11. FOCUS: If the student asks a question about the material, answer it thoroughly but bring them back to the session work afterwards.
 12. TASK-FOCUSED TUTORING & DIRECTION: You have full visibility into the tasks/checklist for each study session (e.g. \`- [ ] Review formula X\`, \`- [ ] Solve 5 practice problems\`). Use these tasks to proactively push the student in a clear direction! When guiding the student through a session, reference their specific tasks, guide them step-by-step through completing the uncompleted tasks (\`[ ]\`), quiz them on each task item, and encourage them to tick off tasks as they master them.${materialContext}`;
 
-    const selectedModelName = isSparseInput ? 'gpt-4o' : (aiIntegration === 'gpt-4o' ? 'gpt-4o' : 'gpt-4o-mini');
+    const selectedModelName = aiIntegration === 'gpt-4o' ? 'gpt-4o' : 'gpt-4o-mini';
     
-    try {
-       require('fs').writeFileSync(require('path').join(process.cwd(), 'debug-system-message.txt'), systemMessage);
-    } catch (e) {
-       console.error('Failed to write debug log');
-    }
+    // Debug system message removed for production safety
 
     // BYOK Logic: Use user's key if available, otherwise fallback to standard system openai client
     let model;

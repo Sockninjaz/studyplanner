@@ -34,15 +34,10 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/tasks`);
-        if (!response.ok) throw new Error('Failed to fetch tasks');
-        const tasks = await response.json();
-        const foundTask = tasks.find((t: Task) => t._id === taskId);
-        if (foundTask) {
-          setTask(foundTask);
-        } else {
-          setError('Task not found');
-        }
+        const response = await fetch(`/api/tasks/${taskId}`);
+        if (!response.ok) throw new Error('Failed to fetch task');
+        const foundTask = await response.json();
+        setTask(foundTask);
       } catch (err) {
         setError('Failed to load task');
         console.error('Error fetching task:', err);
@@ -55,48 +50,53 @@ export default function TaskSidebar({ taskId, onClose }: TaskSidebarProps) {
   }, [taskId]);
 
   const handleTaskComplete = async () => {
-    if (!taskId) return;
+    if (!taskId || !task) return;
 
-    await fetch(`/api/tasks/${taskId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isCompleted: true }),
-    });
-
-    // Refresh task data
-    const response = await fetch(`/api/tasks`);
-    const tasks = await response.json();
-    const updatedTask = tasks.find((t: Task) => t._id === taskId);
-    if (updatedTask) {
-      setTask(updatedTask);
-    }
-
-    // Trigger calendar refresh
+    // Instant optimistic update (0ms UI feedback)
+    setTask((prev: any) => prev ? { ...prev, isCompleted: true } : null);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calendarUpdated'));
+    }
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCompleted: true }),
+      });
+      if (response.ok) {
+        const updatedTask = await response.json();
+        setTask(updatedTask);
+      }
+    } catch (e) {
+      console.error('Failed to complete task:', e);
+      setTask((prev: any) => prev ? { ...prev, isCompleted: false } : null);
     }
   };
 
   const handleToggleComplete = async () => {
     if (!taskId || !task) return;
+    const targetStatus = !task.isCompleted;
 
-    await fetch(`/api/tasks/${taskId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isCompleted: !task.isCompleted }),
-    });
-
-    // Refresh task data
-    const response = await fetch(`/api/tasks`);
-    const tasks = await response.json();
-    const updatedTask = tasks.find((t: Task) => t._id === taskId);
-    if (updatedTask) {
-      setTask(updatedTask);
-    }
-
-    // Trigger calendar refresh
+    // Instant optimistic update (0ms UI feedback)
+    setTask((prev: any) => prev ? { ...prev, isCompleted: targetStatus } : null);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calendarUpdated'));
+    }
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCompleted: targetStatus }),
+      });
+      if (response.ok) {
+        const updatedTask = await response.json();
+        setTask(updatedTask);
+      }
+    } catch (e) {
+      console.error('Failed to toggle task:', e);
+      setTask((prev: any) => prev ? { ...prev, isCompleted: !targetStatus } : null);
     }
   };
 

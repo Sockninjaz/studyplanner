@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Exam from '@/models/Exam';
 import User from '@/models/User';
@@ -8,12 +9,15 @@ import { regenerateSchedule } from '@/lib/scheduling/regenerateSchedule';
 import { separateSessions } from '@/lib/scheduling/sessionUtils';
 import BlockedDay from '@/models/BlockedDay';
 import { isValidCalendarDate } from '@/lib/dateUtils';
+import { stripPromptArtifacts } from '@/lib/ai/prompts';
+import { resolveStudyLanguage, getStudySessionPrefix } from '@/lib/i18n/resolveStudyLanguage';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -27,12 +31,35 @@ export async function GET(
     }
 
     const exam = await Exam.findOne({
-      _id: params.id,
+      _id: id,
       user: user._id,
     });
 
     if (!exam) {
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
+    }
+
+    // Self-heal contaminated rawMaterialText and userInputNotes if prompt artifacts are present
+    let needsSave = false;
+    if (exam.rawMaterialText) {
+      const sanitized = stripPromptArtifacts(exam.rawMaterialText);
+      if (sanitized !== exam.rawMaterialText) {
+        exam.rawMaterialText = sanitized;
+        needsSave = true;
+        console.log(`[GET /api/exams/${id}] Self-healed contaminated rawMaterialText`);
+      }
+    }
+    if (exam.userInputNotes) {
+      const sanitizedNotes = stripPromptArtifacts(exam.userInputNotes);
+      if (sanitizedNotes !== exam.userInputNotes) {
+        exam.userInputNotes = sanitizedNotes;
+        needsSave = true;
+      }
+    }
+    if (needsSave) {
+      exam.markModified('rawMaterialText');
+      exam.markModified('userInputNotes');
+      await exam.save();
     }
 
     return NextResponse.json({ data: exam }, { status: 200 });
@@ -44,9 +71,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -60,7 +88,7 @@ export async function PUT(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const exam = await Exam.findOne({ _id: params.id, user: user._id });
+    const exam = await Exam.findOne({ _id: id, user: user._id });
     if (!exam) {
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
@@ -73,9 +101,10 @@ export async function PUT(
     }
 
     let requiresRegeneration = false;
+    const subjectChanged = Boolean(body.subject && exam.subject !== body.subject);
 
     // Update exam fields
-    if (body.subject && exam.subject !== body.subject) {
+    if (subjectChanged) {
       exam.subject = body.subject;
     }
 
@@ -139,11 +168,12 @@ export async function PUT(
     }
 
     if (body.rawMaterialText !== undefined) {
-      if (exam.rawMaterialText !== body.rawMaterialText) {
+      const sanitizedRaw = stripPromptArtifacts(body.rawMaterialText);
+      if (exam.rawMaterialText !== sanitizedRaw) {
         requiresRegeneration = true;
       }
-      exam.rawMaterialText = body.rawMaterialText;
-      const textLength = body.rawMaterialText?.length || 0;
+      exam.rawMaterialText = sanitizedRaw;
+      const textLength = sanitizedRaw.length;
       exam.useRag = textLength > 400000;
       
       if (exam.useRag && exam.rawMaterialText) {
@@ -160,6 +190,10 @@ export async function PUT(
       }
     }
 
+    if (body.userInputNotes !== undefined) {
+      exam.userInputNotes = stripPromptArtifacts(body.userInputNotes);
+    }
+
     if (body.studyMaterials && requiresRegeneration) {
       // Clean up orphaned completed sessions whose topics no longer exist in the new materials
       const completedSessions = await StudySession.find({ user: user._id, exam: exam._id, isCompleted: true });
@@ -169,10 +203,10 @@ export async function PUT(
       for (const s of completedSessions) {
         const titleLower = s.title.toLowerCase();
         // If the session title doesn't match any of the valid chapters, it's an orphan
-        const matches = validChapters.some((ch: string) => titleLower.includes(ch) || ch.includes(titleLower.replace(/^(study: )?(.*?)( \- )?/, '').trim()));
+        const matches = validChapters.some((ch: string) => titleLower.includes(ch) || ch.includes(titleLower.replace(/^(study|studeren|lernen|étudier|estudiar):\s*/i, '').replace(/^(.*?)\s*-\s*/, '').trim()));
         
         // Also keep generic review sessions
-        if (!matches && !titleLower.includes('review')) {
+        if (!matches && !titleLower.includes('review') && !titleLower.includes('herhaling')) {
           sessionsToDelete.push(s._id);
         }
       }
@@ -186,19 +220,30 @@ export async function PUT(
     await exam.save();
     console.log('Updated exam:', exam._id);
 
-    // If subject changed, update subject/title on ALL existing sessions for this exam (including completed)
-    if (body.subject) {
+    // If subject changed, update subject/title on ALL existing sessions for this exam in a single atomic bulkWrite
+    if (subjectChanged) {
       await StudySession.updateMany(
         { user: user._id, exam: exam._id },
         { $set: { subject: body.subject } }
       );
       // Also update titles to reflect new name
-      const sessionsToRename = await StudySession.find({ user: user._id, exam: exam._id });
-      for (const s of sessionsToRename) {
-        s.title = s.title.replace(/^Study: .+?($| \()/, `Study: ${body.subject}$1`);
-        await s.save();
+      const sessionsToRename = await StudySession.find({ user: user._id, exam: exam._id }, '_id title').lean();
+      if (sessionsToRename.length > 0) {
+        const examLang = resolveStudyLanguage(user.onboardingProfile, `${body.subject} ${exam.studyMaterials?.map((m: any) => m.chapter).join(' ')}`);
+        const prefix = getStudySessionPrefix(examLang);
+        const bulkOps = sessionsToRename.map(s => ({
+          updateOne: {
+            filter: { _id: s._id },
+            update: {
+              $set: {
+                title: s.title.replace(/^(Study|Studeren|Lernen|Étudier|Estudiar): .+?($| \()/, `${prefix}: ${body.subject}$2`)
+              }
+            }
+          }
+        }));
+        await StudySession.bulkWrite(bulkOps);
       }
-      console.log(`Updated subject name on ${sessionsToRename.length} sessions`);
+      console.log(`Updated subject name on ${sessionsToRename.length} sessions via bulkWrite`);
     }
 
     // Unified AI Schedule Regeneration
@@ -214,7 +259,14 @@ export async function PUT(
         session_duration: body.session_duration,
       };
 
-      let scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString(), 'check');
+      // Single-pass schedule regeneration: checks overload first and saves immediately in one run without AI
+      const scheduleResult = await regenerateSchedule(
+        user, 
+        overridePrefs, 
+        exam._id.toString(), 
+        'compress', 
+        { skipAiEnrichment: true, checkOverload: true }
+      );
 
       if (scheduleResult.requiresDecision) {
         return NextResponse.json({
@@ -226,7 +278,6 @@ export async function PUT(
         }, { status: 200 });
       }
 
-      scheduleResult = await regenerateSchedule(user, overridePrefs, exam._id.toString(), 'compress');
       overloadWarning = scheduleResult.overloadWarning;
       overloadedDays = scheduleResult.overloadedDays || [];
     } else {
@@ -248,9 +299,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -258,7 +310,7 @@ export async function DELETE(
   await dbConnect();
 
   try {
-    console.log('Attempting to delete exam:', params.id);
+    console.log('Attempting to delete exam:', id);
 
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
@@ -269,12 +321,12 @@ export async function DELETE(
     console.log('Found user:', user._id);
 
     const exam = await Exam.findOne({
-      _id: params.id,
+      _id: id,
       user: user._id,
     });
 
     if (!exam) {
-      console.log('Exam not found for id:', params.id, 'and user:', user._id);
+      console.log('Exam not found for id:', id, 'and user:', user._id);
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
 
@@ -292,9 +344,9 @@ export async function DELETE(
     const remainingExams = await Exam.find({ user: user._id });
     console.log(`Found ${remainingExams.length} remaining exams`);
 
-    // If there are remaining exams, regenerate the schedule natively via AI.
+    // If there are remaining exams, regenerate the schedule natively without AI.
     // If there are 0 remaining exams, this will still run and cleanly wipe out any ghost sessions.
-    await regenerateSchedule(user);
+    await regenerateSchedule(user, {}, undefined, undefined, { skipAiEnrichment: true });
 
     return NextResponse.json({ message: 'Exam deleted and schedule regenerated for remaining exams' }, { status: 200 });
   } catch (error) {

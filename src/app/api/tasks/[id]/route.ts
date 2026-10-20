@@ -1,15 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Task from '@/models/Task';
 import User from '@/models/User';
 
-export async function PUT(
+export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await dbConnect();
+
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean();
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const task = await Task.findOne({
+      _id: id,
+      userId: user._id,
+    }).lean();
+
+    if (!task) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(task);
+  } catch (error) {
+    console.error('Error fetching task:', error);
+    return NextResponse.json({ error: 'Failed to fetch task' }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -25,7 +61,7 @@ export async function PUT(
     const { name, description, isCompleted, date } = body;
 
     const task = await Task.findOne({
-      _id: params.id,
+      _id: id,
       userId: user._id,
     });
 
@@ -49,10 +85,11 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -65,7 +102,7 @@ export async function DELETE(
     }
 
     const task = await Task.findOneAndDelete({
-      _id: params.id,
+      _id: id,
       userId: user._id,
     });
 

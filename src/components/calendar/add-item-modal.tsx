@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { GraduationCap, CheckSquare, Ban, CalendarCheck, X } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export default function AddItemModal({
   onToggleBlock,
   isTogglingBlock = false,
 }: AddItemModalProps) {
+  const { locale, t } = useLanguage();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle escape key
@@ -59,14 +61,14 @@ export default function AddItemModal({
     top = Math.max(PADDING, Math.round(top));
   }
 
-  // Format date display (e.g. "Sun, Sep 27")
+  // Format date display (e.g. "Sun, Sep 27" or "zo 27 sep.")
   const formattedDate = date
     ? (() => {
         try {
           const parts = date.split('-');
           if (parts.length === 3) {
             const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-            return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            return d.toLocaleDateString(locale === 'nl' ? 'nl-NL' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' });
           }
           return date;
         } catch {
@@ -101,18 +103,18 @@ export default function AddItemModal({
         <div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-100 dark:border-slate-800/80">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
-              {formattedDate || 'Schedule Day'}
+              {formattedDate || (locale === 'nl' ? 'Dag plannen' : 'Schedule Day')}
             </span>
             {isBlocked && (
               <span className="text-[9.5px] font-semibold text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/50 rounded px-1 py-0.2">
-                Blocked
+                {locale === 'nl' ? 'Geblokkeerd' : 'Blocked'}
               </span>
             )}
           </div>
           <button
             onClick={onClose}
             className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-            title="Close"
+            title={locale === 'nl' ? 'Sluiten' : 'Close'}
           >
             <X size={13} />
           </button>
@@ -129,7 +131,7 @@ export default function AddItemModal({
               <GraduationCap size={14} />
             </div>
             <span className="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
-              Add Exam
+              {t('calendar.addExam')}
             </span>
           </button>
 
@@ -142,7 +144,7 @@ export default function AddItemModal({
               <CheckSquare size={14} />
             </div>
             <span className="text-xs font-medium text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors truncate">
-              Add Task
+              {locale === 'nl' ? 'Taak toevoegen' : 'Add Task'}
             </span>
           </button>
 
@@ -176,7 +178,7 @@ export default function AddItemModal({
                     : 'text-slate-800 dark:text-slate-200 group-hover:text-rose-600 dark:group-hover:text-rose-400'
                 }`}
               >
-                {isTogglingBlock ? 'Updating...' : isBlocked ? 'Unblock Day' : 'Block Day'}
+                {isTogglingBlock ? (locale === 'nl' ? 'Bijwerken...' : 'Updating...') : isBlocked ? (locale === 'nl' ? 'Dag deblokkeren' : 'Unblock Day') : (locale === 'nl' ? 'Dag blokkeren' : 'Block Day')}
               </span>
             </button>
           )}

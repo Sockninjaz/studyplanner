@@ -2,31 +2,28 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR, { useSWRConfig } from 'swr';
+import { useSWRConfig } from 'swr';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
 import Calendar from '@/components/calendar/calendar';
 import CalendarListView from '@/components/calendar/calendar-list-view';
 import AddItemModal from '@/components/calendar/add-item-modal';
 import CreateTaskModal from '@/components/calendar/create-task-modal';
 import TaskDetailModal from '@/components/calendar/task-detail-modal';
 import { useSidebar } from '@/components/shared/sidebar-context';
-
-
-interface UserPreferences {
-  daily_study_limit: number;
-  soft_daily_limit: number;
-  adjustment_percentage: number;
-  session_duration: number;
-  enable_daily_limits: boolean;
-}
+import { useBlockedDays } from '@/hooks/use-calendar-data';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function CalendarPage() {
   const router = useRouter();
+  const { locale, t } = useLanguage();
   const { mutate } = useSWRConfig();
   const { isSidebarCollapsed } = useSidebar();
   const calendarRef = useRef<any>(null);
-  const [currentMonthTitle, setCurrentMonthTitle] = useState('');
+  const listViewRef = useRef<any>(null);
+  const [currentMonthTitle, setCurrentMonthTitle] = useState(() => {
+    const d = new Date();
+    return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  });
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -37,40 +34,27 @@ export default function CalendarPage() {
   const [selectedExamId, setSelectedExamId] = useState<string | undefined>(undefined);
   const [selectedExam, setSelectedExam] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-  const [userPreferences, setUserPreferences] = useState<UserPreferences>({
-    daily_study_limit: 4,
-    soft_daily_limit: 2,
-    adjustment_percentage: 25,
-    session_duration: 30,
-    enable_daily_limits: true,
-  });
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState<{ x: number; y: number } | null>(null);
   const [isTogglingBlock, setIsTogglingBlock] = useState(false);
-  const { data: blockedData, mutate: mutateBlocked } = useSWR('/api/blocked-days', fetcher);
-  const blockedDays = useMemo(() => new Set<string>(blockedData?.data || []), [blockedData]);
+  const [isTodayInView, setIsTodayInView] = useState(true);
+  const { blockedDays, mutate: mutateBlocked } = useBlockedDays();
 
   useEffect(() => {
-    fetchUserPreferences();
-
-    // On mobile, always force list view
-    const isMobile = window.matchMedia('(max-width: 1023px)').matches;
-    if (isMobile) {
+    // Check saved mode or phone on mount
+    const isPhone = window.matchMedia('(max-width: 767px)').matches;
+    if (isPhone) {
       setViewMode('list');
     } else {
-      // Load saved view mode only on desktop
       const savedMode = localStorage.getItem('calendarViewMode');
       if (savedMode === 'list' || savedMode === 'calendar') {
         setViewMode(savedMode);
+      } else {
+        setViewMode('calendar');
       }
     }
 
-    const handlePreferencesUpdated = (e: any) => {
-      if (e?.detail) {
-        setUserPreferences(e.detail);
-      } else {
-        fetchUserPreferences();
-      }
+    const handlePreferencesUpdated = () => {
       mutate('/api/calendar/events');
     };
 
@@ -89,60 +73,62 @@ export default function CalendarPage() {
         window.removeEventListener('calendarUpdated', handleCalendarUpdate);
       }
     };
-  }, [mutate]);
+  }, [mutate, viewMode]);
 
-  const handleDatesSet = (info: any) => {
-    // Info contains view.title which is the month name (e.g. "February 2026")
-    setCurrentMonthTitle(info.view.title);
-  };
+  useEffect(() => {
+    if (viewMode === 'calendar') {
+      const timer = setTimeout(() => {
+        calendarRef.current?.getApi?.()?.updateSize?.();
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [viewMode]);
+
+  const handleDatesSet = useCallback((info: any) => {
+    if (info?.view?.title) {
+      setCurrentMonthTitle((prev) => (prev === info.view.title ? prev : info.view.title));
+    }
+  }, []);
 
   const handlePrev = () => {
-    calendarRef.current?.getApi().prev();
+    if (calendarRef.current?.scrollToPrevMonth) {
+      calendarRef.current.scrollToPrevMonth();
+    } else {
+      calendarRef.current?.getApi?.()?.prev?.();
+    }
   };
 
   const handleNext = () => {
-    calendarRef.current?.getApi().next();
+    if (calendarRef.current?.scrollToNextMonth) {
+      calendarRef.current.scrollToNextMonth();
+    } else {
+      calendarRef.current?.getApi?.()?.next?.();
+    }
   };
 
   const handleToday = () => {
-    calendarRef.current?.getApi().today();
-  };
-
-  const fetchUserPreferences = async () => {
-    try {
-      const res = await fetch('/api/user/preferences');
-      if (res.ok) {
-        const data = await res.json();
-        const serverPrefs = {
-          daily_study_limit: data.daily_study_limit || 4,
-          soft_daily_limit: data.soft_daily_limit || 2,
-          adjustment_percentage: data.adjustment_percentage || 25,
-          session_duration: data.session_duration || 30,
-          enable_daily_limits: data.enable_daily_limits !== false,
-        };
-        setUserPreferences(serverPrefs);
-        localStorage.setItem('userPreferences', JSON.stringify(serverPrefs));
+    if (viewMode === 'calendar') {
+      if (calendarRef.current?.scrollToToday) {
+        calendarRef.current.scrollToToday();
       } else {
-        const savedPrefs = localStorage.getItem('userPreferences');
-        if (savedPrefs) {
-          try {
-            setUserPreferences(JSON.parse(savedPrefs));
-          } catch (e) {}
-        }
+        calendarRef.current?.getApi?.()?.today?.();
       }
-    } catch (error) {
-      console.error('Error fetching preferences:', error);
-      const savedPrefs = localStorage.getItem('userPreferences');
-      if (savedPrefs) {
-        try {
-          setUserPreferences(JSON.parse(savedPrefs));
-        } catch (e) {}
+    } else {
+      if (listViewRef.current?.scrollToToday) {
+        listViewRef.current.scrollToToday();
+      } else {
+        const todayString = new Date().toDateString();
+        const todayEl = document.getElementById(`date-${todayString}`);
+        todayEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
   };
 
-  const handleSessionClick = (sessionId: string) => {
-    router.push(`/today?session=${sessionId}`);
+
+
+  const handleSessionClick = (sessionId: string, date?: string) => {
+    const url = date ? `/today?session=${sessionId}&date=${date}` : `/today?session=${sessionId}`;
+    router.push(url);
   };
 
   const handleTaskClick = (taskId: string) => {
@@ -184,25 +170,37 @@ export default function CalendarPage() {
   const handleToggleBlock = async () => {
     if (!selectedDate || isTogglingBlock) return;
     setIsTogglingBlock(true);
+    const dateToToggle = selectedDate;
+    const isCurrentlyBlocked = blockedDays.has(dateToToggle);
+
+    // Instant optimistic UI update (0ms feedback)
+    const currentDates = Array.from(blockedDays);
+    const nextDates = isCurrentlyBlocked
+      ? currentDates.filter(x => x !== dateToToggle)
+      : [...currentDates, dateToToggle];
+    mutateBlocked({ data: nextDates }, false);
+    setIsAddItemModalOpen(false);
+
     try {
-      const isCurrentlyBlocked = blockedDays.has(selectedDate);
       const res = await fetch('/api/blocked-days', {
         method: isCurrentlyBlocked ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: selectedDate }),
+        body: JSON.stringify({ date: dateToToggle }),
       });
       if (res.ok) {
-        await mutateBlocked();
-        await mutate('/api/calendar/events');
+        mutateBlocked();
+        mutate('/api/calendar/events');
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('calendarUpdated'));
         }
+      } else {
+        mutateBlocked();
       }
     } catch (err) {
       console.error('Failed to toggle block on day:', err);
+      mutateBlocked();
     } finally {
       setIsTogglingBlock(false);
-      setIsAddItemModalOpen(false);
     }
   };
 
@@ -290,98 +288,114 @@ export default function CalendarPage() {
           <div className="transition-all duration-300 flex flex-col w-full">
             {/* Toolbar — adapts for mobile and desktop */}
             <div className="bg-white dark:bg-slate-900 px-3 py-2 flex items-center justify-between h-14 flex-shrink-0 border-b border-gray-100 dark:border-slate-800">
-              <h1 className="text-lg font-bold text-[#4a4a4a] dark:text-slate-100">
-                {viewMode === 'calendar' ? currentMonthTitle : 'Schedule'}
+              <h1 suppressHydrationWarning className="text-lg font-bold text-[#4a4a4a] dark:text-slate-100">
+                {viewMode === 'calendar' ? currentMonthTitle : t('calendar.title')}
               </h1>
 
               <div className="flex items-center gap-2">
-                {/* Calendar nav arrows – desktop+calendar only */}
-                <div className={`hidden lg:flex items-center gap-1 mr-1 transition-opacity duration-200 ${viewMode === 'calendar' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                  <button onClick={handlePrev} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <button onClick={handleNext} className="p-1 hover:bg-gray-100 rounded transition-colors text-[#4a4a4a]">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                  <button onClick={handleToday} className="ml-1 px-2.5 py-1 text-xs font-medium border border-[#4a4a4a] border-opacity-20 rounded hover:bg-gray-50 transition-colors text-[#4a4a4a]">
-                    Today
+                {/* Calendar & List nav buttons */}
+                <div suppressHydrationWarning className="flex items-center gap-1 mr-1">
+                  {viewMode === 'calendar' && (
+                    <div className="flex items-center gap-1">
+                      <button onClick={handlePrev} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded transition-colors text-[#4a4a4a] dark:text-slate-300">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button onClick={handleNext} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded transition-colors text-[#4a4a4a] dark:text-slate-300">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleToday}
+                    title={isTodayInView ? (locale === 'nl' ? "Vandaag is in beeld" : "Today is in view") : (locale === 'nl' ? "Scroll naar Vandaag" : "Scroll to Today")}
+                    className={`ml-1 px-2.5 py-1 text-xs rounded transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                      !isTodayInView
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white dark:text-slate-900 border border-indigo-600 shadow-sm shadow-indigo-600/30 font-semibold scale-[1.03] active:scale-95'
+                        : 'border border-[#4a4a4a] border-opacity-20 dark:border-slate-700 text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium'
+                    }`}
+                  >
+                    {!isTodayInView && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white dark:bg-slate-900 animate-pulse" />
+                    )}
+                    {t('common.today')}
                   </button>
                 </div>
 
-                {/* List/Calendar toggle – desktop only */}
-                <div className="hidden lg:flex items-center bg-white dark:bg-slate-800 rounded-md p-0.5 border border-[#4a4a4a] border-opacity-20 shadow-sm">
+                {/* List/Calendar toggle – desktop & iPad */}
+                <div suppressHydrationWarning className="hidden md:flex items-center bg-white dark:bg-slate-800 rounded-md p-0.5 border border-[#4a4a4a] border-opacity-20 shadow-sm">
                   <button
                     onClick={() => { setViewMode('list'); localStorage.setItem('calendarViewMode', 'list'); }}
                     className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                       viewMode === 'list' ? 'bg-indigo-600 text-white dark:text-slate-900 shadow-sm' : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
-                  >List</button>
+                  >{t('calendar.list')}</button>
                   <button
                     onClick={() => { setViewMode('calendar'); localStorage.setItem('calendarViewMode', 'calendar'); }}
                     className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                       viewMode === 'calendar' ? 'bg-indigo-600 text-white dark:text-slate-900 shadow-sm' : 'text-[#4a4a4a] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
-                  >Calendar</button>
+                  >{t('calendar.calendar')}</button>
                 </div>
 
-                {/* Regenerate – desktop only (mobile has FAB) */}
+                {/* Regenerate – desktop & iPad (phones have FAB) */}
                 <button
                   onClick={handleRegenerateSchedule}
                   disabled={isRegenerating}
-                  title="Regenerate schedule"
-                  className="hidden lg:flex bg-white dark:bg-slate-800 border border-[#4a4a4a] border-opacity-20 text-[#4a4a4a] dark:text-slate-200 px-2.5 py-1 rounded text-xs hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors items-center gap-1.5 shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={locale === 'nl' ? 'Rooster herberekenen' : 'Regenerate schedule'}
+                  className="hidden md:flex bg-white dark:bg-slate-800 border border-[#4a4a4a] border-opacity-20 text-[#4a4a4a] dark:text-slate-200 px-2.5 py-1 rounded text-xs hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors items-center gap-1.5 shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  {isRegenerating ? 'Regenerating...' : 'Regenerate'}
+                  {isRegenerating ? (locale === 'nl' ? 'Bezig...' : 'Regenerating...') : t('calendar.regenerate')}
                 </button>
 
-                {/* Add Exam – desktop only (mobile has FAB) */}
+                {/* Add Exam – desktop & iPad (phones have FAB) */}
                 <button
                   onClick={() => router.push('/exams/create')}
-                  className="hidden lg:flex bg-indigo-600 hover:bg-indigo-700 text-white dark:text-slate-900 px-3 py-1 rounded transition-colors items-center gap-1.5 shadow-sm text-xs font-medium border border-transparent"
+                  className="hidden md:flex bg-indigo-600 hover:bg-indigo-700 text-white dark:text-slate-900 px-3 py-1 rounded transition-colors items-center gap-1.5 shadow-sm text-xs font-medium border border-transparent"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Add Exam
+                  {t('calendar.addExam')}
                 </button>
               </div>
             </div>
 
             {/* Content - Stretches to fill everything */}
-            <div className="flex-1 overflow-hidden relative">
-              {viewMode === 'list' ? (
-                <div className="h-full overflow-y-auto">
-                  <CalendarListView
-                    onSessionClick={handleSessionClick}
-                    onTaskClick={handleTaskClick}
-                    onAddItemClick={handleAddItemClick}
-                    onExamView={handleExamView}
-                    onExamEdit={handleExamEdit}
-                    sidebarOpen={false}
-                    sidebarCollapsed={isSidebarCollapsed}
-                  />
-                </div>
-              ) : (
-                <div className="h-full absolute inset-0">
-                  <Calendar
-                    ref={calendarRef}
-                    onSessionClick={handleSessionClick}
-                    onTaskClick={handleTaskClick}
-                    onAddItemClick={handleAddItemClick}
-                    sidebarOpen={false}
-                    sidebarCollapsed={isSidebarCollapsed}
-                    onDatesSet={handleDatesSet}
-                    blockedDays={blockedDays}
-                  />
-                </div>
-              )}
+            <div suppressHydrationWarning className="flex-1 overflow-hidden relative">
+              <div className={`h-full ${viewMode === 'list' ? 'block' : 'hidden'}`}>
+                <CalendarListView
+                  ref={listViewRef}
+                  onSessionClick={handleSessionClick}
+                  onTaskClick={handleTaskClick}
+                  onAddItemClick={handleAddItemClick}
+                  onExamView={handleExamView}
+                  onExamEdit={handleExamEdit}
+                  sidebarOpen={false}
+                  sidebarCollapsed={isSidebarCollapsed}
+                  onTodayInViewChange={viewMode === 'list' ? setIsTodayInView : undefined}
+                />
+              </div>
+              <div className={`h-full absolute inset-0 ${viewMode === 'calendar' ? 'block' : 'hidden'}`}>
+                <Calendar
+                  ref={calendarRef}
+                  onSessionClick={handleSessionClick}
+                  onTaskClick={handleTaskClick}
+                  onAddItemClick={handleAddItemClick}
+                  sidebarOpen={false}
+                  sidebarCollapsed={isSidebarCollapsed}
+                  onDatesSet={handleDatesSet}
+                  onTodayInViewChange={viewMode === 'calendar' ? setIsTodayInView : undefined}
+                  blockedDays={blockedDays}
+                />
+              </div>
             </div>
           </div>
 
@@ -389,19 +403,19 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* ── Mobile FABs: Add Exam + Regenerate (above bottom nav) ── */}
-      <div className="lg:hidden fixed bottom-24 right-4 z-40 flex flex-col items-end gap-3">
+      {/* ── Mobile FABs: Add Exam + Regenerate (phones only, above bottom nav) ── */}
+      <div className="md:hidden fixed bottom-24 right-4 z-40 flex flex-col items-end gap-3">
         {/* Regenerate Schedule */}
         <button
           onClick={handleRegenerateSchedule}
           disabled={isRegenerating}
-          title="Regenerate schedule"
+          title={locale === 'nl' ? 'Rooster herberekenen' : 'Regenerate schedule'}
           className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-lg rounded-2xl px-4 py-3 font-semibold text-sm active:scale-95 transition-all disabled:opacity-50"
         >
           <svg className={`w-5 h-5 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          {isRegenerating ? 'Regenerating…' : 'Regenerate'}
+          {isRegenerating ? (locale === 'nl' ? 'Bezig…' : 'Regenerating…') : t('calendar.regenerate')}
         </button>
 
         {/* Add Exam */}
@@ -412,7 +426,7 @@ export default function CalendarPage() {
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Add Exam
+          {t('calendar.addExam')}
         </button>
       </div>
 
@@ -469,20 +483,30 @@ export default function CalendarPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Schedule Overload Warning</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {locale === 'nl' ? 'Rooster Overbelasting Waarschuwing' : 'Schedule Overload Warning'}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">
-                Your remaining study material is too dense to fit into your available days without exceeding your daily maximum limit. How would you like to handle the overflow?
+                {locale === 'nl'
+                  ? 'Je resterende studiestof is te veel om in te plannen binnen je beschikbare dagen zonder je dagelijkse maximumlimiet te overschrijden. Hoe wil je de overbelasting aanpakken?'
+                  : 'Your remaining study material is too dense to fit into your available days without exceeding your daily maximum limit. How would you like to handle the overflow?'}
               </p>
               
               <div className="space-y-3">
                 <button
                   onClick={() => submitRegenerateAction('compress')}
                   disabled={isRegenerating}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-left"
+                  className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors text-left"
                 >
                   <div>
-                    <div className="font-bold">Compress Chapters to Fit</div>
-                    <div className="text-xs mt-1 opacity-80">Sessions over your daily limit are merged into combined topics (e.g. "Chapter 5 &amp; Chapter 6") at the cost of less in-depth coverage.</div>
+                    <div className="font-bold">
+                      {locale === 'nl' ? 'Hoofdstukken Comprimeren' : 'Compress Chapters to Fit'}
+                    </div>
+                    <div className="text-xs mt-1 opacity-80">
+                      {locale === 'nl'
+                        ? 'Sessies boven je daglimiet worden samengevoegd tot combinaties (bijv. "Hoofdstuk 5 & Hoofdstuk 6") met iets minder diepgang.'
+                        : 'Sessions over your daily limit are merged into combined topics (e.g. "Chapter 5 & Chapter 6") at the cost of less in-depth coverage.'}
+                    </div>
                   </div>
                   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
@@ -493,8 +517,14 @@ export default function CalendarPage() {
                   className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left"
                 >
                   <div>
-                    <div className="font-bold">Keep All Sessions</div>
-                    <div className="text-xs mt-1 opacity-80">Place all sessions anyway, allowing your schedule to exceed the daily limit.</div>
+                    <div className="font-bold">
+                      {locale === 'nl' ? 'Alle Sessies Behouden' : 'Keep All Sessions'}
+                    </div>
+                    <div className="text-xs mt-1 opacity-80">
+                      {locale === 'nl'
+                        ? 'Plaats toch alle sessies, waarbij je dagelijkse maximum overschreden mag worden.'
+                        : 'Place all sessions anyway, allowing your schedule to exceed the daily limit.'}
+                    </div>
                   </div>
                   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
@@ -506,7 +536,7 @@ export default function CalendarPage() {
                 disabled={isRegenerating}
                 className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>

@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Exam from '@/models/Exam';
 import User from '@/models/User';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession();
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -23,7 +25,7 @@ export async function POST(
 
     const body = await request.json();
     const exam = await Exam.findOne({
-      _id: params.id,
+      _id: id,
       user: user._id,
     });
 

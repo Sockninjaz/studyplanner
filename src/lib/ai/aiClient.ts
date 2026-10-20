@@ -57,13 +57,18 @@ Thoroughly examine this screenshot, document, or photo and extract all education
 
 RULES FOR ACCURATE EXTRACTION:
 1. SCREENSHOTS & APPS: If the image is a screenshot of a school portal, learning app, or digital platform (e.g. Magister, Somtoday, Canvas, Blackboard, Teams, Google Classroom, ELO, textbook viewer), ignore peripheral UI buttons and navigation bars, and extract all academic chapters, assignments, and test topics listed.
-2. VERBATIM TITLES: If the image lists specific chapter titles, numbers, or themes (e.g. "Hoofdstuk 4: Zuren en Basen", "Thema 3", "Unit 2: Kinematics", "Paragraaf 3.1 t/m 3.4"), EXTRACT THOSE TITLES EXACTLY VERBATIM in their original language.
-3. CONCEPTS & FORMULAS: Include key definitions, formulas, or bullet points mentioned under each topic so an actionable study plan can be generated.
-${specialInstructions ? `\nUSER SPECIAL INSTRUCTIONS (focus on these): ${specialInstructions}` : ''}`;
+2. PTA & EXAM SCHEDULE TABLES (CRITICAL):
+   If this document is a PTA (Programma van Toetsing en Afsluiting) or exam syllabus table:
+   - Carefully transcribe every exam row with its Period / Toetscode (e.g. Periode 1, Periode 2, SE1, SE2, TW1, TW2, Toetscode 411, 521, etc.) clearly linked to its complete "Stof / Inhoud / Hoofdstukken / Omschrijving" cell.
+   - You MUST extract all textbook names, edition numbers, chapter numbers (e.g. H1, H2, Hoofdstuk 3, Chapter 4), paragraph numbers (e.g. §3.1 t/m 3.5), and topic names verbatim.
+   - Do NOT omit, summarize, or generalize chapter numbers or titles!
+3. VERBATIM TITLES: If the image lists specific chapter titles, numbers, or themes (e.g. "Hoofdstuk 4: Zuren en Basen", "Thema 3", "Unit 2: Kinematics", "Paragraaf 3.1 t/m 3.4"), EXTRACT THOSE TITLES EXACTLY VERBATIM in their original language.
+4. CONCEPTS & FORMULAS: Include key definitions, formulas, or bullet points mentioned under each topic so an actionable study plan can be generated.
+${specialInstructions ? `\nUSER SPECIAL INSTRUCTIONS (HIGHEST PRIORITY — pay special attention to fully extracting all details for this requested test/period): ${specialInstructions}` : ''}`;
 
   if (isImage) {
-    // Direct OpenAI Vision inference (fast, reliable, handles screenshots & all image formats)
-    console.log(`[aiClient] Performing OpenAI Vision OCR for screenshot/image (${normalizedMime})...`);
+    // Direct OpenAI Vision inference with GPT-4o-mini for cost-effective OCR on screenshot/image
+    console.log(`[aiClient] Performing OpenAI Vision OCR for screenshot/image (${normalizedMime}) with gpt-4o-mini...`);
     const result = await generateText({
       model: openai('gpt-4o-mini'),
       messages: [
@@ -90,7 +95,7 @@ ${specialInstructions ? `\nUSER SPECIAL INSTRUCTIONS (focus on these): ${special
       });
 
       const ext = normalizedMime.split('/')[1] || 'pdf';
-      const tempFilePath = path.join(os.tmpdir(), `${crypto.randomUUID()}.${ext}`);
+      const tempFilePath = path.join(/*turbopackIgnore: true*/ os.tmpdir(), `${crypto.randomUUID()}.${ext}`);
       await fs.writeFile(tempFilePath, fileBuffer);
 
       try {
@@ -128,7 +133,7 @@ ${specialInstructions ? `\nUSER SPECIAL INSTRUCTIONS (focus on these): ${special
     }
   }
 
-  // Fallback: Use OpenAI vision
+  // Fallback: Use OpenAI vision with gpt-4o-mini
   const result = await generateText({
     model: openai('gpt-4o-mini'),
     messages: [

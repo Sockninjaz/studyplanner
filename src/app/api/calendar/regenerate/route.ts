@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { regenerateSchedule } from '@/lib/scheduling/regenerateSchedule';
 
 export async function POST(request: Request) {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -20,8 +21,9 @@ export async function POST(request: Request) {
         const body = await request.json().catch(() => ({}));
         const action = body.action as 'check' | 'compress' | 'allowOverload' | undefined;
         const forceRegenerateExamId = body.examId as string | undefined;
+        const skipAi = body.skipAiEnrichment !== false;
 
-        const result = await regenerateSchedule(user, {}, forceRegenerateExamId, action);
+        const result = await regenerateSchedule(user, {}, forceRegenerateExamId, action, { skipAiEnrichment: skipAi });
 
         return NextResponse.json({
             message: result.message || 'Schedule regenerated successfully',

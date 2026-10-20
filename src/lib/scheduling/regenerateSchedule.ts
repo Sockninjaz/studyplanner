@@ -6,19 +6,33 @@ import { generateAISchedule } from '@/lib/scheduling/aiScheduler';
 import { separateSessions } from '@/lib/scheduling/sessionUtils';
 import { compressSessionsInMemory } from '@/lib/scheduling/compressSchedule';
 import { generateSessionDetails } from '@/lib/ai/generateSessionDetails';
+import {
+  resolveStudyLanguage,
+  getStudySessionPrefix,
+  getDefaultFallbackTasks,
+  getSingleFallbackTask,
+  getRevisionFallbackTasks,
+  getRevisionSessionTitles
+} from '@/lib/i18n/resolveStudyLanguage';
 
 // Per-user execution lock to serialize concurrent regenerations
 const userLocks = new Map<string, Promise<any>>();
+
+export interface RegenerateScheduleOptions {
+  skipAiEnrichment?: boolean;
+  checkOverload?: boolean;
+}
 
 export async function regenerateSchedule(
   user: any, 
   overridePrefs: any = {}, 
   forceRegenerateExamId?: string,
-  action?: 'check' | 'compress' | 'allowOverload'
+  action?: 'check' | 'compress' | 'allowOverload',
+  options: RegenerateScheduleOptions = {}
 ) {
   const userId = user._id?.toString() || user.id?.toString();
   if (!userId) {
-    return runRegenerateSchedule(user, overridePrefs, forceRegenerateExamId, action);
+    return runRegenerateSchedule(user, overridePrefs, forceRegenerateExamId, action, options);
   }
 
   const currentPromise = userLocks.get(userId) || Promise.resolve();
@@ -28,7 +42,7 @@ export async function regenerateSchedule(
     } catch {
       // Ignore errors from previous queued task
     }
-    return runRegenerateSchedule(user, overridePrefs, forceRegenerateExamId, action);
+    return runRegenerateSchedule(user, overridePrefs, forceRegenerateExamId, action, options);
   })();
 
   userLocks.set(userId, nextPromise);
@@ -46,7 +60,8 @@ async function runRegenerateSchedule(
   user: any, 
   overridePrefs: any = {}, 
   forceRegenerateExamId?: string,
-  action?: 'check' | 'compress' | 'allowOverload'
+  action?: 'check' | 'compress' | 'allowOverload',
+  options: RegenerateScheduleOptions = {}
 ) {
   await dbConnect();
 
@@ -77,8 +92,11 @@ async function runRegenerateSchedule(
     console.log(`Auto-marked ${pastExamIds.length} past exams and their sessions as completed.`);
   }
 
-  // Get all active user exams (ignore completed exams so we don't schedule new sessions for them)
-  const rawExams = await Exam.find({ user: user._id, isCompleted: { $ne: true } });
+  // Get all active user exams (reuse loaded exams instead of redundant DB query)
+  const pastExamIdStrings = new Set(pastExamIds.map(id => id.toString()));
+  const rawExams = pastExamIds.length > 0
+    ? allUserExamsForCheck.filter(e => !pastExamIdStrings.has(e._id.toString()))
+    : allUserExamsForCheck;
 
   // Deduplicate active exams by subject so orphaned duplicate exams (from re-saves) are cleaned up
   const examsBySubject = new Map<string, any>();
@@ -124,6 +142,33 @@ async function runRegenerateSchedule(
   const allSessions = await StudySession.find({ user: user._id });
   const { completedSessions, missedSessions, reschedulableSessions, completedHours } = separateSessions(allSessions);
 
+  // Build in-memory lookup cache of existing session titles and task checklists to reuse details
+  // and prevent repetitive, slow AI calls on non-AI requests (date changes, name changes, deletes, preferences)
+  const existingDetailsByExamChapter = new Map<string, { shortTitle?: string; title: string; tasks?: any[] }>();
+  const existingDetailsByChapter = new Map<string, { shortTitle?: string; title: string; tasks?: any[] }>();
+
+  for (const s of allSessions) {
+    const rawCh = (s.shortTitle || s.title || '')
+      .replace(/^(study|studeren|lernen|étudier|estudiar):\s*/i, '')
+      .replace(/^(.*?)\s*-\s*/, '')
+      .trim()
+      .toLowerCase();
+    
+    if (s.tasks && s.tasks.length > 0) {
+      const detail = {
+        shortTitle: s.shortTitle,
+        title: s.title,
+        tasks: s.tasks,
+      };
+      if (s.exam) {
+        existingDetailsByExamChapter.set(`${s.exam.toString()}:::${rawCh}`, detail);
+      }
+      if (!existingDetailsByChapter.has(rawCh)) {
+        existingDetailsByChapter.set(rawCh, detail);
+      }
+    }
+  }
+
   console.log(`Regenerate request [${action || 'default'}] - Completed: ${completedSessions.length}, Missed: ${missedSessions.length}, Reschedulable: ${reschedulableSessions.length}`);
 
   const activeExamIds = allExams.map(e => e._id);
@@ -151,7 +196,8 @@ async function runRegenerateSchedule(
       can_study_after_exam: e.can_study_after_exam,
       studyMaterials: e.studyMaterials || [],
     })),
-    allowOverload: isAllowOverload
+    allowOverload: isAllowOverload,
+    userProfile: user?.onboardingProfile,
   };
 
   // Fetch blocked days for this user
@@ -196,12 +242,17 @@ async function runRegenerateSchedule(
           
           sessionStart.setHours(9, dayOffsetMinutes, 0, 0);
           const sessionEnd = new Date(sessionStart.getTime() + duration * 60000);
-          const exactTitle = sessionData.content || `Study: ${examForSubject.subject}`;
+          const examLang = resolveStudyLanguage(user?.onboardingProfile, `${examForSubject.subject} ${(examForSubject.studyMaterials || []).map((m: any) => m.chapter).join(' ')}`);
+          const prefix = getStudySessionPrefix(examLang);
+          const exactTitle = sessionData.content || `${prefix}: ${examForSubject.subject}`;
 
           // Find matching study material for AI enrichment metadata
           const matchingMaterial = (examForSubject.studyMaterials || []).find(
             (m: any) => exactTitle.includes(m.chapter)
           );
+
+          const isRevision = /herhaling|revision|proeftoets|review|eindtoets/i.test(exactTitle);
+          const examChapters = (examForSubject.studyMaterials || []).map((m: any) => m.chapter).filter(Boolean);
 
           sessionsToSave.push({
             user: user._id,
@@ -218,6 +269,8 @@ async function runRegenerateSchedule(
               formulas: matchingMaterial?.formulas || [],
               numMerged: 1,
               durationMinutes: duration,
+              isRevision,
+              examChapters,
             },
           });
           
@@ -241,6 +294,12 @@ async function runRegenerateSchedule(
     return { success: true, requiresDecision: false };
   }
 
+  // Single-pass optimization: if checkOverload was requested and schedule is overloaded,
+  // return early without modifying the database. If not overloaded, proceed cleanly to save.
+  if (options.checkOverload && (wasOverloaded || overloadedDays.length > 0)) {
+    return { success: true, requiresDecision: true, wasOverloaded, overloadedDays };
+  }
+
   if (overloadedDays.length > 0) {
     overloadWarning = `${overloadedDays.length} day(s) exceed your daily session limit.`;
   } else if (wasOverloaded) {
@@ -255,33 +314,145 @@ async function runRegenerateSchedule(
   }
 
   if (finalSessionsToSave.length > 0) {
-    // Enrich sessions with AI-generated descriptive titles and task checklists
-    const enrichInputs = finalSessionsToSave.map((s, i) => ({
-      index: i,
-      subject: s.subject,
-      chapter: s._enrichMeta?.chapter || s.title,
-      difficulty: s._enrichMeta?.difficulty || 3,
-      formulas: s._enrichMeta?.formulas || [],
-      numMerged: s._enrichMeta?.numMerged || 1,
-      durationMinutes: s._enrichMeta?.durationMinutes || Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000),
-    }));
+    const sessionsNeedingEnrichment: Array<{ session: any; originalIndex: number }> = [];
 
-    const enriched = await generateSessionDetails(enrichInputs, user?.onboardingProfile);
+    // First pass: reuse existing cached session details or apply fast deterministic fallback if AI is skipped
+    for (let i = 0; i < finalSessionsToSave.length; i++) {
+      const session = finalSessionsToSave[i];
+      const rawCh = (session._enrichMeta?.chapter || session.shortTitle || session.title || '')
+        .replace(/^(study|studeren|lernen|étudier|estudiar):\s*/i, '')
+        .replace(/^(.*?)\s*-\s*/, '')
+        .trim()
+        .toLowerCase();
+      const examIdStr = session.exam?.toString() || '';
 
-    // Apply AI enrichment and strip the temp _enrichMeta field before saving
-    for (const session of finalSessionsToSave) {
-      const detail = enriched.find(e => e.index === finalSessionsToSave.indexOf(session));
-      if (detail) {
-        session.shortTitle = detail.shortTitle;
-        session.title = detail.fullTitle;
-        session.tasks = detail.tasks.map((text, i) => ({
-          id: `task-${i}`,
-          text,
+      const cached = existingDetailsByExamChapter.get(`${examIdStr}:::${rawCh}`) || existingDetailsByChapter.get(rawCh);
+
+      const examLang = resolveStudyLanguage(user?.onboardingProfile, `${session.subject} ${session._enrichMeta?.chapter || session.title || ''}`);
+      const prefix = getStudySessionPrefix(examLang);
+      const isRev = session._enrichMeta?.isRevision || /herhaling|revision|proeftoets|review|eindtoets/i.test(session._enrichMeta?.chapter || session.title || '');
+      const examChapters = session._enrichMeta?.examChapters || [];
+
+      let validCached = cached;
+      if (isRev && cached) {
+        // Discard bad cached tasks from old naive templates (e.g. "Theorie en kernbegrippen doornemen voor Herhaling: ...")
+        const hasBadRevisionTasks = cached.tasks?.some((t: any) => 
+          /voor herhaling:|over herhaling:|for revision:|for herhaling:/i.test(t.text || t.task || '')
+        );
+        if (hasBadRevisionTasks) {
+          validCached = undefined;
+        }
+      }
+
+      if (validCached) {
+        session.shortTitle = validCached.shortTitle || session._enrichMeta?.chapter || session.title;
+        // Keep title matching current session subject if subject was renamed
+        session.title = validCached.title.replace(/^(Study|Studeren|Lernen|Étudier|Estudiar): .+?($| \()/, `${prefix}: ${session.subject}$2`);
+        session.tasks = validCached.tasks?.map((t: any, idx: number) => ({
+          id: t.id || `task-${idx}`,
+          text: t.text || t.task || '',
           completed: false,
           sessionsCompleted: 0,
-        }));
+        })) || [];
+        delete session._enrichMeta;
+      } else if (options.skipAiEnrichment) {
+        if (isRev) {
+          const revTitles = getRevisionSessionTitles(session.subject, examLang);
+          session.shortTitle = revTitles.shortTitle;
+          session.title = revTitles.fullTitle;
+          session.tasks = getRevisionFallbackTasks(session.subject, examChapters, examLang);
+        } else {
+          const rawChapter = session._enrichMeta?.chapter || session.title || (examLang === 'nl' ? 'Studiesessie' : 'Study Session');
+          session.shortTitle = rawChapter;
+          session.title = /^(study|studeren|lernen|étudier|estudiar):/i.test(rawChapter)
+            ? rawChapter
+            : `${prefix}: ${session.subject} - ${rawChapter}`;
+          session.tasks = getDefaultFallbackTasks(rawChapter, examLang);
+        }
+        delete session._enrichMeta;
+      } else {
+        sessionsNeedingEnrichment.push({ session, originalIndex: i });
       }
-      delete session._enrichMeta;
+    }
+
+    // Second pass: only call AI if there are actually sessions that need new enrichment
+    if (sessionsNeedingEnrichment.length > 0 && !options.skipAiEnrichment) {
+      console.log(`[Regenerate] Calling AI to enrich only ${sessionsNeedingEnrichment.length} new sessions out of ${finalSessionsToSave.length} total.`);
+      const enrichInputs = sessionsNeedingEnrichment.map(({ session }, idx) => ({
+        index: idx,
+        subject: session.subject,
+        chapter: session._enrichMeta?.chapter || session.title,
+        difficulty: session._enrichMeta?.difficulty || 3,
+        formulas: session._enrichMeta?.formulas || [],
+        numMerged: session._enrichMeta?.numMerged || 1,
+        durationMinutes: session._enrichMeta?.durationMinutes || Math.round((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 60000),
+        isRevision: session._enrichMeta?.isRevision || /herhaling|revision|proeftoets|review|eindtoets/i.test(session._enrichMeta?.chapter || session.title || ''),
+        examChapters: session._enrichMeta?.examChapters || [],
+      }));
+
+      try {
+        const enriched = await generateSessionDetails(enrichInputs, user?.onboardingProfile);
+        for (let idx = 0; idx < sessionsNeedingEnrichment.length; idx++) {
+          const { session } = sessionsNeedingEnrichment[idx];
+          const sessionLang = resolveStudyLanguage(user?.onboardingProfile, `${session.subject} ${session._enrichMeta?.chapter || session.title || ''}`);
+          const sessionPrefix = getStudySessionPrefix(sessionLang);
+          const isRev = session._enrichMeta?.isRevision || /herhaling|revision|proeftoets|review|eindtoets/i.test(session._enrichMeta?.chapter || session.title || '');
+          const examChapters = session._enrichMeta?.examChapters || [];
+          const detail = enriched.find(e => e.index === idx);
+          if (detail) {
+            if (isRev) {
+              const revTitles = getRevisionSessionTitles(session.subject, sessionLang);
+              session.shortTitle = detail.shortTitle || revTitles.shortTitle;
+              session.title = detail.fullTitle || revTitles.fullTitle;
+            } else {
+              session.shortTitle = detail.shortTitle;
+              session.title = detail.fullTitle;
+            }
+            session.tasks = detail.tasks.map((text, i) => ({
+              id: `task-${i}`,
+              text,
+              completed: false,
+              sessionsCompleted: 0,
+            }));
+          } else {
+            if (isRev) {
+              const revTitles = getRevisionSessionTitles(session.subject, sessionLang);
+              session.shortTitle = revTitles.shortTitle;
+              session.title = revTitles.fullTitle;
+              session.tasks = getRevisionFallbackTasks(session.subject, examChapters, sessionLang);
+            } else {
+              const rawChapter = session._enrichMeta?.chapter || session.title || (sessionLang === 'nl' ? 'Studiesessie' : 'Study Session');
+              session.shortTitle = rawChapter;
+              session.title = `${sessionPrefix}: ${session.subject} - ${rawChapter}`;
+              session.tasks = [getSingleFallbackTask(rawChapter, sessionLang)];
+            }
+          }
+          delete session._enrichMeta;
+        }
+      } catch (aiErr) {
+        console.error('[Regenerate] AI enrichment failed, falling back to clean titles/tasks:', aiErr);
+        for (const { session } of sessionsNeedingEnrichment) {
+          const sessionLang = resolveStudyLanguage(user?.onboardingProfile, `${session.subject} ${session._enrichMeta?.chapter || session.title || ''}`);
+          const sessionPrefix = getStudySessionPrefix(sessionLang);
+          const isRev = session._enrichMeta?.isRevision || /herhaling|revision|proeftoets|review|eindtoets/i.test(session._enrichMeta?.chapter || session.title || '');
+          const examChapters = session._enrichMeta?.examChapters || [];
+
+          if (isRev) {
+            const revTitles = getRevisionSessionTitles(session.subject, sessionLang);
+            session.shortTitle = revTitles.shortTitle;
+            session.title = revTitles.fullTitle;
+            session.tasks = getRevisionFallbackTasks(session.subject, examChapters, sessionLang);
+          } else {
+            const rawChapter = session._enrichMeta?.chapter || session.title || (sessionLang === 'nl' ? 'Studiesessie' : 'Study Session');
+            session.shortTitle = rawChapter;
+            session.title = `${sessionPrefix}: ${session.subject} - ${rawChapter}`;
+            session.tasks = [getSingleFallbackTask(rawChapter, sessionLang)];
+          }
+          delete session._enrichMeta;
+        }
+      }
+    } else {
+      console.log(`[Regenerate] Reused cached session details for all ${finalSessionsToSave.length} sessions (0 AI requests).`);
     }
   }
 
@@ -289,11 +460,12 @@ async function runRegenerateSchedule(
   // 1. Clean up duplicate or orphaned completed sessions
   
   // Get all valid exam IDs (active and completed) to prevent deleting sessions for completed exams
-  const allUserExamsIds = (await Exam.find({ user: user._id }, '_id')).map(e => e._id.toString());
+  const allUserExamsIds = (await Exam.find({ user: user._id }, '_id').lean()).map(e => e._id.toString());
   const validExamIdStrings = new Set(allUserExamsIds);
   const activeExamIdStrings = new Set(allExams.map(e => e._id.toString()));
   
-  const existingCompleted = await StudySession.find({ user: user._id, isCompleted: true });
+  // Reuse completedSessions already loaded in memory instead of running a duplicate query!
+  const existingCompleted = completedSessions;
   const seenCompletedKeys = new Set<string>();
   const duplicateCompletedIds: any[] = [];
   
@@ -307,7 +479,7 @@ async function runRegenerateSchedule(
     // Only deduplicate sessions for ACTIVE exams. 
     // If the exam is completed, we just keep all its sessions intact.
     if (activeExamIdStrings.has(cs.exam.toString())) {
-      const key = `${cs.exam.toString()}-${cs.startTime.toISOString()}-${cs.title}`;
+      const key = `${cs.exam.toString()}-${new Date(cs.startTime).toISOString()}-${cs.title}`;
       if (seenCompletedKeys.has(key)) {
         duplicateCompletedIds.push(cs._id);
       } else {

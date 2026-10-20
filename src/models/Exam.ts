@@ -17,6 +17,7 @@ export interface IExam extends Document {
   can_study_after_exam: boolean;
   originalFileName?: string;
   rawMaterialText?: string;
+  userInputNotes?: string;
   useRag: boolean;
   color?: string;
   isCompleted?: boolean;
@@ -40,6 +41,7 @@ const ExamSchema: Schema = new Schema({
   can_study_after_exam: { type: Boolean, default: false },
   originalFileName: { type: String },
   rawMaterialText: { type: String },
+  userInputNotes: { type: String },
   useRag: { type: Boolean, default: false },
   color: { type: String },
   isCompleted: { type: Boolean, default: false },

@@ -39,33 +39,7 @@ export default function UserPreferences({ onPreferencesChange }: UserPreferences
     }
   }, [preferences, isLoading]);
 
-  // Sync localStorage with server on page load
-  useEffect(() => {
-    console.log('Component mounted, checking for localStorage sync...');
-    const syncWithServer = async () => {
-      const savedPrefs = localStorage.getItem('userPreferences');
-      console.log('Found in localStorage for sync:', savedPrefs);
-      if (savedPrefs) {
-        try {
-          const prefs = JSON.parse(savedPrefs);
-          console.log('Syncing to server with prefs:', prefs);
-          // Save to server in background
-          const response = await fetch('/api/user/preferences', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(prefs),
-          });
-          console.log('Sync response status:', response.status);
-        } catch (error) {
-          console.error('Failed to sync preferences with server:', error);
-        }
-      } else {
-        console.log('No localStorage found to sync');
-      }
-    };
 
-    syncWithServer();
-  }, []);
 
   const fetchPreferences = async () => {
     try {

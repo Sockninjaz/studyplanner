@@ -128,8 +128,11 @@ export default function UpgradePage() {
               </li>
             </ul>
             
-            <button className="relative z-10 w-full py-3.5 px-4 rounded-xl font-bold text-center bg-indigo-600 text-white dark:text-slate-900 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 dark:shadow-none">
-              Upgrade to Pro
+            <button 
+              onClick={() => alert('Thanks for your interest! We are rolling out Pro features to early access users soon.')}
+              className="relative z-10 w-full py-3.5 px-4 rounded-xl font-bold text-center bg-indigo-600 text-white dark:text-slate-900 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 dark:shadow-none"
+            >
+              Join Pro Waitlist (Coming Soon)
             </button>
           </div>
         </div>

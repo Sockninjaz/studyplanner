@@ -10,6 +10,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        trumley: {
+          50: '#F5FAF4',
+          100: '#E7F4E5',
+          200: '#CEE8CB',
+          300: '#B4DCB0',
+          400: '#9EC29A', // Brand Signature Sage
+          500: '#86B382',
+          600: '#6FA06B',
+          700: '#568053',
+          800: '#3D5C3A',
+          900: '#273C25',
+          950: '#142013',
+        },
         indigo: {
           50: '#f7fbf6',
           100: '#ebf5ea',
@@ -22,6 +35,20 @@ const config: Config = {
           800: '#617d5e',
           900: '#4b6149',
           950: '#283626',
+        },
+      },
+      animation: {
+        'float': 'float 6s ease-in-out infinite',
+        'pulse-subtle': 'pulseSubtle 3s ease-in-out infinite',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-6px)' },
+        },
+        pulseSubtle: {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.85', transform: 'scale(1.02)' },
         },
       },
       backgroundImage: {

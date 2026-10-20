@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import BlockedDay from '@/models/BlockedDay';
 import User from '@/models/User';
 
 export async function GET() {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -13,13 +14,13 @@ export async function GET() {
   await dbConnect();
 
   try {
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean();
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const blockedDays = await BlockedDay.find({ user: user._id });
-    const dates = blockedDays.map(bd => bd.date.toISOString().split('T')[0]);
+    const blockedDays = await BlockedDay.find({ user: user._id }).select('date').lean();
+    const dates = blockedDays.map(bd => new Date(bd.date).toISOString().split('T')[0]);
 
     return NextResponse.json({ data: dates });
   } catch (error) {
@@ -29,7 +30,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

@@ -181,13 +181,41 @@
   {
     "subject": "natuurkunde",
     "title": "Polaris Natuurkunde",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Beweging",
+      "H2 Elektriciteit",
+      "H3 Krachten en beweging",
+      "H4 Trillingen en golven",
+      "H5 Straling",
+      "H6 Materie en warmte"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Polaris Natuurkunde",
     "track": "VWO 5",
     "chapters": [
       "H7 Kracht en evenwicht",
       "H8 Energie",
       "H9 Elektrische velden",
       "H10 Magnetische velden",
-      "H11 Cirkelbeweging"
+      "H11 Atoomfysica",
+      "H12 Medische beeldvorming"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Polaris Natuurkunde",
+    "track": "VWO 6",
+    "chapters": [
+      "H13 Cirkelbanen en gravitatie",
+      "H14 Quantumwereld",
+      "H15 Kern- en deeltjesprocessen",
+      "Keuzeonderwerp IV Relativiteitstheorie",
+      "Keuzeonderwerp I Biofysica",
+      "Keuzeonderwerp II Geofysica",
+      "Keuzeonderwerp III Astrofysica"
     ]
   },
   {
@@ -260,7 +288,8 @@
       "H5 Lineaire verbanden",
       "H6 Machtsverbanden",
       "H7 Kansrekening",
-      "H8 Rijen en veranderingen"
+      "H8 Rijen en veranderingen",
+      "HK Lineair Programmeren"
     ]
   },
   {
@@ -268,6 +297,10 @@
     "title": "Getal en Ruimte Wiskunde A 12e editie",
     "track": "VWO 5",
     "chapters": [
+      "H2 Combinatoriek en data",
+      "H5 Machtsverbanden en exponentiële formules",
+      "H7 Statistiek en ICT",
+      "H8 Logaritmische functies en veranderingen",
       "H9 Kansverdelingen",
       "H10 Differentiëren",
       "H11 Het toetsen van hypothesen"
@@ -599,6 +632,828 @@
       "Unit 6: Plant Form and Function",
       "Unit 7: Animal Form and Function",
       "Unit 8: Ecology"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte 12e editie",
+    "track": "VMBO-KGT 3",
+    "chapters": [
+      "H1 Statistiek",
+      "H2 Meetkunde",
+      "H3 Formules en tabellen",
+      "H4 Grafieken en vergelijkingen",
+      "H5 Goniometrie",
+      "H6 Verschillende verbanden",
+      "H7 Oppervlakte en inhoud",
+      "H8 Getallen",
+      "H9 Grafieken en vergelijkingen (vervolg)",
+      "H10 Goniometrie (vervolg)"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte 12e editie",
+    "track": "VMBO-KGT 4",
+    "chapters": [
+      "H1 Statistiek en kans",
+      "H2 Verbanden",
+      "H3 Drie dimensies, afstanden en hoeken",
+      "H4 Grafieken en vergelijkingen",
+      "H5 Rekenen, meten en schatten",
+      "H6 Vlakke figuren",
+      "H7 Verbanden (vervolg)",
+      "H8 Ruimtemeetkunde"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde C 12e editie",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Rekenen en variabelen",
+      "H2 Verbanden",
+      "H3 Statistiek",
+      "H4 Machten en logaritmen"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde C 12e editie",
+    "track": "VWO 5",
+    "chapters": [
+      "H5 Kansrekening",
+      "H6 Veranderingen en afgeleiden",
+      "H7 Toevalsvariabelen en kansverdelingen",
+      "H8 Meetkunde en perspectief"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde C 12e editie",
+    "track": "VWO 6",
+    "chapters": [
+      "H9 Exponenten en logaritmen",
+      "H10 Toetsen van hypothesen",
+      "H11 Vorm en ruimte"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde D 12e editie",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Combinatoriek",
+      "H2 Discrete wiskunde",
+      "H3 Kansrekening",
+      "H4 Meetkunde"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde D 12e editie",
+    "track": "VWO 5",
+    "chapters": [
+      "H5 Kansverdelingen",
+      "H6 Bewegingsvergelijkingen",
+      "H7 Complexe getallen",
+      "H8 Cryptografie en priemgetallen"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Getal en Ruimte Wiskunde D 12e editie",
+    "track": "VWO 6",
+    "chapters": [
+      "H9 Correlatie en regressie",
+      "H10 Differentiaalvergelijkingen",
+      "H11 Ruimtemeetkunde en kegelsneden"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Moderne Wiskunde 12e editie",
+    "track": "VMBO-GT 3",
+    "chapters": [
+      "H1 Procenten en statistiek",
+      "H2 Lineaire formules",
+      "H3 Goniometrie",
+      "H4 Vergelijkingen en ongelijkheden",
+      "H5 Ruimtemeetkunde",
+      "H6 Kwadratische formules",
+      "H7 Rekenen en eenheden",
+      "H8 Allerlei verbanden"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Moderne Wiskunde 12e editie",
+    "track": "VMBO-GT 4",
+    "chapters": [
+      "H1 Statistiek en kansrekening",
+      "H2 Verbanden en functies",
+      "H3 Goniometrie en afstanden",
+      "H4 Vergelijkingen oplossen",
+      "H5 Vlakke meetkunde",
+      "H6 Machten en exponentiële groei",
+      "H7 Ruimtelijke figuren en aanzichten",
+      "H8 Examentraining en herhaling"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Moderne Wiskunde 12e editie Wiskunde A",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Rekenen",
+      "H2 Verbanden",
+      "H3 Statistische vraagstellingen",
+      "H4 Systematisch tellen",
+      "H5 Lineaire en exponentiële groei",
+      "H6 Grafieken en vergelijkingen"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Moderne Wiskunde 12e editie Wiskunde A",
+    "track": "HAVO 5",
+    "chapters": [
+      "H7 Veranderingen",
+      "H8 Kansrekening",
+      "H9 Kansverdelingen",
+      "H10 Statistiek en hypothesen toetsen",
+      "H11 Formules en modellen"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Moderne Wiskunde 12e editie Wiskunde B",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Functies en formules",
+      "H2 Vergelijkingen en ongelijkheden",
+      "H3 Afgeleide functies en raaklijnen",
+      "H4 Goniometrie",
+      "H5 Machtsfuncties en exponentiële functies",
+      "H6 Lijnen en afstanden"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Moderne Wiskunde 12e editie Wiskunde B",
+    "track": "HAVO 5",
+    "chapters": [
+      "H7 Exponentiële en logaritmische functies",
+      "H8 Goniometrische formules en vergelijkingen",
+      "H9 Cirkels en raaklijnen",
+      "H10 Differentiëren en optimaliseren"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Moderne Wiskunde 12e editie Wiskunde B",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Functies en grafieken",
+      "H2 Differentiëren en raaklijnen",
+      "H3 Meetkunde en vectoren",
+      "H4 Vergelijkingen en algebraïsche technieken",
+      "H5 Machten, wortels en exponentiële functies",
+      "H6 Goniometrische functies"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Moderne Wiskunde 12e editie Wiskunde B",
+    "track": "VWO 5",
+    "chapters": [
+      "H7 Goniometrische formules en krommen",
+      "H8 Logaritmische functies",
+      "H9 Integreren en oppervlakteberekening",
+      "H10 Cirkels en raaklijnen",
+      "H11 Voortgezette differentiaalrekening"
+    ]
+  },
+  {
+    "subject": "wiskunde",
+    "title": "Moderne Wiskunde 12e editie Wiskunde B",
+    "track": "VWO 6",
+    "chapters": [
+      "H12 Lijnen, cirkels en meetkundige bewijzen",
+      "H13 Goniometrische functies en integratie",
+      "H14 Verdelingen en grenswaarden",
+      "H15 Examentraining en gemengde opgaven"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Nova NaSk 1 4e editie",
+    "track": "VMBO-KGT 3",
+    "chapters": [
+      "H1 Krachten",
+      "H2 Elektriciteit",
+      "H3 Energie",
+      "H4 Het weer",
+      "H5 Licht",
+      "H6 Stoffen",
+      "H7 Straling"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Nova NaSk 1 4e editie",
+    "track": "VMBO-KGT 4",
+    "chapters": [
+      "H8 Geluid",
+      "H9 Schakelingen",
+      "H10 Krachten en werktuigen",
+      "H11 Energie en duurzaamheid",
+      "H12 Elektriciteit en veiligheid",
+      "H13 Kracht, snelheid en veiligheid",
+      "H14 Radioactiviteit en medische toepassingen"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Pulsar Natuurkunde 3e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Bewegen in grafieken",
+      "H2 Krachten en de wetten van Newton",
+      "H3 Energieomzettingen en behoud van energie",
+      "H4 Arbeid en vermogen",
+      "H5 Straling en gezondheid",
+      "H6 Eigenschappen van materialen"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Pulsar Natuurkunde 3e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H7 Elektrische schakelingen",
+      "H8 Automatische systemen en sensoren",
+      "H9 Trillingen, golven en geluid",
+      "H10 Informatieoverdracht en communicatie",
+      "H11 Medische beeldvorming"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Pulsar Natuurkunde 3e editie",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Bewegen en snelheid",
+      "H2 Kracht en dynamica",
+      "H3 Arbeid, energie en vermogen",
+      "H4 Eigenschappen van materie en warmte",
+      "H5 Ioniserende straling en kernfysica",
+      "H6 Modelleren van dynamische processen"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Pulsar Natuurkunde 3e editie",
+    "track": "VWO 5",
+    "chapters": [
+      "H7 Elektriciteit en schakelingen",
+      "H8 Elektrische velden en condensatoren",
+      "H9 Magnetische velden en inductie",
+      "H10 Cirkelbanen en zwaartekracht",
+      "H11 Trillingen en golven"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Pulsar Natuurkunde 3e editie",
+    "track": "VWO 6",
+    "chapters": [
+      "H12 Quantumwereld en fotonen",
+      "H13 Astrofysica en kosmologie",
+      "H14 Medische beeldvorming",
+      "H15 Relativiteitstheorie",
+      "H16 Kern- en deeltjesprocessen"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Overal Natuurkunde 5e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Beweging in beeld",
+      "H2 Krachten",
+      "H3 Energie en arbeid",
+      "H4 Elektriciteit",
+      "H5 Straling"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Overal Natuurkunde 5e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H6 Trillingen en golven",
+      "H7 Kracht en beweging",
+      "H8 Materialen en stofeigenschappen",
+      "H9 Medische beeldvorming"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Overal Natuurkunde 5e editie",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Beweging",
+      "H2 Kracht en beweging",
+      "H3 Energie en arbeid",
+      "H4 Elektriciteit",
+      "H5 Straling",
+      "H6 Modelleren"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Overal Natuurkunde 5e editie",
+    "track": "VWO 5",
+    "chapters": [
+      "H7 Cirkelbeweging en gravitatie",
+      "H8 Trillingen en golven",
+      "H9 Elektromagnetisme",
+      "H10 Elektrische en magnetische velden"
+    ]
+  },
+  {
+    "subject": "natuurkunde",
+    "title": "Overal Natuurkunde 5e editie",
+    "track": "VWO 6",
+    "chapters": [
+      "H11 Quantumwereld",
+      "H12 Astrofysica",
+      "H13 Relativiteitstheorie",
+      "H14 Medische beeldvorming"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Nova NaSk 2 4e editie",
+    "track": "VMBO-KGT 3",
+    "chapters": [
+      "H1 Stoffen en mengsels",
+      "H2 Chemische reacties en verbranding",
+      "H3 Water en lucht",
+      "H4 Zuren en basen",
+      "H5 Moleculen en atomen",
+      "H6 Metalen en corrosie"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Nova NaSk 2 4e editie",
+    "track": "VMBO-KGT 4",
+    "chapters": [
+      "H7 Zouten en ionen",
+      "H8 Koolstofchemie en brandstoffen",
+      "H9 Kunststoffen en recycling",
+      "H10 Chemische industrie en duurzaamheid",
+      "H11 Voeding en chemie",
+      "H12 Milieu en chemische kringlopen"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Chemie Overal 7e editie",
+    "track": "VMBO-GT 3",
+    "chapters": [
+      "H1 Stoffen en eigenschappen",
+      "H2 Mengsels scheiden",
+      "H3 Chemische reacties",
+      "H4 Bouw van stoffen",
+      "H5 Verbranding en energie"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Chemie Overal 7e editie",
+    "track": "VMBO-GT 4",
+    "chapters": [
+      "H6 Zuren, basen en zouten",
+      "H7 Koolstofverbindingen",
+      "H8 Chemie en duurzaamheid",
+      "H9 Kunststoffen",
+      "H10 Examentraining"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Pulsar Chemie 3e editie",
+    "track": "HAVO 4",
+    "chapters": [
+      "H1 Scheikunde om je heen",
+      "H2 Stoffen en deeltjes",
+      "H3 Chemische reacties",
+      "H4 Koolstofchemie",
+      "H5 Zouten",
+      "H6 Rekenen aan reacties"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Pulsar Chemie 3e editie",
+    "track": "HAVO 5",
+    "chapters": [
+      "H7 Zuren en basen",
+      "H8 Redoxreacties",
+      "H9 Kunststoffen en macromoleculen",
+      "H10 Chemie van het leven",
+      "H11 Groene chemie en industrie"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Pulsar Chemie 3e editie",
+    "track": "VWO 4",
+    "chapters": [
+      "H1 Chemisch onderzoek en stoffen",
+      "H2 Bouw van atomen en bindingen",
+      "H3 Chemische reacties en energie",
+      "H4 Koolstofchemie en naamgeving",
+      "H5 Zouten en zoutoplossingen",
+      "H6 Chemisch rekenen en evenwichten"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Pulsar Chemie 3e editie",
+    "track": "VWO 5",
+    "chapters": [
+      "H7 Chemische evenwichten en reactiesnelheid",
+      "H8 Zuren en basen",
+      "H9 Redoxreacties en elektrochemie",
+      "H10 Polymeren en materialen",
+      "H11 Biochemie en levensmoleculen"
+    ]
+  },
+  {
+    "subject": "scheikunde",
+    "title": "Pulsar Chemie 3e editie",
+    "track": "VWO 6",
+    "chapters": [
+      "H12 Analyse en spectroscopie",
+      "H13 Industriële chemie en proceskunde",
+      "H14 Duurzaamheid en groene synthese",
+      "H15 Examentraining en syntheseroutes"
+    ]
+  },
+  {
+    "subject": "biologie",
+    "title": "Biologie voor Jou 8e editie",
+    "track": "VMBO-KGT 3",
+    "chapters": [
+      "Thema 1 Organen en cellen",
+      "Thema 2 Voortplanting en seksualiteit",
+      "Thema 3 Erfelijkheid en evolutie",
+      "Thema 4 Ordening",
+      "Thema 5 Stevigheid en beweging",
+      "Thema 6 Ecologie",
+      "Thema 7 Duurzaam leven",
+      "Thema 8 Gedrag"
+    ]
+  },
+  {
+    "subject": "biologie",
+    "title": "Biologie voor Jou 8e editie",
+    "track": "VMBO-KGT 4",
+    "chapters": [
+      "Thema 1 Planten",
+      "Thema 2 Regeling en zintuigen",
+      "Thema 3 Voeding en vertering",
+      "Thema 4 Transport en gaswisseling",
+      "Thema 5 Afweer en bescherming",
+      "Thema 6 Mens en milieu (Examentraining)"
+    ]
+  },
+  {
+    "subject": "biologie",
+    "title": "Nectar 5e editie",
+    "track": "VMBO-GT 3",
+    "chapters": [
+      "H1 Cellen en organismen",
+      "H2 Voortplanting en groei",
+      "H3 Erfelijkheid",
+      "H4 Ordening en diversiteit",
+      "H5 Stevigheid en beweging",
+      "H6 Ecologie en leefomgeving"
+    ]
+  },
+  {
+    "subject": "biologie",
+    "title": "Nectar 5e editie",
+    "track": "VMBO-GT 4",
+    "chapters": [
+      "H7 Fotosynthese en planten",
+      "H8 Zintuigen en zenuwstelsel",
+      "H9 Voeding en spijsvertering",
+      "H10 Bloedsomloop en ademhaling",
+      "H11 Afweer en gezondheid",
+      "H12 Examentraining en ecologische vraagstukken"
+    ]
+  },
+  {
+    "subject": "economie",
+    "title": "Pincode 7e editie",
+    "track": "VMBO-KGT 3",
+    "chapters": [
+      "H1 Wat heb je nodig? (Consumptie)",
+      "H2 Jij en je geld (Geld en sparen)",
+      "H3 Aan het werk (Arbeid en beroep)",
+      "H4 Wat doe jij met je centen? (Budgetteren)",
+      "H5 De overheid en jij (Overheidsfinanciën en belastingen)",
+      "H6 Bedrijf in actie (Productie en marketing)",
+      "H7 Nederland over de grens (Internationale handel)"
+    ]
+  },
+  {
+    "subject": "economie",
+    "title": "Pincode 7e editie",
+    "track": "VMBO-KGT 4",
+    "chapters": [
+      "H1 Werk en geld",
+      "H2 Vraag en aanbod (Marktwerking)",
+      "H3 Verzekeren en risico",
+      "H4 Welvaart en milieu",
+      "H5 Nederland en de wereld",
+      "H6 De economie van een land (Nationaal inkomen)"
+    ]
+  },
+  {
+    "subject": "economie",
+    "title": "Pincode 7e editie",
+    "track": "HAVO Bovenbouw",
+    "chapters": [
+      "Katern 1 Schaarste en ruil",
+      "Katern 2 Markt: vraag en aanbod",
+      "Katern 3 Marktvormen en marktfalen",
+      "Katern 4 Ruilen over de tijd",
+      "Katern 5 Samenwerken en risico",
+      "Katern 6 Welvaart en economische groei",
+      "Katern 7 Goede tijden, slechte tijden (Conjunctuur)"
+    ]
+  },
+  {
+    "subject": "economie",
+    "title": "Pincode 7e editie",
+    "track": "VWO Bovenbouw",
+    "chapters": [
+      "Katern 1 Schaarste, geld en ruil",
+      "Katern 2 Vraag en aanbod",
+      "Katern 3 Marktstructuren en marktwerking",
+      "Katern 4 Intertemporele ruil en pensioenen",
+      "Katern 5 Speltheorie en risico & rendement",
+      "Katern 6 Welvaart, verdeling en duurzaamheid",
+      "Katern 7 Conjunctuur en monetair beleid",
+      "Katern 8 Internationale economie en globalisering"
+    ]
+  },
+  {
+    "subject": "economie",
+    "title": "Praktische Economie",
+    "track": "VMBO-KGT 3 & 4",
+    "chapters": [
+      "Module 1 Consumptie en consumentengedrag",
+      "Module 2 Arbeid en productie",
+      "Module 3 Overheid en maatschappij",
+      "Module 4 Internationale handel en Europa",
+      "Module 5 Geld, banken en sparen",
+      "Module 6 Examenvoorbereiding"
+    ]
+  },
+  {
+    "subject": "economie",
+    "title": "Praktische Economie",
+    "track": "HAVO Bovenbouw",
+    "chapters": [
+      "Module 1 Schaarste en kiezen",
+      "Module 2 Van vraag naar aanbod",
+      "Module 3 Markt en overheid",
+      "Module 4 Heden, verleden en toekomst",
+      "Module 5 Speltheorie en onderhandelen",
+      "Module 6 Risico en informatie",
+      "Module 7 Welvaart en economische groei",
+      "Module 8 Conjunctuur en stabilisatiebeleid"
+    ]
+  },
+  {
+    "subject": "economie",
+    "title": "Bedrijfseconomie in Balans",
+    "track": "HAVO Bovenbouw",
+    "chapters": [
+      "Domein B Financiële zelfredzaamheid",
+      "Domein C De oprichting van een eenmanszaak",
+      "Domein D Van eenmanszaak naar besloten vennootschap",
+      "Domein E De naamloze vennootschap: financiering",
+      "Domein F De naamloze vennootschap: verslaggeving",
+      "Domein G Kosten- en winstcalculaties"
+    ]
+  },
+  {
+    "subject": "geschiedenis",
+    "title": "Geschiedeniswerkplaats 3e editie",
+    "track": "VMBO-GT 3",
+    "chapters": [
+      "H1 De Eerste Wereldoorlog",
+      "H2 Het Interbellum en de crisis van de jaren 30",
+      "H3 De Tweede Wereldoorlog",
+      "H4 Nederland en Indonesië"
+    ]
+  },
+  {
+    "subject": "geschiedenis",
+    "title": "Geschiedeniswerkplaats 3e editie",
+    "track": "VMBO-GT 4",
+    "chapters": [
+      "H1 De Koude Oorlog",
+      "H2 Een multiculturele samenleving",
+      "H3 Nederland na 1945",
+      "H4 Historisch overzicht: Staatsinrichting van Nederland"
+    ]
+  },
+  {
+    "subject": "geschiedenis",
+    "title": "Geschiedeniswerkplaats 3e editie",
+    "track": "HAVO Bovenbouw",
+    "chapters": [
+      "H1 Tijd van jagers en boeren (tot 3000 v.Chr.)",
+      "H2 Tijd van Grieken en Romeinen (3000 v.Chr. - 500 n.Chr.)",
+      "H3 Tijd van monniken en ridders (500 - 1000)",
+      "H4 Tijd van steden en staten (1000 - 1500)",
+      "H5 Tijd van ontdekkers en hervormers (1500 - 1600)",
+      "H6 Tijd van regenten en vorsten (1600 - 1700)",
+      "H7 Tijd van pruiken en revoluties (1700 - 1800)",
+      "H8 Tijd van burgers en stoommachines (1800 - 1900)",
+      "H9 Tijd van de wereldoorlogen (1900 - 1950)",
+      "H10 Tijd van televisie en computer (1950 - heden)",
+      "Historische Context: Het Britse Rijk (1585 - 1900)",
+      "Historische Context: Duitsland in Europa (1918 - 1991)",
+      "Historische Context: Nederland (1948 - 2008)"
+    ]
+  },
+  {
+    "subject": "geschiedenis",
+    "title": "Feniks",
+    "track": "VMBO-GT 3 & 4",
+    "chapters": [
+      "Thema 1 Industrie en samenleving in Nederland",
+      "Thema 2 De Eerste Wereldoorlog en het Interbellum",
+      "Thema 3 De Tweede Wereldoorlog",
+      "Thema 4 De wereld na 1945: Koude Oorlog",
+      "Thema 5 Nederland en de Europese integratie",
+      "Thema 6 Staatsinrichting en democratie"
+    ]
+  },
+  {
+    "subject": "geschiedenis",
+    "title": "Feniks",
+    "track": "HAVO Bovenbouw",
+    "chapters": [
+      "H1 Jagers en boeren",
+      "H2 Grieken en Romeinen",
+      "H3 Monniken en ridders",
+      "H4 Steden en staten",
+      "H5 Ontdekkers en hervormers",
+      "H6 Regenten en vorsten",
+      "H7 Pruiken en revoluties",
+      "H8 Burgers en stoommachines",
+      "H9 Wereldoorlogen en Holocaust",
+      "H10 Televisie en computer",
+      "Historische Context: Het Britse Rijk",
+      "Historische Context: Duitsland in Europa",
+      "Historische Context: Nederland 1948-2008"
+    ]
+  },
+  {
+    "subject": "aardrijkskunde",
+    "title": "De Geo 9e editie",
+    "track": "VMBO-GT 3",
+    "chapters": [
+      "H1 Grenzen en identiteit",
+      "H2 Weer en klimaat",
+      "H3 Bronnen van energie",
+      "H4 Arm en rijk"
+    ]
+  },
+  {
+    "subject": "aardrijkskunde",
+    "title": "De Geo 9e editie",
+    "track": "VMBO-GT 4",
+    "chapters": [
+      "H1 Weer en klimaat (Examenmodule)",
+      "H2 Bevolking en ruimte",
+      "H3 Water en waterbeheer",
+      "H4 Verrijking en casestudies"
+    ]
+  },
+  {
+    "subject": "aardrijkskunde",
+    "title": "De Geo 9e editie",
+    "track": "HAVO Bovenbouw",
+    "chapters": [
+      "Domein B Wereld: Globalisering en wereldsteden",
+      "Domein C Aarde: Endogene en exogene krachten",
+      "Domein C Aarde: Systeem Aarde en klimaat",
+      "Domein D Gebieden: Brazilië en Zuid-Amerika",
+      "Domein E Leefomgeving: Wateroverlast en kustbeheer",
+      "Domein E Leefomgeving: Stedelijke vernieuwing in Nederland"
+    ]
+  },
+  {
+    "subject": "aardrijkskunde",
+    "title": "De Geo 9e editie",
+    "track": "VWO Bovenbouw",
+    "chapters": [
+      "Domein B Wereld: Globalisering, wereldeconomie en geopolitiek",
+      "Domein C Aarde: Vulkanisme, aardbevingen en platentektoniek",
+      "Domein C Aarde: Landschapszones en klimaatverandering",
+      "Domein D Gebieden: Zuid-Amerika fysisch en sociaal",
+      "Domein E Leefomgeving: Rivierbeheer en Deltaprogramma",
+      "Domein E Leefomgeving: Vraagstukken van grote steden in Nederland"
+    ]
+  },
+  {
+    "subject": "aardrijkskunde",
+    "title": "buiteNLand 4e editie",
+    "track": "VMBO-GT 3 & 4",
+    "chapters": [
+      "H1 Arm en rijk",
+      "H2 Aarde in beweging",
+      "H3 Klimaat en landschap",
+      "H4 Nederland waterland"
+    ]
+  },
+  {
+    "subject": "aardrijkskunde",
+    "title": "buiteNLand 4e editie",
+    "track": "HAVO Bovenbouw",
+    "chapters": [
+      "H1 Wereld: Globalisering",
+      "H2 Aarde: Klimaat en landschap",
+      "H3 Gebieden: Brazilië",
+      "H4 Leefomgeving: Nederland waterland"
+    ]
+  },
+  {
+    "subject": "nederlands",
+    "title": "Nieuw Nederlands 6e editie",
+    "track": "VMBO-GT 3",
+    "chapters": [
+      "Blok 1 Leesvaardigheid (Tekstbegrip en tekstsoorten)",
+      "Blok 2 Schrijfvaardigheid (Brieven en berichten)",
+      "Blok 3 Woordenschat en idioom",
+      "Blok 4 Formuleren en grammatica",
+      "Blok 5 Spelling en interpunctie",
+      "Blok 6 Spreken, kijken en luisteren",
+      "Blok 7 Fictie en jeugdliteratuur"
+    ]
+  },
+  {
+    "subject": "nederlands",
+    "title": "Nieuw Nederlands 6e editie",
+    "track": "VMBO-GT 4",
+    "chapters": [
+      "Blok 1 Leesvaardigheid op examenniveau",
+      "Blok 2 Schrijfvaardigheid: zakelijke brieven en artikelen",
+      "Blok 3 Woordenschat en signaalwoorden",
+      "Blok 4 Formuleren en zinsbouw",
+      "Blok 5 Spelling en werkwoordspelling",
+      "Blok 6 Spreken en gespreksvaardigheid",
+      "Blok 7 Fictie en literatuur"
+    ]
+  },
+  {
+    "subject": "nederlands",
+    "title": "Nieuw Nederlands 6e editie",
+    "track": "HAVO Bovenbouw",
+    "chapters": [
+      "Deel 1 Lezen: Tekststructuren en verbanden",
+      "Deel 2 Lezen: Argumentatie, betoog en beschouwing",
+      "Deel 3 Schrijven: Betoog, beschouwing en uiteenzetting",
+      "Deel 4 Formuleren: Stijl, beknopte bijzinnen en congruentieregels",
+      "Deel 5 Spelling: Werkwoordspelling en leestekens",
+      "Deel 6 Mondelinge taalvaardigheid: Debatteren en presenteren",
+      "Deel 7 Literatuurgeschiedenis en literaire analyse"
+    ]
+  },
+  {
+    "subject": "nederlands",
+    "title": "Nieuw Nederlands 6e editie",
+    "track": "VWO Bovenbouw",
+    "chapters": [
+      "Deel 1 Lezen: Complexe betogen en wetenschappelijke teksten",
+      "Deel 2 Argumentatieleer, formele logica en drogredenen",
+      "Deel 3 Schrijven: Academisch betoog en essay",
+      "Deel 4 Formuleren: Gevorderde stijlleer en retorische technieken",
+      "Deel 5 Spelling en interpunctieregels op expertniveau",
+      "Deel 6 Mondelinge taalvaardigheid: Wetenschappelijk debat en presentatie",
+      "Deel 7 Historische letterkunde: Van Middeleeuwen tot heden"
     ]
   }
 ]

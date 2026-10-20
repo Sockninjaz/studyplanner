@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Try to persist to DB if the user is authenticated
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (session?.user?.email) {
       try {
         await dbConnect();

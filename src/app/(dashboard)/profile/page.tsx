@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
-import { LogOut, Star, ChevronRight, User, Shield, Trash2, Bot, Settings as SettingsIcon, Sun, Moon, Palette, Compass, Check, Loader2 } from 'lucide-react';
+import { LogOut, Star, ChevronRight, User, Shield, Trash2, Bot, Settings as SettingsIcon, Sun, Moon, Palette, Compass, Check, Loader2, BookOpen, Plus, Edit2, X, Languages } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface UserPreferences {
   name?: string;
@@ -17,10 +18,32 @@ interface UserPreferences {
   enable_daily_limits: boolean;
 }
 
+const COMMON_TEXTBOOK_SUGGESTIONS = [
+  'Pulsar Natuurkunde',
+  'Systematische Natuurkunde',
+  'Nova Natuurkunde',
+  'Overal Natuurkunde',
+  'Stevin Natuurkunde',
+  'Chemie Overal',
+  'Nova Scheikunde',
+  'Chemie (Malmberg)',
+  'Biologie voor Jou (BVJ)',
+  'Nectar Biologie',
+  '10voorBiologie',
+  'Getal & Ruimte',
+  'Moderne Wiskunde',
+  'Feniks Geschiedenis',
+  'Geschiedenis Werkplaats',
+  'Memo Geschiedenis',
+  'Campbell Biology',
+  'Polaris',
+];
+
 export default function ProfilePage() {
   const router = useRouter();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
+  const { locale, setLocale, t } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
   const handleLogout = async () => {
@@ -51,6 +74,16 @@ export default function ProfilePage() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Textbooks state
+  const [textbooks, setTextbooks] = useState<Array<{ subject: string; textbook: string }>>([]);
+  const [loadingTextbooks, setLoadingTextbooks] = useState(true);
+  const [isAddingTextbook, setIsAddingTextbook] = useState(false);
+  const [newSubject, setNewSubject] = useState('');
+  const [newTextbook, setNewTextbook] = useState('');
+  const [editingSubject, setEditingSubject] = useState<string | null>(null);
+  const [editingTextbook, setEditingTextbook] = useState('');
+  const [textbookActionLoading, setTextbookActionLoading] = useState(false);
+
   // Password state
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [pwdCurrent, setPwdCurrent] = useState('');
@@ -72,8 +105,65 @@ export default function ProfilePage() {
     }
   };
 
+  const fetchTextbooks = async () => {
+    try {
+      const res = await fetch('/api/user/textbooks');
+      if (res.ok) {
+        const data = await res.json();
+        setTextbooks(data.textbooks || []);
+      }
+    } catch (err) {
+      console.error('Failed to load textbooks:', err);
+    } finally {
+      setLoadingTextbooks(false);
+    }
+  };
+
+  const handleSaveTextbook = async (subj: string, tb: string) => {
+    if (!subj.trim() || !tb.trim()) return;
+    setTextbookActionLoading(true);
+    try {
+      const res = await fetch('/api/user/textbooks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: subj.trim(), textbook: tb.trim() })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTextbooks(data.textbooks || []);
+        setIsAddingTextbook(false);
+        setNewSubject('');
+        setNewTextbook('');
+        setEditingSubject(null);
+        setEditingTextbook('');
+      }
+    } catch (err) {
+      console.error('Failed to save textbook:', err);
+    } finally {
+      setTextbookActionLoading(false);
+    }
+  };
+
+  const handleDeleteTextbook = async (subj: string) => {
+    setTextbookActionLoading(true);
+    try {
+      const res = await fetch(`/api/user/textbooks?subject=${encodeURIComponent(subj)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTextbooks(data.textbooks || []);
+      }
+    } catch (err) {
+      console.error('Failed to delete textbook:', err);
+    } finally {
+      setTextbookActionLoading(false);
+    }
+  };
+
   useEffect(() => { 
     fetchPreferences(); 
+    fetchTextbooks();
     setMounted(true);
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -194,7 +284,7 @@ export default function ProfilePage() {
   const initials = session?.user?.name?.charAt(0)?.toUpperCase() || 'U';
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-900 no-scrollbar pb-24 lg:pb-12">
+    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-slate-900 no-scrollbar pb-24 xl:pb-12">
       
       {/* Hero header - full width but centers content */}
       <div className="px-5 pt-8 pb-6">
@@ -219,14 +309,14 @@ export default function ProfilePage() {
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-semibold transition-colors cursor-pointer border border-indigo-200/60 dark:border-indigo-800/60"
               >
                 <Compass size={14} />
-                Restart Onboarding
+                {locale === 'nl' ? 'Onboarding opnieuw starten' : 'Restart Onboarding'}
               </button>
               <button
                 onClick={handleLogout}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full text-xs font-semibold transition-colors cursor-pointer"
               >
                 <LogOut size={14} />
-                Log Out
+                {locale === 'nl' ? 'Uitloggen' : 'Log Out'}
               </button>
             </div>
           </div>
@@ -236,6 +326,54 @@ export default function ProfilePage() {
       {/* Main Settings Container (Max Width for Desktop) */}
       <div className="px-4 space-y-6 max-w-3xl mx-auto">
 
+        {/* --- LANGUAGE / TAAL --- */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
+              <Languages size={16} className="text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <h2 className="font-bold text-slate-800 dark:text-white text-sm">
+              {locale === 'nl' ? 'Taal / Language' : 'Language'}
+            </h2>
+          </div>
+          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <label className="font-semibold text-sm text-slate-900 dark:text-white block mb-0.5">
+                {locale === 'nl' ? 'Taal van de app' : 'App Language'}
+              </label>
+              <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400">
+                {locale === 'nl' 
+                  ? 'Kies tussen Nederlands en Engels. Automatisch gedetecteerd voor Nederland.' 
+                  : 'Choose between English and Dutch. Auto-detected for the Netherlands.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setLocale('nl')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  locale === 'nl'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Nederlands
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocale('en')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  locale === 'en'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                English
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* --- PERSONAL INFORMATION --- */}
         {!loading && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
@@ -244,13 +382,13 @@ export default function ProfilePage() {
                 <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
                   <User size={16} className="text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <h2 className="font-bold text-slate-800 dark:text-white text-sm">Personal Information</h2>
+                <h2 className="font-bold text-slate-800 dark:text-white text-sm">{locale === 'nl' ? 'Persoonlijke Gegevens' : 'Personal Information'}</h2>
               </div>
               {renderSaveStatus()}
             </div>
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Full Name</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">{locale === 'nl' ? 'Volledige Naam' : 'Full Name'}</label>
                 <input 
                   type="text" 
                   value={preferences.name || ''} 
@@ -259,7 +397,7 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email Address</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">{locale === 'nl' ? 'E-mailadres' : 'Email Address'}</label>
                 <input 
                   type="email" 
                   value={preferences.email || ''} 
@@ -278,19 +416,19 @@ export default function ProfilePage() {
               <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
                 <Palette size={16} className="text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h2 className="font-bold text-slate-800 dark:text-white text-sm">Appearance</h2>
+              <h2 className="font-bold text-slate-800 dark:text-white text-sm">{locale === 'nl' ? 'Weergave' : 'Appearance'}</h2>
             </div>
             <div className="p-4 flex items-center justify-between gap-4">
               <div>
-                <label className="font-semibold text-sm text-slate-900 dark:text-white block mb-0.5">Dark Mode</label>
-                <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400">Toggle between light and dark themes.</p>
+                <label className="font-semibold text-sm text-slate-900 dark:text-white block mb-0.5">{locale === 'nl' ? 'Donkere Modus' : 'Dark Mode'}</label>
+                <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400">{locale === 'nl' ? 'Wissel tussen lichte en donkere modus.' : 'Toggle between light and dark themes.'}</p>
               </div>
               <button 
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-sm"
               >
                 {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                {theme === 'dark' ? (locale === 'nl' ? 'Lichte Modus' : 'Light Mode') : (locale === 'nl' ? 'Donkere Modus' : 'Dark Mode')}
               </button>
             </div>
           </div>
@@ -304,7 +442,7 @@ export default function ProfilePage() {
                 <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
                   <SettingsIcon size={16} className="text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <h2 className="font-bold text-slate-800 dark:text-white text-sm">Study Preferences</h2>
+                <h2 className="font-bold text-slate-800 dark:text-white text-sm">{locale === 'nl' ? 'Studie Voorkeuren' : 'Study Preferences'}</h2>
               </div>
               {renderSaveStatus()}
             </div>
@@ -400,6 +538,181 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* --- MY TEXTBOOKS (SAVED PER SUBJECT) --- */}
+        {!loading && (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
+                  <BookOpen size={16} className="text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-slate-800 dark:text-white text-sm">My Textbooks / Boeken per Vak</h2>
+                </div>
+              </div>
+              <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full">
+                {textbooks.length} {textbooks.length === 1 ? 'book' : 'books'}
+              </span>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                When you upload a PTA or syllabus that only lists topic names, the AI maps the topics to your chosen textbook for that subject. Textbooks you type during exam creation are also automatically saved here.
+              </p>
+
+              {loadingTextbooks ? (
+                <div className="flex items-center justify-center py-6 text-slate-400 gap-2 text-xs">
+                  <Loader2 size={16} className="animate-spin text-indigo-500" />
+                  <span>Loading your textbooks...</span>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {textbooks.length === 0 && !isAddingTextbook && (
+                    <div className="text-center py-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl px-4">
+                      <BookOpen size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">No textbooks saved yet</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                        Whenever you enter a textbook during exam creation, it will be automatically remembered here.
+                      </p>
+                    </div>
+                  )}
+
+                  {textbooks.map((item, idx) => (
+                    <div 
+                      key={idx}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 gap-3"
+                    >
+                      {editingSubject === item.subject ? (
+                        <div className="flex-1 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                          <span className="font-semibold text-xs text-slate-700 dark:text-slate-200 shrink-0 min-w-[120px]">
+                            {item.subject}
+                          </span>
+                          <input 
+                            type="text"
+                            list="profile-textbook-suggestions"
+                            value={editingTextbook}
+                            onChange={(e) => setEditingTextbook(e.target.value)}
+                            className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="e.g. Pulsar 3e editie"
+                          />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => handleSaveTextbook(item.subject, editingTextbook)}
+                              disabled={textbookActionLoading}
+                              className="px-2.5 py-1.5 bg-indigo-600 text-white dark:text-slate-900 rounded-lg text-xs font-semibold hover:bg-indigo-700 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                            >
+                              <Check size={12} /> Save
+                            </button>
+                            <button
+                              onClick={() => setEditingSubject(null)}
+                              className="px-2 py-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg text-xs cursor-pointer"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2.5">
+                            <span className="px-2.5 py-1 bg-indigo-100/70 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold rounded-lg text-xs">
+                              {item.subject}
+                            </span>
+                            <span className="font-medium text-xs text-slate-800 dark:text-slate-200">
+                              {item.textbook}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                            <button
+                              onClick={() => {
+                                setEditingSubject(item.subject);
+                                setEditingTextbook(item.textbook);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                              title="Edit textbook"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTextbook(item.subject)}
+                              disabled={textbookActionLoading}
+                              className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Remove textbook"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add New Textbook Form */}
+                  {isAddingTextbook ? (
+                    <div className="p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Subject / Vak
+                          </label>
+                          <input 
+                            type="text"
+                            value={newSubject}
+                            onChange={(e) => setNewSubject(e.target.value)}
+                            placeholder="e.g. Natuurkunde, Biologie..."
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Textbook / Methode
+                          </label>
+                          <input 
+                            type="text"
+                            list="profile-textbook-suggestions"
+                            value={newTextbook}
+                            onChange={(e) => setNewTextbook(e.target.value)}
+                            placeholder="e.g. Pulsar 3e editie, Nova..."
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                      <datalist id="profile-textbook-suggestions">
+                        {COMMON_TEXTBOOK_SUGGESTIONS.map((tb, idx) => (
+                          <option key={idx} value={tb} />
+                        ))}
+                      </datalist>
+                      <div className="flex items-center gap-2 justify-end pt-1">
+                        <button
+                          onClick={() => setIsAddingTextbook(false)}
+                          className="px-3 py-1.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleSaveTextbook(newSubject, newTextbook)}
+                          disabled={textbookActionLoading || !newSubject.trim() || !newTextbook.trim()}
+                          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white dark:text-slate-900 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                          <Check size={13} />
+                          <span>Save Textbook</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setIsAddingTextbook(true)}
+                      className="w-full py-2.5 px-3 border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Plus size={14} />
+                      <span>Add Subject Textbook</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* --- SECURITY --- */}
         {!loading && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
@@ -489,8 +802,8 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Other Links (Visible on Mobile) */}
-        <div className="lg:hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden mt-4">
+        {/* Other Links (Visible on Mobile / iPad) */}
+        <div className="xl:hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden mt-4">
           <a
             href="/upgrade"
             className="w-full flex items-center gap-4 px-4 py-4 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors border-b border-gray-50 dark:border-slate-800"
@@ -499,8 +812,8 @@ export default function ProfilePage() {
               <Star size={18} className="text-amber-600 dark:text-amber-400" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-semibold text-sm text-amber-700 dark:text-amber-400">Upgrade Plan</p>
-              <p className="text-xs text-amber-600/70 dark:text-amber-500/60 mt-0.5">Unlock premium features</p>
+              <p className="font-semibold text-sm text-amber-700 dark:text-amber-400">{locale === 'nl' ? 'Abonnement upgraden' : 'Upgrade Plan'}</p>
+              <p className="text-xs text-amber-600/70 dark:text-amber-500/60 mt-0.5">{locale === 'nl' ? 'Ontgrendel alle premium functies' : 'Unlock premium features'}</p>
             </div>
             <ChevronRight size={16} className="text-amber-300 dark:text-amber-700 flex-shrink-0" />
           </a>
@@ -513,8 +826,8 @@ export default function ProfilePage() {
               <Compass size={18} className="text-indigo-600 dark:text-indigo-400" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-semibold text-sm text-indigo-700 dark:text-indigo-300">Restart Onboarding</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Reconfigure country, track, and year</p>
+              <p className="font-semibold text-sm text-indigo-700 dark:text-indigo-300">{locale === 'nl' ? 'Onboarding opnieuw starten' : 'Restart Onboarding'}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{locale === 'nl' ? 'Land, niveau en leerjaar aanpassen' : 'Reconfigure country, track, and year'}</p>
             </div>
             <ChevronRight size={16} className="text-slate-300 dark:text-slate-700 flex-shrink-0" />
           </button>
@@ -527,8 +840,8 @@ export default function ProfilePage() {
               <LogOut size={18} className="text-red-500" />
             </div>
             <div className="text-left">
-              <p className="font-semibold text-sm text-red-600 dark:text-red-400">Log out</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Sign out of your account</p>
+              <p className="font-semibold text-sm text-red-600 dark:text-red-400">{locale === 'nl' ? 'Uitloggen' : 'Log out'}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{locale === 'nl' ? 'Afmelden bij je account' : 'Sign out of your account'}</p>
             </div>
           </button>
         </div>

@@ -1,14 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import useSWR from 'swr';
-import SessionSidebar from './session-sidebar';
+import { useState, useEffect, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import CreateTaskModal from './create-task-modal';
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { useCalendarEvents, useBlockedDays } from '@/hooks/use-calendar-data';
 
 interface CalendarListViewProps {
-  onSessionClick?: (sessionId: string) => void;
+  onSessionClick?: (sessionId: string, date?: string) => void;
   onTaskClick?: (taskId: string) => void;
   onAddItemClick?: (date: string) => void;
   onExamView?: (examId: string) => void;
@@ -16,6 +13,7 @@ interface CalendarListViewProps {
   sidebarOpen?: boolean;
   sidebarCollapsed?: boolean;
   viewMode?: 'all' | 'today';
+  onTodayInViewChange?: (inView: boolean) => void;
 }
 
 interface Event {
@@ -38,7 +36,7 @@ interface GroupedEvents {
   [date: string]: Event[];
 }
 
-export default function CalendarListView({
+const CalendarListView = forwardRef<any, CalendarListViewProps>(function CalendarListView({
   onSessionClick,
   onTaskClick,
   onAddItemClick,
@@ -46,11 +44,11 @@ export default function CalendarListView({
   onExamEdit,
   sidebarOpen,
   sidebarCollapsed,
-  viewMode = 'all'
-}: CalendarListViewProps) {
-  const { data, error, isLoading, mutate } = useSWR('/api/calendar/events', fetcher);
-  const { data: blockedData, mutate: mutateBlocked } = useSWR('/api/blocked-days', fetcher);
-  const [groupedEvents, setGroupedEvents] = useState<GroupedEvents>({});
+  viewMode = 'all',
+  onTodayInViewChange,
+}: CalendarListViewProps, ref) {
+  const { events: rawEventsData, error, isLoading, mutate } = useCalendarEvents();
+  const { rawDates: rawBlockedDates, mutate: mutateBlocked } = useBlockedDays();
   const [draggedSession, setDraggedSession] = useState<Event | null>(null);
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [togglingBlock, setTogglingBlock] = useState(false);
@@ -58,58 +56,31 @@ export default function CalendarListView({
   const [selectedTaskDate, setSelectedTaskDate] = useState<string>('');
   const [openTaskMenuId, setOpenTaskMenuId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const hasScrolledRef = useRef(false);
+  const isTodayInViewRef = useRef(true);
+  const onTodayInViewChangeRef = useRef(onTodayInViewChange);
+  onTodayInViewChangeRef.current = onTodayInViewChange;
 
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    if (!isLoading && Object.keys(groupedEvents).length > 0 && !hasScrolledRef.current) {
-      const todayString = new Date().toDateString();
-      const todayElement = document.getElementById(`date-${todayString}`);
-      if (todayElement) {
-        todayElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-        hasScrolledRef.current = true;
-      }
+    setMounted(true);
+  }, []);
+
+  const blockedDays = useMemo(() => {
+    return new Set<string>(
+      rawBlockedDates.map((d: string) => {
+        const date = new Date(d + 'T00:00:00.000Z');
+        return date.toDateString();
+      })
+    );
+  }, [rawBlockedDates]);
+
+  // Synchronously compute grouped events once mounted on client to prevent SSR hydration mismatch
+  const groupedEvents = useMemo<GroupedEvents>(() => {
+    if (!mounted) {
+      return {};
     }
-  }, [groupedEvents, isLoading]);
-
-  const blockedDays: Set<string> = new Set(
-    blockedData?.data?.map((d: string) => {
-      const date = new Date(d + 'T00:00:00.000Z');
-      return date.toDateString();
-    }) || []
-  );
-
-  useEffect(() => {
-    // Listen for calendar updates and exam deletions
-    const handleCalendarUpdate = () => {
-      mutate();
-    };
-
-    const handleExamDeletion = () => {
-      mutate();
-    };
-
-    // Close task menu when clicking outside
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openTaskMenuId) {
-        setOpenTaskMenuId(null);
-      }
-    };
-
-    window.addEventListener('calendarUpdated', handleCalendarUpdate);
-    window.addEventListener('preferencesUpdated', handleCalendarUpdate);
-    window.addEventListener('examDeleted', handleExamDeletion);
-    document.addEventListener('click', handleClickOutside);
-
-    return () => {
-      window.removeEventListener('calendarUpdated', handleCalendarUpdate);
-      window.removeEventListener('preferencesUpdated', handleCalendarUpdate);
-      window.removeEventListener('examDeleted', handleExamDeletion);
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [openTaskMenuId, mutate]);
-
-  useEffect(() => {
-    // Determine the range of dates to display
     const grouped: GroupedEvents = {};
     const today = new Date();
 
@@ -126,9 +97,9 @@ export default function CalendarListView({
       }
     }
 
-    // Then add events to the appropriate dates
-    if (data?.data) {
-      const events: Event[] = data.data.map((event: any) => ({
+    // Add events to the appropriate dates
+    if (rawEventsData && rawEventsData.length > 0) {
+      const events: Event[] = rawEventsData.map((event: any) => ({
         id: event.id,
         title: event.title,
         date: event.start ? new Date(event.start).toDateString() : '',
@@ -151,12 +122,11 @@ export default function CalendarListView({
 
       // Add structure for past dates that have events (only in 'all' mode)
       if (viewMode === 'all') {
+        const now = new Date();
         relevantEvents.forEach(event => {
           if (event.startTime) {
             const eventDate = new Date(event.startTime);
-            const now = new Date();
             if (eventDate < now && !grouped[event.date]) {
-              // This is a past date with events, add it to the structure
               grouped[event.date] = [];
             }
           }
@@ -191,8 +161,122 @@ export default function CalendarListView({
       sortedGrouped[date] = grouped[date];
     });
 
-    setGroupedEvents(sortedGrouped);
-  }, [data, viewMode]);
+    return sortedGrouped;
+  }, [rawEventsData, viewMode]);
+
+  const checkTodayInView = useCallback(() => {
+    if (!containerRef.current) return true;
+    const todayString = new Date().toDateString();
+    const todayElement = document.getElementById(`date-${todayString}`);
+    if (!todayElement) return true;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const elementRect = todayElement.getBoundingClientRect();
+
+    // Today is in view if its top/bottom overlaps the container visible area
+    return elementRect.bottom >= containerRect.top + 10 && elementRect.top <= containerRect.bottom - 10;
+  }, []);
+
+  const scrollToToday = useCallback(() => {
+    const todayString = new Date().toDateString();
+    const todayElement = document.getElementById(`date-${todayString}`);
+    if (todayElement) {
+      todayElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        const inView = checkTodayInView();
+        if (inView !== isTodayInViewRef.current) {
+          isTodayInViewRef.current = inView;
+          onTodayInViewChangeRef.current?.(inView);
+        }
+      }, 300);
+      setTimeout(() => {
+        const inView = checkTodayInView();
+        if (inView !== isTodayInViewRef.current) {
+          isTodayInViewRef.current = inView;
+          onTodayInViewChangeRef.current?.(inView);
+        }
+      }, 650);
+    }
+  }, [checkTodayInView]);
+
+  useImperativeHandle(ref, () => ({
+    scrollToToday,
+  }), [scrollToToday]);
+
+  useEffect(() => {
+    if (hasScrolledRef.current) return;
+    if (!isLoading && Object.keys(groupedEvents).length > 0) {
+      const todayString = new Date().toDateString();
+      const todayElement = document.getElementById(`date-${todayString}`);
+      if (todayElement) {
+        hasScrolledRef.current = true;
+        todayElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+        setTimeout(() => {
+          const inView = checkTodayInView();
+          isTodayInViewRef.current = inView;
+          onTodayInViewChangeRef.current?.(inView);
+        }, 60);
+      }
+    }
+  }, [groupedEvents, isLoading, checkTodayInView]);
+
+  useEffect(() => {
+    const scroller = containerRef.current;
+    if (!scroller) return;
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const inView = checkTodayInView();
+        if (inView !== isTodayInViewRef.current) {
+          isTodayInViewRef.current = inView;
+          onTodayInViewChangeRef.current?.(inView);
+        }
+      });
+    };
+
+    scroller.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      scroller.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [checkTodayInView, groupedEvents]);
+
+  useEffect(() => {
+    // Listen for calendar updates and exam deletions
+    const handleCalendarUpdate = () => {
+      mutate();
+    };
+
+    const handleExamDeletion = () => {
+      mutate();
+    };
+
+    // Close task menu when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openTaskMenuId) {
+        setOpenTaskMenuId(null);
+      }
+    };
+
+    window.addEventListener('calendarUpdated', handleCalendarUpdate);
+    window.addEventListener('preferencesUpdated', handleCalendarUpdate);
+    window.addEventListener('examDeleted', handleExamDeletion);
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      window.removeEventListener('calendarUpdated', handleCalendarUpdate);
+      window.removeEventListener('preferencesUpdated', handleCalendarUpdate);
+      window.removeEventListener('examDeleted', handleExamDeletion);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [openTaskMenuId, mutate]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -214,18 +298,11 @@ export default function CalendarListView({
     }
   };
 
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: false
-    });
-  };
-
   const handleEventClick = (event: Event) => {
     if (event.type === 'session' && event.sessionId && onSessionClick) {
-      onSessionClick(event.sessionId);
+      const d = event.date ? new Date(event.date) : (event.startTime ? new Date(event.startTime) : null);
+      const dateStr = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : undefined;
+      onSessionClick(event.sessionId, dateStr);
     } else if (event.type === 'exam' && onExamView) {
       onExamView(event.id);
     } else if (event.type === 'task' && event.taskId && onTaskClick) {
@@ -333,7 +410,7 @@ export default function CalendarListView({
     }
   };
 
-  if (error) {
+  if (error && Object.keys(groupedEvents).length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center p-6">
         <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center mb-2">
@@ -347,7 +424,7 @@ export default function CalendarListView({
     );
   }
 
-  if (isLoading) {
+  if (!mounted || (isLoading && (!rawEventsData || rawEventsData.length === 0))) {
     return (
       <div className="h-full overflow-y-auto p-4 max-w-4xl mx-auto space-y-6 animate-pulse">
         {[1, 2, 3].map((i) => (
@@ -364,7 +441,7 @@ export default function CalendarListView({
   }
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div ref={containerRef} className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto">
 
         {/* Events List */}
@@ -384,6 +461,7 @@ export default function CalendarListView({
               <div
                 key={date}
                 id={`date-${date}`}
+                suppressHydrationWarning
                 className="border-b border-[#4a4a4a] dark:border-slate-700 border-opacity-20 pb-6 last:border-b-0"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, date)}
@@ -402,7 +480,16 @@ export default function CalendarListView({
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                    <h3 className="text-sm font-medium text-[#4a4a4a] dark:text-slate-200" suppressHydrationWarning>{formatDate(date)}</h3>
+                    <h3 className={`text-sm font-medium flex items-center gap-1.5 ${
+                      date === new Date().toDateString() ? 'text-indigo-900 dark:text-indigo-200 font-semibold' : 'text-[#4a4a4a] dark:text-slate-200'
+                    }`} suppressHydrationWarning>
+                      {formatDate(date)}
+                      {date === new Date().toDateString() && (
+                        <span suppressHydrationWarning className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-indigo-600/15 text-indigo-800 dark:text-indigo-300 border border-indigo-600/30">
+                          Today
+                        </span>
+                      )}
+                    </h3>
                     {events.length > 0 && (
                       <span className="text-xs text-[#4a4a4a] dark:text-slate-400 opacity-50">
                         {events.length} {events.length === 1 ? 'item' : 'items'}
@@ -471,10 +558,18 @@ export default function CalendarListView({
                         e.stopPropagation();
                         if (togglingBlock) return;
                         setTogglingBlock(true);
+                        const d = new Date(date);
+                        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                        const isBlocked = blockedDays.has(date);
+
+                        // Instant optimistic UI update (0ms feedback)
+                        const currentDates = Array.from(blockedDays);
+                        const nextDates = isBlocked
+                          ? currentDates.filter(x => x !== date && x !== dateStr)
+                          : [...currentDates, date, dateStr];
+                        mutateBlocked({ data: nextDates }, false);
+
                         try {
-                          const d = new Date(date);
-                          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                          const isBlocked = blockedDays.has(date);
                           await fetch('/api/blocked-days', {
                             method: isBlocked ? 'DELETE' : 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -483,6 +578,7 @@ export default function CalendarListView({
                           mutateBlocked();
                         } catch (err) {
                           console.error('Failed to toggle block:', err);
+                          mutateBlocked();
                         } finally {
                           setTogglingBlock(false);
                         }
@@ -517,11 +613,11 @@ export default function CalendarListView({
                           onDragStart={(e) => handleDragStart(e, event)}
                           onDragEnd={handleDragEnd}
                           onClick={() => handleEventClick(event)}
-                          className={`group flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:cursor-pointer ${event.type === 'session' && !!event.sessionId
+                          className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer hover:cursor-pointer ${event.type === 'session' && !!event.sessionId
                             ? 'hover:cursor-grab active:cursor-grabbing'
                             : ''
                             } ${event.type === 'exam'
-                              ? `border-opacity-30 bg-opacity-10 hover:bg-opacity-20`
+                              ? `border-2 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md`
                               : event.type === 'task'
                                 ? event.isCompleted
                                   ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40'
@@ -532,17 +628,16 @@ export default function CalendarListView({
                             }`}
                           style={{
                             borderColor: event.type === 'exam' ? eventColor : undefined,
-                            backgroundColor: event.type === 'exam' ? `${eventColor}10` : undefined
                           }}
                         >
                           {/* Event Type Icon */}
                           <div
-                            className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 text-white"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white shadow-xs"
                             style={{ backgroundColor: event.isCompleted && event.type === 'task' ? '#10b981' : eventColor }}
                           >
                             {event.type === 'exam' ? (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                <path d="M4 2v20M4 4h14l-3 5 3 5H4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             ) : event.type === 'task' ? (
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -558,8 +653,19 @@ export default function CalendarListView({
                           {/* Event Details */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
+                              {event.type === 'exam' && (
+                                <span
+                                  className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
+                                  style={{
+                                    backgroundColor: `${eventColor}20`,
+                                    color: eventColor,
+                                  }}
+                                >
+                                  EXAM DEADLINE
+                                </span>
+                              )}
                               <h4
-                                className={`text-sm font-medium truncate ${event.isCompleted ? 'line-through opacity-70' : ''
+                                className={`text-sm font-bold truncate ${event.isCompleted ? 'line-through opacity-70' : ''
                                   } ${event.type === 'exam' ? '' : 'text-[#4a4a4a] dark:text-slate-200'}`}
                                 style={{
                                   color: event.type === 'exam' ? eventColor : undefined
@@ -673,4 +779,6 @@ export default function CalendarListView({
       />
     </div>
   );
-}
+});
+
+export default CalendarListView;

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Exam from '@/models/Exam';
 import User from '@/models/User';
@@ -7,7 +8,7 @@ import StudySession from '@/models/StudySession';
 import Task from '@/models/Task';
 
 export async function GET(request: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -15,18 +16,26 @@ export async function GET(request: Request) {
   await dbConnect();
 
   try {
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean();
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get all exams for the user
-    const exams = await Exam.find({ user: user._id });
-    const validExamIds = new Set(exams.map(e => e._id.toString()));
+    // Parallelize database queries with lean() and exact projections to avoid reading rawMaterialText, notes, and large subdocs
+    const [exams, rawSessions, tasks] = await Promise.all([
+      Exam.find({ user: user._id })
+        .select('_id subject date color isCompleted')
+        .lean(),
+      StudySession.find({ user: user._id })
+        .select('_id exam subject title shortTitle startTime endTime isCompleted')
+        .lean(),
+      Task.find({ userId: user._id })
+        .select('_id name description date isCompleted')
+        .lean(),
+    ]);
 
-    // Get all study sessions for the user, but only for valid exams
-    let rawSessions = await StudySession.find({ user: user._id });
-    let validSessions = rawSessions.filter(session => validExamIds.has(session.exam?.toString()));
+    const validExamIds = new Set(exams.map(e => e._id.toString()));
+    const validSessions = rawSessions.filter(session => validExamIds.has(session.exam?.toString()));
 
     // Deduplicate sessions in memory by exam + startTime + title to prevent duplicate chips
     const seenSessionKeys = new Set<string>();
@@ -38,9 +47,6 @@ export async function GET(request: Request) {
         sessions.push(session);
       }
     }
-
-    // Get all tasks for the user
-    const tasks = await Task.find({ userId: user._id });
 
     // Colors for exams
     const EXAM_COLORS = [
@@ -138,7 +144,11 @@ export async function GET(request: Request) {
           sessionId: session._id.toString(),
           subject: session.subject,
           isCompleted: session.isCompleted,
-          color: examColor
+          color: examColor,
+          title: session.title,
+          shortTitle: displayTitle,
+          startTime: session.startTime,
+          endTime: session.endTime,
         }
       };
     });
