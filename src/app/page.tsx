@@ -7,11 +7,10 @@ export const metadata = {
   description: 'Automate your exam schedule with intelligent waterfill algorithms and a personal AI coach. Turn dense syllabi into calm daily progress.',
 };
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams?: { preview?: string };
+export default async function Home(props: {
+  searchParams?: Promise<{ preview?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await getServerSession();
   if (session?.user && !searchParams?.preview) {
     redirect('/today');

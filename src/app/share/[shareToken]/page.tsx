@@ -52,8 +52,8 @@ interface ShareData {
   timeline: TimelineItem[];
 }
 
-export default function PublicSharePage({ params }: { params: { shareToken: string } }) {
-  const { shareToken } = params;
+export default function PublicSharePage({ params }: { params: Promise<{ shareToken: string }> }) {
+  const { shareToken } = React.use(params);
   const [data, setData] = useState<ShareData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
