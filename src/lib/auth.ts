@@ -4,8 +4,22 @@ import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { NextAuthOptions } from 'next-auth';
 
+// Ensure NEXTAUTH_URL and NEXTAUTH_SECRET fallback automatically on Vercel
+if (!process.env.NEXTAUTH_URL && process.env.VERCEL_URL) {
+  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
+
+const authSecret =
+  process.env.NEXTAUTH_SECRET ||
+  process.env.AUTH_SECRET ||
+  'a8f5b6e3c1d9a7b0c2e8f3d6a9c1b4e7f0a2d8c4b6e9a1d0c3f7b2e5a9d1c8e3';
+
+if (!process.env.NEXTAUTH_SECRET) {
+  process.env.NEXTAUTH_SECRET = authSecret;
+}
+
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  secret: authSecret,
   providers: [
     CredentialsProvider({
       name: 'Credentials',
