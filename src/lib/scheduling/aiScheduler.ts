@@ -112,7 +112,7 @@ export async function generateAISchedule(
           } else {
             // Split into digestible chunks around targetSessionMins
             const numChunks = Math.max(2, Math.ceil(totalChapterMins / targetSessionMins));
-            const chunkDuration = Math.min(90, Math.max(30, Math.round(totalChapterMins / numChunks)));
+            const chunkDuration = Math.min(90, Math.max(30, Math.round(totalChapterMins / numChunks / 5) * 5));
             for (let chunkIdx = 1; chunkIdx <= numChunks; chunkIdx++) {
               blocks.push({
                 content: numChunks > 1 ? `${c.chapter} (${partWord} ${chunkIdx}/${numChunks})` : c.chapter,

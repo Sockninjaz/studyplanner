@@ -11,6 +11,9 @@ import BlockedDay from '@/models/BlockedDay';
 import { isValidCalendarDate } from '@/lib/dateUtils';
 import { stripPromptArtifacts } from '@/lib/ai/prompts';
 
+// Exam creation runs scheduling + AI session enrichment; give it room on serverless hosts
+export const maxDuration = 60;
+
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {

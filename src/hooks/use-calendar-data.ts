@@ -6,7 +6,22 @@ import { useMemo, useCallback } from 'react';
 const CALENDAR_CACHE_KEY = 'cached_calendar_events_v2';
 const BLOCKED_DAYS_CACHE_KEY = 'cached_blocked_days_v2';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err: any = new Error(`Request failed with status ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
+};
+
+// Retry transient failures (cold starts, DB hiccups) but never retry auth errors
+const onErrorRetry = (err: any, _key: string, _config: any, revalidate: any, { retryCount }: { retryCount: number }) => {
+  if (err?.status === 401 || err?.status === 404) return;
+  if (retryCount >= 4) return;
+  setTimeout(() => revalidate({ retryCount }), 1000 * (retryCount + 1));
+};
 
 export function getCachedCalendarEvents(): any | undefined {
   if (typeof window === 'undefined') return undefined;
@@ -85,6 +100,7 @@ export function useCalendarEvents() {
       revalidateOnFocus: true,
       revalidateIfStale: true,
       keepPreviousData: true,
+      onErrorRetry,
       onSuccess: (freshData) => {
         saveCachedCalendarEvents(freshData);
       },
@@ -126,6 +142,7 @@ export function useBlockedDays() {
     revalidateOnFocus: true,
     revalidateIfStale: true,
     keepPreviousData: true,
+    onErrorRetry,
     onSuccess: (fresh) => {
       if (Array.isArray(fresh?.data)) {
         saveCachedBlockedDays(fresh.data);

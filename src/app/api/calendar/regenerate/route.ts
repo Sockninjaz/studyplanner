@@ -5,6 +5,8 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { regenerateSchedule } from '@/lib/scheduling/regenerateSchedule';
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {

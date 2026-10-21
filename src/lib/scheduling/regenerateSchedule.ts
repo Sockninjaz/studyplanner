@@ -178,11 +178,18 @@ async function runRegenerateSchedule(
   const effectiveMaxHours = isAllowOverload ? 24 : (overridePrefs.daily_max_hours ?? overridePrefs.daily_study_limit ?? user.daily_study_limit ?? 4);
   const effectiveSoftLimit = isAllowOverload ? 24 : (overridePrefs.soft_daily_limit ?? user.soft_daily_limit ?? 2);
 
+  // The per-session length setting no longer exists in the UI, but the stored value (and the exam
+  // form payload) is stuck at the legacy default of 30 min. Derive a sensible session length from the
+  // user's preferred daily study time instead: ~half of it, snapped to 15 min, between 45 and 90 min.
+  // e.g. 2h preferred -> 60 min sessions, 3h+ -> 90 min sessions.
+  const preferredDailyMinutes = Math.min(effectiveSoftLimit, effectiveMaxHours) * 60;
+  const derivedSessionDuration = Math.min(90, Math.max(45, Math.round(preferredDailyMinutes / 2 / 15) * 15));
+
   const userInputs: any = {
     daily_max_hours: effectiveMaxHours,
     soft_daily_limit: effectiveSoftLimit,
     adjustment_percentage: overridePrefs.adjustment_percentage ?? user.adjustment_percentage ?? 25,
-    session_duration: overridePrefs.session_duration ?? user.session_duration ?? 30,
+    session_duration: derivedSessionDuration,
     enable_daily_limits: overridePrefs.enable_daily_limits !== undefined 
       ? overridePrefs.enable_daily_limits 
       : (user.enable_daily_limits !== false),
