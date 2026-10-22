@@ -352,6 +352,8 @@ async function runRegenerateSchedule(
             (isRev && /voor herhaling:|over herhaling:|for revision:|for herhaling:/i.test(txt)) ||
             /reactie- of processchema|processchema/i.test(txt) ||
             /kernbegrippen.*met behulp van BINAS/i.test(txt) ||
+            /binas tabel/i.test(txt) ||
+            /ruimtelijke vorm met het vsepr-model/i.test(txt) ||
             /Grammatica & idioom/i.test(txt)
           );
         });

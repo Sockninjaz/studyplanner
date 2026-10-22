@@ -329,19 +329,19 @@ export function getRevisionFallbackTasks(subject: string, chapters: string[], la
       return [
         {
           id: 'task-0',
-          text: `Schrijf de belangrijkste concepten, formules en Binas-tabellen van ${stofStr} uit je hoofd op en check wat je mist.`,
+          text: `Belangrijkste theorie, formules en begrippen van ${stofStr} kort herhalen.`,
           completed: false,
           sessionsCompleted: 0,
         },
         {
           id: 'task-1',
-          text: `Maak 4–6 gemengde examenvragen over ${summary || 'de getoetste hoofdstukken'} onder examentijd zonder in je boek te kijken.`,
+          text: `4–6 gemengde oefenopgaven maken over ${summary || 'de getoetste hoofdstukken'} onder examentijd.`,
           completed: false,
           sessionsCompleted: 0,
         },
         {
           id: 'task-2',
-          text: `Kijk na met de uitwerkingen en herhaal direct de 1 of 2 onderdelen waar je punten verloor.`,
+          text: `Kijk na met de uitwerkingen en herhaal direct de onderdelen waar je punten verloor.`,
           completed: false,
           sessionsCompleted: 0,
         }
@@ -352,7 +352,7 @@ export function getRevisionFallbackTasks(subject: string, chapters: string[], la
       return [
         {
           id: 'task-0',
-          text: `Noteer de belangrijkste formules en eenheden van ${stofStr} uit je hoofd en controleer met Binas tabel 35.`,
+          text: `Belangrijkste formules en eenheden van ${stofStr} kort herhalen.`,
           completed: false,
           sessionsCompleted: 0,
         },
@@ -398,7 +398,7 @@ export function getRevisionFallbackTasks(subject: string, chapters: string[], la
       return [
         {
           id: 'task-0',
-          text: `Neem de biologische processen en Binas-afbeeldingen van ${stofStr} uit je hoofd door en check wat je mist.`,
+          text: `Belangrijkste biologische processen en begrippen van ${stofStr} doornemen.`,
           completed: false,
           sessionsCompleted: 0,
         },
