@@ -341,12 +341,21 @@ async function runRegenerateSchedule(
       const examChapters = session._enrichMeta?.examChapters || [];
 
       let validCached = cached;
-      if (isRev && cached) {
-        // Discard bad cached tasks from old naive templates (e.g. "Theorie en kernbegrippen doornemen voor Herhaling: ...")
-        const hasBadRevisionTasks = cached.tasks?.some((t: any) => 
-          /voor herhaling:|over herhaling:|for revision:|for herhaling:/i.test(t.text || t.task || '')
-        );
-        if (hasBadRevisionTasks) {
+      if (cached) {
+        // Discard bad cached tasks from old naive templates:
+        // 1. Revision sessions with redundant "voor herhaling:"
+        // 2. Nonsensical tasks (e.g. processchema for Molecuulbouw or defining terms with BINAS)
+        // 3. Treating literature as grammar/idiom
+        const hasBadCachedTasks = cached.tasks?.some((t: any) => {
+          const txt = t.text || t.task || '';
+          return (
+            (isRev && /voor herhaling:|over herhaling:|for revision:|for herhaling:/i.test(txt)) ||
+            /reactie- of processchema|processchema/i.test(txt) ||
+            /kernbegrippen.*met behulp van BINAS/i.test(txt) ||
+            /Grammatica & idioom/i.test(txt)
+          );
+        });
+        if (hasBadCachedTasks) {
           validCached = undefined;
         }
       }
