@@ -33,7 +33,13 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [selectedExamId, setSelectedExamId] = useState<string | undefined>(undefined);
   const [selectedExam, setSelectedExam] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>(() => {
+    if (typeof window === 'undefined') return 'calendar';
+    const isPhone = window.matchMedia('(max-width: 767px)').matches;
+    if (isPhone) return 'list';
+    const savedMode = localStorage.getItem('calendarViewMode');
+    return savedMode === 'list' || savedMode === 'calendar' ? savedMode : 'calendar';
+  });
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState<{ x: number; y: number } | null>(null);
   const [isTogglingBlock, setIsTogglingBlock] = useState(false);
@@ -41,18 +47,8 @@ export default function CalendarPage() {
   const { blockedDays, mutate: mutateBlocked } = useBlockedDays();
 
   useEffect(() => {
-    // Check saved mode or phone on mount
-    const isPhone = window.matchMedia('(max-width: 767px)').matches;
-    if (isPhone) {
-      setViewMode('list');
-    } else {
-      const savedMode = localStorage.getItem('calendarViewMode');
-      if (savedMode === 'list' || savedMode === 'calendar') {
-        setViewMode(savedMode);
-      } else {
-        setViewMode('calendar');
-      }
-    }
+    // Explicitly revalidate calendar events when navigating to Schedule
+    mutate('/api/calendar/events');
 
     const handlePreferencesUpdated = () => {
       mutate('/api/calendar/events');
@@ -73,7 +69,7 @@ export default function CalendarPage() {
         window.removeEventListener('calendarUpdated', handleCalendarUpdate);
       }
     };
-  }, [mutate, viewMode]);
+  }, [mutate]);
 
   useEffect(() => {
     if (viewMode === 'calendar') {

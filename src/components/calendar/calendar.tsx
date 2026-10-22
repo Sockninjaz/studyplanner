@@ -436,7 +436,7 @@ const Calendar = forwardRef<any, CalendarProps>(({
 
   // Aggregate daily study sessions into consolidated summary cards with color-coded dot badges
   const processedEvents = useMemo(() => {
-    if (!mounted || !rawEvents || rawEvents.length === 0) return [];
+    if (!rawEvents || rawEvents.length === 0) return [];
     const rawEventsList: any[] = rawEvents;
 
     const exams: any[] = [];
@@ -521,6 +521,19 @@ const Calendar = forwardRef<any, CalendarProps>(({
     }, 0);
     return () => clearTimeout(timer);
   }, [blockedDays]);
+
+  // Ensure FullCalendar calculates dimensions and displays events immediately upon mount
+  useEffect(() => {
+    if (mounted && calendarRef.current) {
+      const timer = setTimeout(() => {
+        try {
+          const api = calendarRef.current?.getApi?.() as any;
+          api?.updateSize?.();
+        } catch {}
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [mounted, processedEvents.length]);
 
   if (error && processedEvents.length === 0) {
     return (

@@ -76,11 +76,8 @@ const CalendarListView = forwardRef<any, CalendarListViewProps>(function Calenda
     );
   }, [rawBlockedDates]);
 
-  // Synchronously compute grouped events once mounted on client to prevent SSR hydration mismatch
+  // Synchronously compute grouped events
   const groupedEvents = useMemo<GroupedEvents>(() => {
-    if (!mounted) {
-      return {};
-    }
     const grouped: GroupedEvents = {};
     const today = new Date();
 

@@ -1,6 +1,6 @@
 'use client';
 
-import useSWR from 'swr';
+import useSWR, { preload } from 'swr';
 import { useMemo, useCallback } from 'react';
 
 const CALENDAR_CACHE_KEY = 'cached_calendar_events_v2';
@@ -29,7 +29,7 @@ export function getCachedCalendarEvents(): any | undefined {
     const raw = localStorage.getItem(CALENDAR_CACHE_KEY);
     if (!raw) return undefined;
     const parsed = JSON.parse(raw);
-    if (parsed && Array.isArray(parsed.data)) {
+    if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) {
       return parsed;
     }
   } catch {
@@ -41,7 +41,7 @@ export function getCachedCalendarEvents(): any | undefined {
 export function saveCachedCalendarEvents(data: any): void {
   if (typeof window === 'undefined' || !data) return;
   try {
-    if (Array.isArray(data.data)) {
+    if (Array.isArray(data.data) && data.data.length > 0) {
       localStorage.setItem(CALENDAR_CACHE_KEY, JSON.stringify(data));
     }
   } catch {
@@ -80,12 +80,7 @@ export function saveCachedBlockedDays(dates: string[]): void {
 export function prefetchCalendarEvents(): void {
   if (typeof window === 'undefined') return;
   try {
-    fetch('/api/calendar/events').then(async (res) => {
-      if (res.ok) {
-        const data = await res.json();
-        saveCachedCalendarEvents(data);
-      }
-    }).catch(() => {});
+    preload('/api/calendar/events', fetcher);
   } catch {}
 }
 
@@ -99,6 +94,7 @@ export function useCalendarEvents() {
       fallbackData,
       revalidateOnFocus: true,
       revalidateIfStale: true,
+      revalidateOnMount: true,
       keepPreviousData: true,
       onErrorRetry,
       onSuccess: (freshData) => {
