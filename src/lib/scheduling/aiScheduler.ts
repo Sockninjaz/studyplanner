@@ -217,8 +217,11 @@ export async function generateAISchedule(
 
     const totalTopicMins = rawTopics.reduce((sum, t) => sum + t.durationMinutes, 0);
     const minDaysNeeded = Math.ceil(totalTopicMins / PREFERRED_MINUTES_PER_DAY);
-    // Active horizon: at least minDaysNeeded, up to MAX_HORIZON_DAYS or allValid length
-    const horizonCount = Math.max(minDaysNeeded, Math.min(allValid.length, MAX_HORIZON_DAYS));
+    // Active horizon: sized realistically based on the number of sessions (~2 days per session),
+    // at least minDaysNeeded + 1. Distant exams with few sessions (e.g. German in 3 weeks with only 4 sessions)
+    // will not start weeks in advance leaving multi-week retention gaps.
+    const targetHorizonDays = Math.max(minDaysNeeded + 1, Math.ceil(rawTopics.length * 2.0));
+    const horizonCount = Math.max(minDaysNeeded, Math.min(allValid.length, targetHorizonDays));
     const horizonDates = allValid.slice(-horizonCount);
 
     examValidDates.set(exam.id, { allValid, horizonDates });
@@ -249,7 +252,7 @@ export async function generateAISchedule(
 
   // Pass 2: Workload-Aware Interleaved Placement across all exams
   // Round-robin placement ensures subjects are studied in a balanced manner across available days
-  // while strictly staying under PREFERRED_MINUTES_PER_DAY (e.g. 1 hour/day) whenever possible.
+  // while strictly staying under PREFERRED_MINUTES_PER_DAY (e.g. 1-2 hours/day) whenever possible.
   let hasRemaining = true;
   while (hasRemaining) {
     hasRemaining = false;
@@ -267,6 +270,7 @@ export async function generateAISchedule(
       let minScore = Infinity;
 
       const candidatePool = horizonDates.length > 0 ? horizonDates : allValid;
+      const scheduledList = Array.from(examScheduledDays.get(exam.id) || []);
 
       // Iterate backwards so upcoming exams take precedence near their dates, leaving earlier slots balanced
       for (let i = candidatePool.length - 1; i >= 0; i--) {
@@ -276,16 +280,74 @@ export async function generateAISchedule(
         const hasSame = examScheduledDays.get(exam.id)?.has(d) ? 1 : 0;
         const wouldExceedPref = (load + duration > PREFERRED_MINUTES_PER_DAY) ? 1 : 0;
         const wouldExceedMax = (load + duration > MAX_MINUTES_PER_DAY) ? 1 : 0;
-        const isPreExamDayForOther = preExamMap.has(d) && !preExamMap.get(d)!.has(exam.id) ? 1 : 0;
+        const isPreExamDayForThis = preExamMap.has(d) && preExamMap.get(d)!.has(exam.id);
+        const isPreExamDayForOther = preExamMap.has(d) && !preExamMap.get(d)!.has(exam.id);
+
+        const daysBeforeExam = Math.max(1, Math.round((new Date(exam.exam_date).getTime() - new Date(d).getTime()) / 86400000));
+
+        // 1. Recency / Back-loading penalty: prefer days closer to the exam date.
+        // When deciding which day to load with an extra session, dates closer to the exam get priority.
+        const recencyPenalty = daysBeforeExam * 200;
+
+        // 2. Count penalty:
+        // When deciding which day gets a 2nd session, days closer to the exam (<= 3 days or pre-exam day)
+        // are welcomed if within PREFERRED limit. Farther away from the exam, single-session spreading is preferred.
+        let countPenalty = 0;
+        if (count === 1) {
+          if (daysBeforeExam <= 2 || isPreExamDayForThis) {
+            countPenalty = 50; // Welcome 2nd session near exam
+          } else if (daysBeforeExam <= 4) {
+            countPenalty = 300;
+          } else {
+            countPenalty = 700;
+          }
+        } else if (count >= 2) {
+          countPenalty = 1500 * count;
+        }
+
+        // 3. Same exam penalty:
+        // On pre-exam day or 1-2 days before the exam, studying the same subject multiple times
+        // is desired to consolidate knowledge before the test.
+        let sameExamPenalty = 0;
+        if (hasSame) {
+          if (daysBeforeExam <= 2 || isPreExamDayForThis) {
+            sameExamPenalty = 100;
+          } else {
+            sameExamPenalty = 600;
+          }
+        }
+
+        // 4. Retention gap penalty:
+        // Prevents multi-week gaps between consecutive sessions of the same subject to prevent forgetting.
+        let gapPenalty = 0;
+        if (scheduledList.length > 0) {
+          const minGap = Math.min(
+            ...scheduledList.map(sd =>
+              Math.abs(Math.round((new Date(d).getTime() - new Date(sd).getTime()) / 86400000))
+            )
+          );
+          if (minGap > 4) {
+            gapPenalty = (minGap - 4) * 1200;
+          }
+        }
 
         // Score priorities:
         // 1. Exceeding MAX is highest penalty
         // 2. Pre-exam day for another exam is heavily penalized (reserved exclusively for tomorrow's exam)
-        // 3. Exceeding PREFERRED (soft limit, e.g. 1 hour) is next penalty
-        // 4. Days with fewer sessions are heavily preferred (0 sessions > 1 session > 2 sessions)
-        // 5. Days without this same exam are preferred to spread subjects
-        // 6. Lowest existing load breaks ties
-        const score = wouldExceedMax * 100000 + isPreExamDayForOther * 20000 + wouldExceedPref * 10000 + count * 1000 + hasSame * 500 + load;
+        // 3. Exceeding PREFERRED (soft limit) is next penalty
+        // 4. Recency bias (closer to exam is preferred)
+        // 5. Gap penalty (keep sessions of the same subject reasonably close)
+        // 6. Workload count and subject spreading
+        const score =
+          wouldExceedMax * 100000 +
+          (isPreExamDayForOther ? 25000 : 0) +
+          wouldExceedPref * 8000 +
+          recencyPenalty +
+          countPenalty +
+          sameExamPenalty +
+          gapPenalty +
+          Math.round(load / 10);
+
         if (score < minScore) {
           minScore = score;
           bestDay = d;
@@ -301,9 +363,18 @@ export async function generateAISchedule(
           const hasSame = examScheduledDays.get(exam.id)?.has(d) ? 1 : 0;
           const wouldExceedPref = (load + duration > PREFERRED_MINUTES_PER_DAY) ? 1 : 0;
           const wouldExceedMax = (load + duration > MAX_MINUTES_PER_DAY) ? 1 : 0;
-          const isPreExamDayForOther = preExamMap.has(d) && !preExamMap.get(d)!.has(exam.id) ? 1 : 0;
+          const isPreExamDayForOther = preExamMap.has(d) && !preExamMap.get(d)!.has(exam.id);
+          const daysBeforeExam = Math.max(1, Math.round((new Date(exam.exam_date).getTime() - new Date(d).getTime()) / 86400000));
 
-          const score = wouldExceedMax * 100000 + isPreExamDayForOther * 20000 + wouldExceedPref * 10000 + count * 1000 + hasSame * 500 + load;
+          const score =
+            wouldExceedMax * 100000 +
+            (isPreExamDayForOther ? 25000 : 0) +
+            wouldExceedPref * 8000 +
+            daysBeforeExam * 200 +
+            count * 500 +
+            hasSame * 300 +
+            load;
+
           if (score < minScore) {
             minScore = score;
             bestDay = d;

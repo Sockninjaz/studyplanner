@@ -50,7 +50,7 @@ export interface IUser extends Document {
 
 const UserSchema: Schema = new Schema({
   name: { type: String, required: false },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true, select: false },
   daily_study_limit: { type: Number, default: 4, min: 1, max: 12 },
   soft_daily_limit: { type: Number, default: 2, min: 1, max: 12 },
