@@ -120,6 +120,32 @@ CRITICAL RULE 4 — EXACT TITLES ONLY FOR REAL TEXTBOOK TABLES OF CONTENTS:
 The rule to copy exact titles word-for-word ONLY applies when the text contains an authentic textbook Table of Contents, syllabus outline, or book chapter list (e.g. "Hoofdstuk 4: Zuren en Basen", "Thema: Genetica").
 It strictly DOES NOT apply to question/opgave titles or problem numbers in tests or practice sets.
 
+CRITICAL RULE 5 — LANGUAGE WRITING & ESSAY EXAMS (SCHRIJFVAARDIGHEID, BETOOG, ESSAY, ARTIKEL, SPREEKVAARDIGHEID):
+When the exam subject is a language (English, Dutch, German, French, Spanish) and the test is an essay, argumentative writing, or speaking exam (e.g. "Betoog", "Schrijfvaardigheid", "Essay", "Domein D", "Argumenterend schrijven", "Artikel", "Formal Letter", "Spreekvaardigheid", "Mondeling"):
+1. RECOGNIZE THE ESSAY / WRITING NATURE:
+   The student is writing a structured text or essay under exam conditions (e.g. 120 min). THIS IS NOT A VOCABULARY MEMORIZATION TEST AND NOT A GRAMMAR WORKSHEET!
+2. STRICT PROHIBITION ON VOCABULARY & GENERIC GRAMMAR CHAPTERS:
+   - When a school PTA mentions words like "woordenschat, grammatica" under Schrijfvaardigheid, these are merely GRADING CRITERIA (evaluating whether the essay uses formal academic vocabulary and correct sentence structures).
+   - NEVER create a standalone chapter called "Woordenschat en grammatica", "Grammar and Vocabulary", or "Domein D: Schrijfvaardigheid"!
+3. STRICT PROHIBITION ON RAW BUREAUCRATIC PTA JARGON:
+   - NEVER copy bureaucratic administrative PTA phrases as chapter titles, such as:
+     * "Toepassing van conventies formeel argumenterend betoog"
+     * "Domein D. Schrijfvaardigheid"
+     * "Standpunt innemen en onderbouwen"
+   - These are vague and meaningless to a student sitting down to study.
+4. MANDATORY ACTIONABLE ESSAY PREPARATION CHAPTERS (typically 3 to 4 topics):
+   Break down the preparation into concrete, practical writing stages:
+   - Topic 1: "Essaystructuur & Conventies (Inleiding, Thesis & Alinea-indeling)"
+     (Focus: Planning the essay, writing an engaging hook, formulating a clear thesis statement, structuring body paragraphs with PEEL: Point, Evidence, Explanation, Link, and writing a strong conclusion).
+   - Topic 2: "Formeel Register & Signaalwoorden (Linking Words)"
+     (Focus: Mastering transitional phrases like furthermore, however, in spite of, consequently, on the one hand / on the other hand, avoiding informal contractions and colloquialisms).
+   - Topic 3: "Argumentatiestructuur & Tegenargumenten (Onderbouwing & Weerlegging)"
+     (Focus: Formulating strong main arguments with evidence, anticipating opposing viewpoints, and writing persuasive rebuttals).
+   - Topic 4: "Oefenessay Schrijven & Beoordelingsrubric"
+     (Focus: Writing a complete practice essay under timed conditions, self-checking against the assessment criteria: word count, layout, register, cohesion, and spelling).
+5. DO NOT APPEND FAKE BOOK NAMES:
+   If no textbook was provided, do NOT append ". Engels" or ". [Subject]" to the chapter titles!
+
 General Guidelines:
 - When specific textbook chapters are listed (e.g. 2 to 5 chapters), create exactly those chapters.
 - You CAN assign fractional hours (e.g., 0.5, 1.0, 1.5, 2.0) for concise review or overview chapters.

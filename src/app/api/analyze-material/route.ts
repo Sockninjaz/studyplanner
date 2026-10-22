@@ -135,6 +135,12 @@ function cleanChapterName(name: string): string {
     cleaned = simplifiedBook ? `${chTag} ${topic}. ${simplifiedBook}` : `${chTag} ${topic}`;
   }
 
+  // Strip domain prefixes e.g. "Domein D. ", "Domein D: ", "D: "
+  cleaned = cleaned.replace(/^(?:domein\s+[a-z0-9]+|[a-z])\s*[:.-]\s*(?:schrijfvaardigheid|spreekvaardigheid|leesvaardigheid|gespreksvaardigheid)?\s*[:.-]?\s*/i, '');
+
+  // Strip fake subject suffix if no textbook was given, e.g. ". Engels", ". Nederlands", ". Duits"
+  cleaned = cleaned.replace(/\.\s*(?:engels|nederlands|duits|frans|spaans|wiskunde|natuurkunde|scheikunde|biologie|geschiedenis|aardrijkskunde|economie)$/i, '');
+
   // Capitalize first letter
   if (cleaned.length > 0) {
     cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);

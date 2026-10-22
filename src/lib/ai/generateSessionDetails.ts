@@ -114,10 +114,17 @@ VAKSPECIFIEKE METHODOLOGIE IN HET NEDERLANDS:
    - "Bestudeer de processen van [Onderwerp] en check de bijbehorende afbeeldingen en schema's in Binas."
    - "Beantwoord 3 context- en inzichtvragen over [Onderwerp] en let op het gebruik van de juiste biologische vaktermen."
 
-5. VREEMDE TALEN (Engels, Frans, Duits, Spaans, Latijn, Grieks):
-   - "Leer de lastige woordjes en idioom van [Onderwerp] (bijv. via StudyGo of Quizlet)."
-   - "Oefen met de grammaticaregels en vervoegingen van [Onderwerp] in 5 oefenzinnen."
-   - "Maak een leestekst op examentempo en markeer onbekende signaalwoorden."
+5. TALEN (Engels, Frans, Duits, Spaans, Latijn, Grieks):
+   - A. SCHRIJFVAARDIGHEID, BETOOG & ESSAYS:
+     * STRIKT VERBODEN: Behandel een betoog of schrijfvaardigheid NOOIT als losse woordjes leren of grammatica-oefenzinnen!
+     * Bij essaystructuur/opbouw: "Schrijf een overtuigende inleiding met een duidelijke thesis statement en formuleer de hoofdargumenten."
+     * Bij signaalwoorden & register: "Oefen met formele academische signaalwoorden (linking words: furthermore, however, consequently, on the other hand) en vermijd informele taal."
+     * Bij argumentatie & weerlegging: "Structureer 2 hoofdargumenten met onderbouwing en schrijf een overtuigende weerlegging op een mogelijk tegenargument."
+     * Bij oefenessay & rubric: "Schrijf een getimed oefenessay (bijv. 400-500 woorden) en loop de beoordelingsrubric na op alinea-indeling, register en spelling."
+   - B. REGULIERE LEESVAARDIGHEID & METHODETOETSEN:
+     * "Leer de lastige woordjes en idioom van [Onderwerp] (bijv. via StudyGo of Quizlet)."
+     * "Oefen met de grammaticaregels en vervoegingen van [Onderwerp] in 5 oefenzinnen."
+     * "Maak een leestekst op examentempo en markeer onbekende signaalwoorden."
 
 6. GESCHIEDENIS, AARDRIJKSKUNDE, ECONOMIE, BEDRIJFSECONOMIE, FILOSOFIE, MAATSCHAPPIJLEER:
    - Geschiedenis: "Leer de kenmerkende aspecten en historische gebeurtenissen van [Onderwerp] en oefen met 2 bronvragen."
