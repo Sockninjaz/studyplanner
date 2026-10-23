@@ -385,9 +385,36 @@ const Calendar = forwardRef<any, CalendarProps>(({
 
     const oldStart = info.oldEvent.start as Date;
     const oldEnd = info.oldEvent.end as Date | null;
-    const newStart = info.event.start as Date;
-    const duration = oldEnd ? oldEnd.getTime() - oldStart.getTime() : 60 * 60 * 1000;
-    const newEnd = new Date(newStart.getTime() + duration);
+    const newStartRaw = info.event.start as Date;
+
+    const oldStartDate = new Date(oldStart);
+    const oldEndDate = oldEnd ? new Date(oldEnd) : new Date(oldStartDate.getTime() + 60 * 60 * 1000);
+    const duration = oldEndDate.getTime() - oldStartDate.getTime();
+
+    // Preserve the original session's time of day on the new date
+    const newStart = new Date(newStartRaw);
+    newStart.setHours(
+      oldStartDate.getHours(),
+      oldStartDate.getMinutes(),
+      oldStartDate.getSeconds(),
+      0
+    );
+    const newEnd = new Date(newStart.getTime() + (duration > 0 ? duration : 60 * 60 * 1000));
+
+    // Optimistic UI update in SWR cache
+    if (rawEvents && Array.isArray(rawEvents)) {
+      const updated = rawEvents.map((ev: any) => {
+        if (ev.extendedProps?.sessionId === sessionId || ev.id === info.event.id) {
+          return {
+            ...ev,
+            start: newStart.toISOString(),
+            end: newEnd.toISOString(),
+          };
+        }
+        return ev;
+      });
+      mutate({ data: updated }, false);
+    }
 
     try {
       const res = await fetch(`/api/sessions/${sessionId}`, {
@@ -402,9 +429,13 @@ const Calendar = forwardRef<any, CalendarProps>(({
 
       if (!res.ok) throw new Error('Failed to update session');
       mutate();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('calendarUpdated'));
+      }
     } catch (err) {
       console.error('Session drag failed:', err);
       info.revert();
+      mutate();
     }
   };
 
@@ -434,77 +465,31 @@ const Calendar = forwardRef<any, CalendarProps>(({
     }
   }, [sidebarOpen, sidebarCollapsed]);
 
-  // Aggregate daily study sessions into consolidated summary cards with color-coded dot badges
+  // Process events: exams and tasks are fixed; all study sessions are individual draggable events
   const processedEvents = useMemo(() => {
     if (!rawEvents || rawEvents.length === 0) return [];
     const rawEventsList: any[] = rawEvents;
 
     const exams: any[] = [];
     const tasks: any[] = [];
-    const sessionsByDate: Record<string, any[]> = {};
+    const sessions: any[] = [];
 
     for (const event of rawEventsList) {
       if (event.extendedProps?.type === 'exam') {
-        exams.push(event);
+        exams.push({ ...event, editable: false });
       } else if (event.extendedProps?.type === 'task') {
-        tasks.push(event);
+        tasks.push({ ...event, editable: false });
       } else if (event.extendedProps?.type === 'session') {
-        const d = new Date(event.start);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const dateKey = `${y}-${m}-${day}`;
-
-        if (!sessionsByDate[dateKey]) sessionsByDate[dateKey] = [];
-        sessionsByDate[dateKey].push(event);
+        sessions.push({
+          ...event,
+          editable: true,
+        });
       }
     }
 
-    const result: any[] = [...exams, ...tasks];
+    sessions.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
-    for (const [dateStr, dateSessions] of Object.entries(sessionsByDate)) {
-      dateSessions.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-
-      if (dateSessions.length <= 3) {
-        result.push(...dateSessions);
-        continue;
-      }
-
-      const totalMinutes = dateSessions.reduce((acc, s) => {
-        const dur = (new Date(s.end).getTime() - new Date(s.start).getTime()) / 60000;
-        return acc + (isNaN(dur) || dur <= 0 ? 60 : dur);
-      }, 0);
-
-      const hours = Math.round((totalMinutes / 60) * 10) / 10;
-      const hoursStr = Number.isInteger(hours) ? `${hours}h` : `${hours}h`;
-      const count = dateSessions.length;
-      const cardTitle = `${count} ${count === 1 ? 'block' : 'blocks'} (${hoursStr})`;
-
-      const dots = dateSessions.map(s => ({
-        color: s.extendedProps?.color || s.borderColor || '#3b82f6',
-        subject: s.extendedProps?.subject || s.title,
-        isCompleted: s.extendedProps?.isCompleted || false,
-      }));
-
-      result.push({
-        id: `session-group-${dateStr}`,
-        title: cardTitle,
-        start: `${dateStr}T09:00:00`,
-        allDay: true,
-        editable: false,
-        extendedProps: {
-          type: 'session-group',
-          dateStr,
-          count,
-          hoursStr,
-          totalMinutes,
-          sessions: dateSessions,
-          dots,
-        }
-      });
-    }
-
-    return result;
+    return [...exams, ...tasks, ...sessions];
   }, [rawEvents]);
 
   // Silently re-evaluate day classes when blockedDays updates without tearing down FullCalendar DOM
@@ -576,9 +561,10 @@ const Calendar = forwardRef<any, CalendarProps>(({
         views={calendarViews}
         headerToolbar={false}
         events={processedEvents}
-        editable={false}
+        editable={true}
+        eventDrop={handleEventDrop}
         height="100%"
-        dayMaxEvents={4}
+        dayMaxEvents={5}
         datesSet={(info) => onDatesSetRef.current?.(info)}
         dateClick={(info) => {
           if (onAddItemClickRef.current) {
@@ -733,7 +719,7 @@ const Calendar = forwardRef<any, CalendarProps>(({
             
             return (
               <div
-                className={`w-full flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[11px] font-medium shadow-xs select-none overflow-hidden cursor-pointer hover:shadow-sm hover:scale-[1.01] transition-all ${
+                className={`w-full flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[11px] font-medium shadow-xs select-none overflow-hidden cursor-grab active:cursor-grabbing hover:shadow-sm hover:scale-[1.01] transition-all ${
                   isCompleted
                     ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 opacity-80'
                     : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'
@@ -943,6 +929,18 @@ const Calendar = forwardRef<any, CalendarProps>(({
         }
         .fc-daygrid-event-harness {
           margin-top: 1.5px !important;
+        }
+        .fc-event-dragging {
+          opacity: 0.85 !important;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.25) !important;
+          transform: scale(1.02);
+          z-index: 9999 !important;
+        }
+        .fc-event-mirror {
+          opacity: 0.9 !important;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25) !important;
+          border-radius: 6px !important;
+          z-index: 9999 !important;
         }
         .fc-event-completed,
         .fc-event-completed .fc-event-title,

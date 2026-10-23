@@ -135,6 +135,7 @@ export async function GET(request: Request) {
         start: session.startTime,
         end: session.endTime,
         allDay: false,
+        editable: true, // Allow sessions to be dragged
         backgroundColor: taskCompleted ? '#10b981' : applyOpacity(examColor, 0.4), // Green if completed, else light exam color (0.4 opacity)
         borderColor: taskCompleted ? '#059669' : examColor,
         textColor: '#ffffff', // This might need adjustment based on background

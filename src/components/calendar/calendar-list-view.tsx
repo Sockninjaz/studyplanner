@@ -50,6 +50,7 @@ const CalendarListView = forwardRef<any, CalendarListViewProps>(function Calenda
   const { events: rawEventsData, error, isLoading, mutate } = useCalendarEvents();
   const { rawDates: rawBlockedDates, mutate: mutateBlocked } = useBlockedDays();
   const [draggedSession, setDraggedSession] = useState<Event | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [togglingBlock, setTogglingBlock] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -355,42 +356,91 @@ const CalendarListView = forwardRef<any, CalendarListViewProps>(function Calenda
     }
     setDraggedSession(event);
     e.dataTransfer.effectAllowed = 'move';
+    try {
+      e.dataTransfer.setData('text/plain', event.sessionId);
+      e.dataTransfer.setData('application/json', JSON.stringify({
+        sessionId: event.sessionId,
+        date: event.date,
+        startTime: event.startTime,
+        endTime: event.endTime,
+      }));
+    } catch {}
   };
 
   const handleDragEnd = () => {
     setDraggedSession(null);
+    setDragOverDate(null);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, targetDate: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    if (dragOverDate !== targetDate) {
+      setDragOverDate(targetDate);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent, targetDate: string) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    if (dragOverDate === targetDate) {
+      setDragOverDate(null);
+    }
   };
 
   const handleDrop = async (e: React.DragEvent, targetDate: string) => {
     e.preventDefault();
     e.stopPropagation();
+    setDragOverDate(null);
 
-    if (!draggedSession || !draggedSession.sessionId) return;
-    if (draggedSession.date === targetDate) {
+    const sessionToMove = draggedSession;
+    if (!sessionToMove || !sessionToMove.sessionId) {
+      setDraggedSession(null);
+      return;
+    }
+
+    if (sessionToMove.date === targetDate) {
       setDraggedSession(null);
       return;
     }
 
     try {
       const targetDateObj = new Date(targetDate);
-      const originalStart = new Date(draggedSession.startTime!);
-      const originalEnd = new Date(draggedSession.endTime!);
+      const originalStart = new Date(sessionToMove.startTime!);
+      const originalEnd = new Date(sessionToMove.endTime!);
+      const duration = originalEnd.getTime() - originalStart.getTime();
 
       const newStart = new Date(targetDateObj);
-      newStart.setHours(originalStart.getHours(), originalStart.getMinutes(), 0, 0);
+      newStart.setHours(
+        originalStart.getHours(),
+        originalStart.getMinutes(),
+        originalStart.getSeconds(),
+        0
+      );
 
-      const newEnd = new Date(targetDateObj);
-      newEnd.setHours(originalEnd.getHours(), originalEnd.getMinutes(), 0, 0);
+      const newEnd = new Date(newStart.getTime() + (duration > 0 ? duration : 60 * 60 * 1000));
 
-      const response = await fetch(`/api/sessions/${draggedSession.sessionId}`, {
+      // Instant optimistic UI update
+      if (rawEventsData && Array.isArray(rawEventsData)) {
+        const updated = rawEventsData.map((ev: any) => {
+          if (ev.extendedProps?.sessionId === sessionToMove.sessionId || ev.id === sessionToMove.id) {
+            return {
+              ...ev,
+              start: newStart.toISOString(),
+              end: newEnd.toISOString(),
+            };
+          }
+          return ev;
+        });
+        mutate({ data: updated }, false);
+      }
+
+      setDraggedSession(null);
+
+      const response = await fetch(`/api/sessions/${sessionToMove.sessionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          date: newStart.toISOString(),
           startTime: newStart.toISOString(),
           endTime: newEnd.toISOString(),
         }),
@@ -399,10 +449,12 @@ const CalendarListView = forwardRef<any, CalendarListViewProps>(function Calenda
       if (!response.ok) throw new Error('Failed to update session');
 
       mutate();
-      setDraggedSession(null);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('calendarUpdated'));
+      }
     } catch (error) {
       console.error('Error moving session:', error);
-      alert('Failed to move session');
+      mutate();
       setDraggedSession(null);
     }
   };
@@ -454,15 +506,23 @@ const CalendarListView = forwardRef<any, CalendarListViewProps>(function Calenda
               <p className="text-[#4a4a4a] dark:text-slate-400 opacity-70">Get started by adding your first exam</p>
             </div>
           ) : (
-            Object.entries(groupedEvents).map(([date, events]) => (
-              <div
-                key={date}
-                id={`date-${date}`}
-                suppressHydrationWarning
-                className="border-b border-[#4a4a4a] dark:border-slate-700 border-opacity-20 pb-6 last:border-b-0"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, date)}
-              >
+            Object.entries(groupedEvents).map(([date, events]) => {
+              const isDragOver = dragOverDate === date;
+
+              return (
+                <div
+                  key={date}
+                  id={`date-${date}`}
+                  suppressHydrationWarning
+                  className={`border-b border-[#4a4a4a] dark:border-slate-700 border-opacity-20 pb-6 last:border-b-0 transition-all rounded-xl p-1.5 ${
+                    isDragOver
+                      ? 'bg-indigo-50/60 dark:bg-indigo-950/40 ring-2 ring-indigo-500/60 border-transparent shadow-sm'
+                      : ''
+                  }`}
+                  onDragOver={(e) => handleDragOver(e, date)}
+                  onDragLeave={(e) => handleDragLeave(e, date)}
+                  onDrop={(e) => handleDrop(e, date)}
+                >
                 {/* Date Header */}
                 <div
                   className={`flex items-center justify-between py-2 px-1 rounded-md cursor-pointer select-none transition-colors ${blockedDays.has(date) ? 'opacity-50' : ''
@@ -610,9 +670,12 @@ const CalendarListView = forwardRef<any, CalendarListViewProps>(function Calenda
                           onDragStart={(e) => handleDragStart(e, event)}
                           onDragEnd={handleDragEnd}
                           onClick={() => handleEventClick(event)}
-                          className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer hover:cursor-pointer ${event.type === 'session' && !!event.sessionId
+                          className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${event.type === 'session' && !!event.sessionId
                             ? 'hover:cursor-grab active:cursor-grabbing'
                             : ''
+                            } ${draggedSession?.sessionId === event.sessionId
+                              ? 'opacity-40 scale-[0.98]'
+                              : ''
                             } ${event.type === 'exam'
                               ? `border-2 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md`
                               : event.type === 'task'
@@ -746,11 +809,28 @@ const CalendarListView = forwardRef<any, CalendarListViewProps>(function Calenda
                               )}
                             </div>
                           ) : (
-                            /* Click indicator for sessions */
-                            <div className="text-[#4a4a4a] dark:text-slate-400 opacity-40 group-hover:opacity-70 transition-opacity">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
+                            /* Click & drag indicator for sessions */
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {event.type === 'session' && !!event.sessionId && (
+                                <div
+                                  className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-400 transition-colors"
+                                  title="Drag to reschedule"
+                                >
+                                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="9" cy="6" r="1.5" />
+                                    <circle cx="15" cy="6" r="1.5" />
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="9" cy="18" r="1.5" />
+                                    <circle cx="15" cy="18" r="1.5" />
+                                  </svg>
+                                </div>
+                              )}
+                              <div className="text-[#4a4a4a] dark:text-slate-400 opacity-40 group-hover:opacity-70 transition-opacity">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -759,7 +839,8 @@ const CalendarListView = forwardRef<any, CalendarListViewProps>(function Calenda
                   </div>
                 )}
               </div>
-            ))
+            );
+          })
           )}
         </div>
       </div>
