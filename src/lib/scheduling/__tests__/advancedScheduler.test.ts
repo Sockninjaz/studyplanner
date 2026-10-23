@@ -98,17 +98,25 @@ describe('StudyPlannerV1', () => {
     const planner = new StudyPlannerV1(activeExamProtectionFixture);
     const result = planner.generatePlan() as ScheduleResult;
 
-    // In activeExamProtectionFixture, "exam-close" is 2 days away.
-    // So days_to_exam <= 3 is true for the first 2 days.
-    const firstDayStr = getDayString(activeExamProtectionFixture.start_date);
-    const nextDay = new Date(activeExamProtectionFixture.start_date);
+    // In activeExamProtectionFixture, "exam-close" is 2 days away and has can_study_after_exam: false.
+    // This means study sessions can only be scheduled prior to the exam date.
+
+    // Use local Date comparisons rather than string extraction to avoid timezone issues.
+    const startDate = activeExamProtectionFixture.start_date;
+    const firstDayStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+
+    const nextDay = new Date(startDate);
     nextDay.setDate(nextDay.getDate() + 1);
-    const nextDayStr = getDayString(nextDay);
+    const nextDayStr = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
 
-    // Ensure that these days have at least ONE subject scheduled
-    const day1 = result.schedule.find(day => getDayString(day.date) === firstDayStr);
-    const day2 = result.schedule.find(day => getDayString(day.date) === nextDayStr);
+    // Helper to extract local date string reliably from a Date object
+    const getLocalDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+    // Look for schedules matching the first and next days
+    const day1 = result.schedule.find(day => getLocalDateStr(day.date) === firstDayStr);
+    const day2 = result.schedule.find(day => getLocalDateStr(day.date) === nextDayStr);
+
+    // Both of these days represent days prior to the exam-close date and should have scheduled study time.
     expect(day1?.total_hours).toBeGreaterThan(0);
     expect(day2?.total_hours).toBeGreaterThan(0);
   });
