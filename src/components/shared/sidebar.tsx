@@ -466,11 +466,12 @@ const Sidebar = ({ isCollapsed = false, onToggle }: SidebarProps) => {
         {/* Theme Toggle */}
         <div className={isCollapsed ? 'px-2 py-2' : 'px-3 py-2'}>
           <button
+            suppressHydrationWarning
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className={`flex items-center justify-center rounded-md text-slate-600 hover:text-slate-900 hover:bg-black/5 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors ${
               isCollapsed ? 'w-8 h-8 mx-auto p-0' : 'w-full py-1.5 px-2.5 gap-2'
             }`}
-            title={theme === 'dark' ? t('nav.switchToLight') : t('nav.switchToDark')}
+            title={mounted && theme === 'dark' ? t('nav.switchToLight') : t('nav.switchToDark')}
           >
             {mounted && theme === 'dark' ? (
               <>

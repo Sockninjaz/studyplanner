@@ -424,11 +424,12 @@ export default function ProfilePage() {
                 <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400">{locale === 'nl' ? 'Wissel tussen lichte en donkere modus.' : 'Toggle between light and dark themes.'}</p>
               </div>
               <button 
+                suppressHydrationWarning
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-sm"
               >
-                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-                {theme === 'dark' ? (locale === 'nl' ? 'Lichte Modus' : 'Light Mode') : (locale === 'nl' ? 'Donkere Modus' : 'Dark Mode')}
+                {mounted && theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                {mounted && theme === 'dark' ? (locale === 'nl' ? 'Lichte Modus' : 'Light Mode') : (locale === 'nl' ? 'Donkere Modus' : 'Dark Mode')}
               </button>
             </div>
           </div>
