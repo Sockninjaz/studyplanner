@@ -33,18 +33,26 @@ function LoginContent() {
     setSuccess('');
     setLoading(true);
 
-    const result = await signIn('credentials', {
-      redirect: false,
-      email: email.trim(),
-      password,
-    });
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: email.trim(),
+        password,
+      });
 
-    if (result?.error) {
-      setError('Invalid email or password');
-    } else {
-      router.push('/today');
+      if (!result || result.error || !result.ok) {
+        setError('Invalid email or password');
+        setLoading(false);
+      } else {
+        const callbackUrl = searchParams.get('callbackUrl');
+        const targetUrl = callbackUrl && !callbackUrl.includes('/login') ? callbackUrl : '/today';
+        window.location.href = targetUrl;
+      }
+    } catch (err) {
+      console.error('Sign-in error:', err);
+      setError('An error occurred while signing in. Please try again.');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

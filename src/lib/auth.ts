@@ -5,8 +5,16 @@ import bcrypt from 'bcryptjs';
 import { NextAuthOptions } from 'next-auth';
 
 // Ensure NEXTAUTH_URL and NEXTAUTH_SECRET fallback automatically on Vercel
-if (!process.env.NEXTAUTH_URL && process.env.VERCEL_URL) {
-  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+  if (!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL.includes('localhost')) {
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+    } else if (process.env.VERCEL_URL) {
+      process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+    } else {
+      process.env.NEXTAUTH_URL = 'https://studyplanner-orpin.vercel.app';
+    }
+  }
 }
 
 const authSecret =
@@ -18,8 +26,24 @@ if (!process.env.NEXTAUTH_SECRET) {
   process.env.NEXTAUTH_SECRET = authSecret;
 }
 
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+const useSecureCookies = isProduction;
+const cookiePrefix = useSecureCookies ? '__Secure-' : '';
+
 export const authOptions: NextAuthOptions = {
   secret: authSecret,
+  useSecureCookies,
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+  },
   providers: [
     CredentialsProvider({
       name: 'Credentials',

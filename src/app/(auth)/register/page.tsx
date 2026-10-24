@@ -58,10 +58,12 @@ export default function RegisterPage() {
           password,
         });
 
-        if (result?.error) {
+        if (result?.error || !result?.ok) {
           router.push('/login?message=Registration successful, please login');
+          setLoading(false);
         } else {
-          router.push('/onboarding');
+          window.location.href = '/onboarding';
+          return;
         }
       }
     } catch (error) {
