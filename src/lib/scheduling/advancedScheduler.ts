@@ -2,7 +2,7 @@
 console.log('=== SCHEDULER FILE LOADED ===');
 
 // §1. User Inputs
-interface ExamData {
+export interface ExamData {
   id: string;
   subject: string;
   exam_date: Date;
@@ -12,13 +12,13 @@ interface ExamData {
   can_study_after_exam: boolean; // Default: true
 }
 
-interface ExistingSession {
+export interface ExistingSession {
   date: Date;
   subjectId: string;
   duration: number; // in hours
 }
 
-interface UserInputs {
+export interface UserInputs {
   daily_max_hours: number;
   adjustment_percentage: number; // Max percentage adjustment for difficulty/confidence
   session_duration: number; // Duration of each study session in minutes
@@ -44,7 +44,7 @@ interface InternalSubjectState {
   original_confidence: number;
 }
 
-interface DailySchedule {
+export interface DailySchedule {
   date: Date;
   total_hours: number;
   subjects: { [subjectId: string]: number };
@@ -52,7 +52,7 @@ interface DailySchedule {
   overload_amount?: number; // How much over the daily limit
 }
 
-interface ScheduleResult {
+export interface ScheduleResult {
   schedule: DailySchedule[];
   overload_info?: {
     total_overload_hours: number;
