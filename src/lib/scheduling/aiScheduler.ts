@@ -10,6 +10,7 @@ export interface ExamInput {
     chapter: string;
     difficulty: number;
     user_estimated_total_hours: number;
+    completed?: boolean;
   }>;
 }
 
@@ -86,41 +87,39 @@ export async function generateAISchedule(
     const reviewWord = isDutch ? 'Herhaling' : (examLang === 'de' ? 'Wiederholung' : (examLang === 'fr' ? 'Révision' : (examLang === 'es' ? 'Repaso' : 'Review')));
     
     if (exam.studyMaterials && exam.studyMaterials.length > 0) {
-      const totalMaterialHours = exam.studyMaterials.reduce((sum, c) => sum + (c.user_estimated_total_hours || 0), 0);
-      const completedHoursForExam = (inputs as any).completed_hours ? ((inputs as any).completed_hours[exam.id] || 0) : 0;
-      
-      let remainingRatio = 1.0;
-      if (totalMaterialHours > 0 && completedHoursForExam > 0) {
-        remainingRatio = Math.max(0, (totalMaterialHours - completedHoursForExam) / totalMaterialHours);
-      }
+      // Filter out chapters explicitly marked completed if active chapters remain
+      const activeMaterials = exam.studyMaterials.filter(c => !c.completed);
+      const materialsToSchedule = activeMaterials.length > 0 ? activeMaterials : exam.studyMaterials;
 
-      if (remainingRatio > 0) {
-        const targetSessionMins = Math.min(75, Math.max(30, inputs.session_duration || 50)); // typically 45-60 min
-        // Keep individual session durations balanced around targetSessionMins.
-        // Chapters up to 75m fit in 1 single session.
-        // Larger chapters (> 75m, like 90m or 120m) are split into digestible chunks of ~45-60 min,
-        // so that a day with 2 sessions never ends up at 180 min (3 hours).
-        const splitThreshold = Math.min(75, Math.round(targetSessionMins * 1.25));
+      const targetSessionMins = Math.min(75, Math.max(30, inputs.session_duration || 50)); // typically 45-60 min
+      // Keep individual session durations balanced around targetSessionMins.
+      // Chapters up to 75m fit in 1 single session.
+      // Larger chapters (> 75m, like 90m or 120m) are split into digestible chunks of ~45-60 min,
+      // so that a day with 2 sessions never ends up at 180 min (3 hours).
+      const splitThreshold = Math.min(75, Math.round(targetSessionMins * 1.25));
 
-        for (const c of exam.studyMaterials) {
-          const totalChapterMins = Math.max(30, Math.round((c.user_estimated_total_hours || 1) * 60 * remainingRatio));
-          
-          if (totalChapterMins <= splitThreshold) {
-            // Fits in 1 single session
+      for (const c of materialsToSchedule) {
+        const totalChapterMins = Math.max(30, Math.round((c.user_estimated_total_hours || 1) * 60));
+        
+        if (totalChapterMins <= splitThreshold) {
+          // Fits in 1 single session
+          blocks.push({
+            content: c.chapter,
+            durationMinutes: totalChapterMins
+          });
+        } else {
+          // Split into digestible chunks around targetSessionMins that sum exactly to totalChapterMins
+          const numChunks = Math.max(2, Math.ceil(totalChapterMins / targetSessionMins));
+          const baseChunk = Math.floor(totalChapterMins / numChunks / 5) * 5;
+          let remainder = totalChapterMins - (baseChunk * numChunks);
+          for (let chunkIdx = 1; chunkIdx <= numChunks; chunkIdx++) {
+            const addFive = remainder >= 5 ? 5 : 0;
+            remainder -= addFive;
+            const dur = Math.min(90, Math.max(30, baseChunk + addFive));
             blocks.push({
-              content: c.chapter,
-              durationMinutes: Math.min(75, totalChapterMins)
+              content: numChunks > 1 ? `${c.chapter} (${partWord} ${chunkIdx}/${numChunks})` : c.chapter,
+              durationMinutes: dur
             });
-          } else {
-            // Split into digestible chunks around targetSessionMins
-            const numChunks = Math.max(2, Math.ceil(totalChapterMins / targetSessionMins));
-            const chunkDuration = Math.min(75, Math.max(30, Math.round(totalChapterMins / numChunks / 5) * 5));
-            for (let chunkIdx = 1; chunkIdx <= numChunks; chunkIdx++) {
-              blocks.push({
-                content: numChunks > 1 ? `${c.chapter} (${partWord} ${chunkIdx}/${numChunks})` : c.chapter,
-                durationMinutes: chunkDuration
-              });
-            }
           }
         }
       }

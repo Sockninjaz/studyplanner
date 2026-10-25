@@ -374,4 +374,47 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
       }
     }
   });
+
+  it('guarantees exact study time preservation for exams with multi-hour chapters (Chemistry 8.5h)', async () => {
+    const inputs: AISchedulerInputs = {
+      exams: [
+        {
+          id: 'scheikunde',
+          subject: 'Scheikunde',
+          exam_date: new Date('2026-11-04T09:00:00.000Z'),
+          totalHours: 8.5,
+          studyMaterials: [
+            { chapter: 'H12: Molecuulbouw. Chemie Overal', difficulty: 3, user_estimated_total_hours: 2 },
+            { chapter: 'H13: Kunststoffen. Chemie Overal', difficulty: 3, user_estimated_total_hours: 2 },
+            { chapter: 'H15: Biochemie. Chemie Overal', difficulty: 4, user_estimated_total_hours: 2 },
+            { chapter: 'H16: Groene chemie. Chemie Overal', difficulty: 4, user_estimated_total_hours: 2.5 },
+          ],
+        },
+      ],
+      daily_max_hours: 4,
+      soft_daily_limit: 2,
+      session_duration: 60,
+      start_date: new Date('2026-10-25T00:00:00.000Z'),
+    };
+
+    const { schedule } = await generateAISchedule(inputs);
+
+    let totalChemMinutes = 0;
+    let totalChemSessions = 0;
+    for (const [, dayMap] of schedule.entries()) {
+      if (dayMap.has('scheikunde')) {
+        for (const s of dayMap.get('scheikunde')!) {
+          totalChemMinutes += s.durationMinutes;
+          totalChemSessions++;
+          // Sessions should be standard clean lengths (50m or 60m), not mangled into 40m
+          expect(s.durationMinutes).toBeGreaterThanOrEqual(50);
+          expect(s.durationMinutes).toBeLessThanOrEqual(75);
+        }
+      }
+    }
+
+    // Must EXACTLY equal the 8.5 hours agreed in exam creation (510 minutes)
+    expect(totalChemMinutes).toBe(510);
+    expect(totalChemSessions).toBe(9); // 6 sessions of 60m + 3 sessions of 50m = 510m
+  });
 });
