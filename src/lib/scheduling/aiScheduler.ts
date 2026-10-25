@@ -14,6 +14,13 @@ export interface ExamInput {
   }>;
 }
 
+export interface CompletedSessionInfo {
+  examId: string;
+  title?: string;
+  shortTitle?: string;
+  durationMinutes?: number;
+}
+
 export interface AISchedulerInputs {
   exams: ExamInput[];
   daily_max_hours: number;
@@ -22,6 +29,7 @@ export interface AISchedulerInputs {
   start_date: Date;
   blocked_days?: string[];
   existing_sessions?: { examId: string; content: string }[];
+  completed_sessions?: CompletedSessionInfo[];
   allowOverload?: boolean;
   userProfile?: any;
 }
@@ -29,6 +37,47 @@ export interface AISchedulerInputs {
 export interface SessionBlock {
   content: string;
   durationMinutes: number;
+}
+
+export function normalizeSessionContent(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/^(?:studeren|study|lernen|étudier|estudiar):\s*(?:[^-]+-\s*)?/i, '')
+    .toLowerCase()
+    .replace(/[`'"]/g, '')
+    .replace(/[\s\t\n]+/g, ' ')
+    .trim();
+}
+
+export function extractChapterBase(text: string): string {
+  if (!text) return '';
+  const withoutPart = text.replace(/\s*\((?:deel|part|teil|partie|parte)\s*\d+\/\d+\)\s*$/i, '');
+  return normalizeSessionContent(withoutPart);
+}
+
+export function isChapterMatch(chapterA: string, chapterB: string): boolean {
+  const baseA = extractChapterBase(chapterA);
+  const baseB = extractChapterBase(chapterB);
+  if (!baseA || !baseB) return false;
+  if (baseA === baseB) return true;
+
+  // Check if both start with same chapter number, e.g. "h12" or "h1"
+  const matchA = baseA.match(/^h\s*(\d+[a-z]?)\b/i);
+  const matchB = baseB.match(/^h\s*(\d+[a-z]?)\b/i);
+  if (matchA && matchB) {
+    if (matchA[1].toLowerCase() !== matchB[1].toLowerCase()) {
+      return false; // Different chapter numbers (e.g. H1 vs H10 or H12 vs H13)
+    }
+    // Same chapter number (e.g. both H12)
+    return true;
+  }
+
+  // Fallback: If one is a complete substring of the other and at least 8 characters long
+  if (baseA.length >= 8 && baseB.length >= 8) {
+    if (baseA.includes(baseB) || baseB.includes(baseA)) return true;
+  }
+
+  return false;
 }
 
 function isDedicatedReviewBlock(content: string): boolean {
@@ -86,6 +135,10 @@ export async function generateAISchedule(
     const partWord = isDutch ? 'Deel' : (examLang === 'de' ? 'Teil' : (examLang === 'fr' ? 'Partie' : (examLang === 'es' ? 'Parte' : 'Part')));
     const reviewWord = isDutch ? 'Herhaling' : (examLang === 'de' ? 'Wiederholung' : (examLang === 'fr' ? 'Révision' : (examLang === 'es' ? 'Repaso' : 'Review')));
     
+    const completedForExam = (inputs.completed_sessions || []).filter(
+      s => s.examId === exam.id
+    );
+
     if (exam.studyMaterials && exam.studyMaterials.length > 0) {
       // Filter out chapters explicitly marked completed if active chapters remain
       const activeMaterials = exam.studyMaterials.filter(c => !c.completed);
@@ -99,25 +152,62 @@ export async function generateAISchedule(
       const splitThreshold = Math.min(75, Math.round(targetSessionMins * 1.25));
 
       for (const c of materialsToSchedule) {
+        const matchingCompleted = completedForExam.filter(cs => 
+          isChapterMatch(c.chapter, cs.shortTitle || cs.title || '')
+        );
+
         const totalChapterMins = Math.max(30, Math.round((c.user_estimated_total_hours || 1) * 60));
-        
-        if (totalChapterMins <= splitThreshold) {
-          // Fits in 1 single session
+        const completedMinsForMat = matchingCompleted.reduce(
+          (sum, cs) => sum + (cs.durationMinutes || 60),
+          0
+        );
+
+        const numChunks = totalChapterMins <= splitThreshold ? 1 : Math.max(2, Math.ceil(totalChapterMins / targetSessionMins));
+
+        // Extract completed parts
+        const completedParts = new Set<number>();
+        let hasPartTags = false;
+        for (const cs of matchingCompleted) {
+          const text = cs.shortTitle || cs.title || '';
+          const match = text.match(/\((?:deel|part|teil|partie|parte)\s*(\d+)\/\d+\)/i);
+          if (match) {
+            completedParts.add(parseInt(match[1], 10));
+            hasPartTags = true;
+          }
+        }
+
+        const isEntireChapterDone =
+          (hasPartTags && completedParts.size >= numChunks) ||
+          completedMinsForMat >= totalChapterMins ||
+          (!hasPartTags && matchingCompleted.length >= numChunks);
+
+        if (isEntireChapterDone) {
+          // Chapter has already been finished by user — never duplicate into future schedule!
+          continue;
+        }
+
+        if (numChunks === 1) {
           blocks.push({
             content: c.chapter,
             durationMinutes: totalChapterMins
           });
         } else {
           // Split into digestible chunks around targetSessionMins that sum exactly to totalChapterMins
-          const numChunks = Math.max(2, Math.ceil(totalChapterMins / targetSessionMins));
           const baseChunk = Math.floor(totalChapterMins / numChunks / 5) * 5;
           let remainder = totalChapterMins - (baseChunk * numChunks);
           for (let chunkIdx = 1; chunkIdx <= numChunks; chunkIdx++) {
             const addFive = remainder >= 5 ? 5 : 0;
             remainder -= addFive;
             const dur = Math.min(90, Math.max(30, baseChunk + addFive));
+            const chunkContent = `${c.chapter} (${partWord} ${chunkIdx}/${numChunks})`;
+
+            if (completedParts.has(chunkIdx) || (matchingCompleted.length >= chunkIdx && !hasPartTags)) {
+              // This specific chunk was already completed — skip it!
+              continue;
+            }
+
             blocks.push({
-              content: numChunks > 1 ? `${c.chapter} (${partWord} ${chunkIdx}/${numChunks})` : c.chapter,
+              content: chunkContent,
               durationMinutes: dur
             });
           }
@@ -129,22 +219,10 @@ export async function generateAISchedule(
     // generate Review & Practice sessions so active exams NEVER have 0 upcoming sessions.
     if (blocks.length === 0) {
       const fallbackSessionDuration = Math.min(90, Math.max(30, inputs.session_duration || 45));
-      if (exam.studyMaterials && exam.studyMaterials.length > 0) {
-        for (const c of exam.studyMaterials) {
-          blocks.push({
-            content: c.chapter,
-            durationMinutes: fallbackSessionDuration
-          });
-        }
-      } else {
-        const neededHours = Math.max(1, exam.totalHours || 2);
-        for (let i = 0; i < neededHours; i++) {
-          blocks.push({
-            content: `${reviewWord}: ${exam.subject} ${partWord} ${i + 1}`,
-            durationMinutes: fallbackSessionDuration
-          });
-        }
-      }
+      blocks.push({
+        content: isDutch ? `Eindherhaling & Proeftoets: ${exam.subject}` : `Final Revision & Practice: ${exam.subject}`,
+        durationMinutes: fallbackSessionDuration
+      });
     }
 
 

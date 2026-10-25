@@ -2,7 +2,7 @@ import dbConnect from '@/lib/db';
 import Exam from '@/models/Exam';
 import StudySession from '@/models/StudySession';
 import BlockedDay from '@/models/BlockedDay';
-import { generateAISchedule } from '@/lib/scheduling/aiScheduler';
+import { generateAISchedule, extractChapterBase } from '@/lib/scheduling/aiScheduler';
 import { separateSessions } from '@/lib/scheduling/sessionUtils';
 import { compressSessionsInMemory } from '@/lib/scheduling/compressSchedule';
 import { generateSessionDetails } from '@/lib/ai/generateSessionDetails';
@@ -139,8 +139,52 @@ async function runRegenerateSchedule(
   }
 
   // Separate historical/future sessions for exams to calculate completed hours
+  const allUserExamsIds = (await Exam.find({ user: user._id }, '_id').lean()).map(e => e._id.toString());
+  const validExamIdStrings = new Set(allUserExamsIds);
+  const activeExamIdStrings = new Set(allExams.map(e => e._id.toString()));
+
   const allSessions = await StudySession.find({ user: user._id });
-  const { completedSessions, missedSessions, reschedulableSessions, completedHours } = separateSessions(allSessions);
+
+  // Deduplicate completed sessions chronologically so only original completions are preserved
+  const completedDocs = allSessions
+    .filter(s => s.isCompleted)
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+  const seenCompletedKeys = new Set<string>();
+  const duplicateCompletedIds: any[] = [];
+
+  for (const cs of completedDocs) {
+    const examIdStr = cs.exam ? cs.exam.toString() : '';
+    if (!examIdStr || !validExamIdStrings.has(examIdStr)) {
+      // Exam was completely deleted from DB
+      duplicateCompletedIds.push(cs._id);
+      continue;
+    }
+
+    if (activeExamIdStrings.has(examIdStr)) {
+      const norm = extractChapterBase(cs.shortTitle || cs.title || '');
+      const partMatch = (cs.shortTitle || cs.title || '').match(/\((?:deel|part|teil|partie|parte)\s*(\d+\/\d+)\)/i);
+      const partTag = partMatch ? partMatch[1] : 'all';
+      const isRev = /herhaling|revision|proeftoets|review|eindtoets/i.test(cs.shortTitle || cs.title || '');
+      const key = isRev
+        ? `${examIdStr}:::revision:::${norm}`
+        : `${examIdStr}:::${norm}:::${partTag}`;
+
+      if (seenCompletedKeys.has(key)) {
+        duplicateCompletedIds.push(cs._id);
+      } else {
+        seenCompletedKeys.add(key);
+      }
+    }
+  }
+
+  if (duplicateCompletedIds.length > 0) {
+    await StudySession.deleteMany({ _id: { $in: duplicateCompletedIds } });
+    console.log(`[Regenerate] Cleaned up ${duplicateCompletedIds.length} duplicate/orphaned completed sessions.`);
+  }
+
+  const cleanSessions = allSessions.filter(s => !duplicateCompletedIds.some(dId => dId.toString() === s._id.toString()));
+  const { completedSessions, missedSessions, reschedulableSessions, completedHours } = separateSessions(cleanSessions);
 
   // Build in-memory lookup cache of existing session titles and task checklists to reuse details
   // and prevent repetitive, slow AI calls on non-AI requests (date changes, name changes, deletes, preferences)
@@ -195,6 +239,12 @@ async function runRegenerateSchedule(
       : (user.enable_daily_limits !== false),
     start_date: new Date(),
     completed_hours: completedHours,
+    completed_sessions: completedSessions.map(s => ({
+      examId: (s.exam || (s as any).examId)?.toString(),
+      title: s.title,
+      shortTitle: s.shortTitle,
+      durationMinutes: Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000),
+    })),
     exams: allExams.map(e => ({
       id: e._id.toString(),
       subject: e.subject,
@@ -364,8 +414,12 @@ async function runRegenerateSchedule(
 
       if (validCached) {
         session.shortTitle = validCached.shortTitle || session._enrichMeta?.chapter || session.title;
-        // Keep title matching current session subject if subject was renamed
-        session.title = validCached.title.replace(/^(Study|Studeren|Lernen|Étudier|Estudiar): .+?($| \()/, `${prefix}: ${session.subject}$2`);
+        const cleanChapter = (session.shortTitle || session._enrichMeta?.chapter || '')
+          .replace(/^(?:studeren|study|lernen|étudier|estudiar):\s*(?:[^-]+-\s*)?/i, '')
+          .trim();
+        session.title = isRev
+          ? (validCached.title || `${prefix}: ${session.subject} - ${cleanChapter}`)
+          : `${prefix}: ${session.subject} - ${cleanChapter}`;
         session.tasks = validCached.tasks?.map((t: any, idx: number) => ({
           id: t.id || `task-${idx}`,
           text: t.text || t.task || '',
@@ -474,41 +528,7 @@ async function runRegenerateSchedule(
     }
   }
 
-  // === ATOMIC DATABASE UPDATE & DEDUPLICATION ===
-  // 1. Clean up duplicate or orphaned completed sessions
-  
-  // Get all valid exam IDs (active and completed) to prevent deleting sessions for completed exams
-  const allUserExamsIds = (await Exam.find({ user: user._id }, '_id').lean()).map(e => e._id.toString());
-  const validExamIdStrings = new Set(allUserExamsIds);
-  const activeExamIdStrings = new Set(allExams.map(e => e._id.toString()));
-  
-  // Reuse completedSessions already loaded in memory instead of running a duplicate query!
-  const existingCompleted = completedSessions;
-  const seenCompletedKeys = new Set<string>();
-  const duplicateCompletedIds: any[] = [];
-  
-  for (const cs of existingCompleted) {
-    if (!cs.exam || !validExamIdStrings.has(cs.exam.toString())) {
-      // Exam was completely deleted from DB
-      duplicateCompletedIds.push(cs._id);
-      continue;
-    }
-    
-    // Only deduplicate sessions for ACTIVE exams. 
-    // If the exam is completed, we just keep all its sessions intact.
-    if (activeExamIdStrings.has(cs.exam.toString())) {
-      const key = `${cs.exam.toString()}-${new Date(cs.startTime).toISOString()}-${cs.title}`;
-      if (seenCompletedKeys.has(key)) {
-        duplicateCompletedIds.push(cs._id);
-      } else {
-        seenCompletedKeys.add(key);
-      }
-    }
-  }
-  if (duplicateCompletedIds.length > 0) {
-    await StudySession.deleteMany({ _id: { $in: duplicateCompletedIds } });
-    console.log(`Cleaned up ${duplicateCompletedIds.length} orphaned/duplicate completed sessions.`);
-  }
+  // === ATOMIC DATABASE UPDATE ===
 
   // 2. Delete all existing uncompleted sessions atomically right before inserting the new schedule
   await StudySession.deleteMany({ user: user._id, isCompleted: { $ne: true } });

@@ -417,4 +417,122 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
     expect(totalChemMinutes).toBe(510);
     expect(totalChemSessions).toBe(9); // 6 sessions of 60m + 3 sessions of 50m = 510m
   });
+
+  it('skips already finished chapters and sessions and never duplicates them on regenerate', async () => {
+    const inputs: AISchedulerInputs = {
+      exams: [
+        {
+          id: 'scheikunde',
+          subject: 'Scheikunde',
+          exam_date: new Date('2026-11-04T09:00:00.000Z'),
+          totalHours: 8.5,
+          studyMaterials: [
+            { chapter: 'H12: Molecuulbouw. Chemie Overal', difficulty: 3, user_estimated_total_hours: 2 },
+            { chapter: 'H13: Kunststoffen. Chemie Overal', difficulty: 3, user_estimated_total_hours: 2 },
+            { chapter: 'H15: Biochemie. Chemie Overal', difficulty: 4, user_estimated_total_hours: 2 },
+            { chapter: 'H16: Groene chemie. Chemie Overal', difficulty: 4, user_estimated_total_hours: 2.5 },
+          ],
+        },
+        {
+          id: 'natuurkunde',
+          subject: 'Natuurkunde',
+          exam_date: new Date('2026-11-05T09:00:00.000Z'),
+          totalHours: 9,
+          studyMaterials: [
+            { chapter: 'H1: Krachten en beweging. Polaris. H3 `&', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H7: Kracht en evenwicht. Polaris', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H8: Energie. Polaris', difficulty: 3, user_estimated_total_hours: 2.5 },
+            { chapter: 'H13: Cirkelbanen en gravitatie. Polaris', difficulty: 4, user_estimated_total_hours: 3.5 },
+          ],
+        },
+        {
+          id: 'duits',
+          subject: 'Duits',
+          exam_date: new Date('2026-11-12T09:00:00.000Z'),
+          totalHours: 4.5,
+          studyMaterials: [
+            { chapter: 'H1: Literatuur en context. Duits', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H2: Literaire tekstsoorten en begrippen. Duits', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H3: Literatuurgeschiedenis en hoofdthema\'s. Duits', difficulty: 3, user_estimated_total_hours: 1.5 },
+          ],
+        },
+      ],
+      completed_sessions: [
+        // Scheikunde H12 completed in 2 parts of 60m
+        {
+          examId: 'scheikunde',
+          title: 'Studeren: scheikunde - H12: Molecuulbouw. Chemie Overal (Deel 1/2)',
+          shortTitle: 'H12: Molecuulbouw. Chemie Overal (Deel 1/2)',
+          durationMinutes: 60,
+        },
+        {
+          examId: 'scheikunde',
+          title: 'Studeren: scheikunde - H12: Molecuulbouw. Chemie Overal (Deel 2/2)',
+          shortTitle: 'H12: Molecuulbouw. Chemie Overal (Deel 2/2)',
+          durationMinutes: 60,
+        },
+        // Natuurkunde H1 completed (90m single block)
+        {
+          examId: 'natuurkunde',
+          title: 'Studeren: natuurkunde - H1: Krachten en beweging. Polaris. H3 `&',
+          shortTitle: 'H1: Krachten en beweging. Polaris. H3 `&',
+          durationMinutes: 90,
+        },
+        // Duits H1 partial: only Deel 1/2 completed
+        {
+          examId: 'duits',
+          title: 'Studeren: duits - H1: Literatuur en context. Duits (Deel 1/2)',
+          shortTitle: 'H1: Literatuur en context. Duits (Deel 1/2)',
+          durationMinutes: 45,
+        },
+      ],
+      daily_max_hours: 4,
+      soft_daily_limit: 2,
+      session_duration: 60,
+      start_date: new Date('2026-10-25T00:00:00.000Z'),
+    };
+
+    const { schedule } = await generateAISchedule(inputs);
+
+    const scheduledTopics: { [examId: string]: string[] } = {
+      scheikunde: [],
+      natuurkunde: [],
+      duits: [],
+    };
+
+    let scheikundeMins = 0;
+    let natuurkundeMins = 0;
+    let duitsMins = 0;
+
+    for (const [, dayMap] of schedule.entries()) {
+      for (const [examId, sessions] of dayMap.entries()) {
+        for (const s of sessions) {
+          scheduledTopics[examId]?.push(s.content);
+          if (examId === 'scheikunde') scheikundeMins += s.durationMinutes;
+          if (examId === 'natuurkunde') natuurkundeMins += s.durationMinutes;
+          if (examId === 'duits') duitsMins += s.durationMinutes;
+        }
+      }
+    }
+
+    // 1. Scheikunde: H12 must be completely absent from future schedule
+    const hasH12 = scheduledTopics.scheikunde.some(t => /H12|Molecuulbouw/i.test(t));
+    expect(hasH12).toBe(false);
+    // Remaining study time to schedule: 8.5h total - 2h done = 6.5h (390m)
+    expect(scheikundeMins).toBe(390);
+
+    // 2. Natuurkunde: H1 must be completely absent from future schedule
+    const hasH1 = scheduledTopics.natuurkunde.some(t => /H1:.*Krachten/i.test(t));
+    expect(hasH1).toBe(false);
+    // Remaining study time to schedule: 9h total - 1.5h done = 7.5h (450m)
+    expect(natuurkundeMins).toBe(450);
+
+    // 3. Duits: H1 (Deel 1/2) was done, so only H1 (Deel 2/2) should be scheduled
+    const duitsH1Deel1 = scheduledTopics.duits.some(t => /H1.*Deel 1\/2/i.test(t));
+    const duitsH1Deel2 = scheduledTopics.duits.some(t => /H1.*Deel 2\/2/i.test(t));
+    expect(duitsH1Deel1).toBe(false); // Already completed
+    expect(duitsH1Deel2).toBe(true);  // Remaining part
+    // Remaining study time to schedule: 4.5h total - 45m done = 3.75h (225m)
+    expect(duitsMins).toBe(225);
+  });
 });
