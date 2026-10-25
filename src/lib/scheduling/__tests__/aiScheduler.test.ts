@@ -318,8 +318,9 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
           totalHours: 4.5,
           can_study_after_exam: true,
           studyMaterials: [
-            { chapter: 'Grammatik & Naamvallen', difficulty: 3, user_estimated_total_hours: 1.5 },
-            { chapter: 'Leseverstehen & Woorden', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H1: Literatuur en context. Duits', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H2: Literaire tekstsoorten en begrippen. Duits', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H3: Literatuurgeschiedenis en hoofdthema\'s. Duits', difficulty: 3, user_estimated_total_hours: 1.5 },
           ],
         },
       ],
@@ -331,19 +332,34 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
 
     const { schedule } = await generateAISchedule(inputs);
 
-    // 1. German must ONLY be scheduled on or after Math exam date (2026-11-10)
+    // 1. Total scheduled German study time must EXACTLY equal agreed 4.5 hours (270 minutes), NOT 5.5h
+    let totalGermanMins = 0;
+    let totalGermanSessions = 0;
+    const germanDates: string[] = [];
     for (const [dateStr, dayMap] of schedule.entries()) {
-      if (dayMap.has('duits') && dayMap.get('duits')!.length > 0) {
-        expect(dateStr >= '2026-11-10').toBe(true);
+      if (dayMap.has('duits')) {
+        const sessions = dayMap.get('duits')!;
+        totalGermanSessions += sessions.length;
+        for (const s of sessions) {
+          totalGermanMins += s.durationMinutes;
+          germanDates.push(dateStr);
+        }
       }
     }
+    expect(totalGermanMins).toBe(270); // 4.5 hours * 60 = 270 min exactly
+    expect(totalGermanSessions).toBe(6); // 6 sessions of 45 min each
 
-    // 2. Nov 11 must have at least 2 German sessions (substantial final prep)
+    // 2. German must ONLY be scheduled on or after Math exam date (2026-11-10) — 0 on Nov 6, 7, 8, 9
+    germanDates.forEach(d => {
+      expect(d >= '2026-11-10').toBe(true);
+    });
+
+    // 3. Nov 11 must have at least 2 German sessions (substantial final prep)
     const nov11German = schedule.get('2026-11-11')?.get('duits');
     expect(nov11German).toBeDefined();
     expect(nov11German!.length).toBeGreaterThanOrEqual(2);
 
-    // 3. No day in the entire schedule has >= 180 min (max 150m on pre-exam days, <= 135m on regular days)
+    // 4. No day in the entire schedule has >= 180 min (max 150m on pre-exam days, <= 135m on regular days)
     for (const [dateStr, dayMap] of schedule.entries()) {
       let dayMins = 0;
       for (const [, sessions] of dayMap.entries()) {

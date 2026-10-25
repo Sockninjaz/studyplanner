@@ -150,16 +150,17 @@ export async function generateAISchedule(
 
 
 
-    // Guarantee that every exam ALWAYS has a dedicated final Revision session
+    // Ensure the final session before the exam covers final revision & practice,
+    // WITHOUT adding an unbudgeted extra session that exceeds the total study hours
+    // the user agreed upon in exam creation (e.g. turning 4.5h into 5.5h).
     const hasExplicitReview = blocks.some(b => 
       isDedicatedReviewBlock(b.content)
     );
-    if (!hasExplicitReview) {
-      const fallbackSessionDuration = Math.min(90, Math.max(30, inputs.session_duration || 60));
-      blocks.push({
-        content: isDutch ? `Eindherhaling & Proeftoets: ${exam.subject}` : `Final Revision & Practice: ${exam.subject}`,
-        durationMinutes: fallbackSessionDuration
-      });
+    if (!hasExplicitReview && blocks.length >= 2) {
+      const lastBlock = blocks[blocks.length - 1];
+      lastBlock.content = isDutch
+        ? `Eindherhaling & Proeftoets: ${exam.subject} (${lastBlock.content})`
+        : `Final Revision & Practice: ${exam.subject} (${lastBlock.content})`;
     }
 
     examTopics.set(exam.id, blocks);
@@ -254,15 +255,15 @@ export async function generateAISchedule(
         // Full pre-exam days (e.g. day before exam) comfortably accommodate 2 sessions (up to 120-135m).
         // Exam day afternoons accommodate 1-2 sessions (up to 90-120m).
         const postSessionCapacity = postPriorDays.reduce((acc, d) => {
-          return acc + (d === earlierDateStr ? 2 : 3);
+          return acc + (d === earlierDateStr ? 3 : 3);
         }, 0);
 
         const postMinsCapacity = postPriorDays.reduce((acc, d) => {
-          return acc + (d === earlierDateStr ? 105 : Math.max(150, PREFERRED_MINUTES_PER_DAY + 30));
+          return acc + (d === earlierDateStr ? 135 : Math.max(150, PREFERRED_MINUTES_PER_DAY + 30));
         }, 0);
 
-        // If sessions fit in postPriorDays, or if within healthy capacity, ISOLATE 100%!
-        if (rawTopics.length <= postSessionCapacity || totalTopicMins <= postMinsCapacity) {
+        // If sessions fit in postPriorDays within healthy capacity, ISOLATE 100%!
+        if (rawTopics.length <= postSessionCapacity && totalTopicMins <= postMinsCapacity) {
           isIsolated = true;
           allValid = postPriorDays;
         }
@@ -326,8 +327,8 @@ export async function generateAISchedule(
       const postDaysHaveCapacity = postDaysAvailable && postPriorDays.some(pd => {
         const curCount = dailySessionsCount.get(pd) || 0;
         const curLoad = dailyLoadMinutes.get(pd) || 0;
-        const maxDayCount = (pd === firstAvailablePostDay) ? 2 : 3;
-        const maxDayLoad = (pd === firstAvailablePostDay) ? 120 : Math.max(150, PREFERRED_MINUTES_PER_DAY + 30);
+        const maxDayCount = 3;
+        const maxDayLoad = (pd === firstAvailablePostDay) ? 135 : Math.max(150, PREFERRED_MINUTES_PER_DAY + 30);
         return curCount < maxDayCount && (curLoad + duration <= maxDayLoad);
       });
 
@@ -398,7 +399,7 @@ export async function generateAISchedule(
         // Strongly penalize days exceeding 135 mins, strictly forbid 160+ mins (prevents 180m days)
         let overloadPenalty = 0;
         if (load + duration > 160) {
-          overloadPenalty = 90000;
+          overloadPenalty = 100000;
         } else if (load + duration > 135) {
           overloadPenalty = 25000;
         } else if (load + duration > PREFERRED_MINUTES_PER_DAY) {
@@ -430,22 +431,26 @@ export async function generateAISchedule(
         }
       }
 
-      // Fallback if all candidatePool dates exceed MAX
-      if ((minScore >= 100000 || !bestDay) && allValid.length > candidatePool.length) {
+      // Fallback if all candidatePool dates exceed MAX or cause heavy overload
+      if ((minScore >= 80000 || !bestDay) && allValid.length > candidatePool.length) {
         for (let i = allValid.length - 1; i >= 0; i--) {
           const d = allValid[i];
           const count = dailySessionsCount.get(d) || 0;
           const load = dailyLoadMinutes.get(d) || 0;
           const hasSame = examScheduledDays.get(exam.id)?.has(d) ? 1 : 0;
-          const wouldExceedPref = (load + duration > PREFERRED_MINUTES_PER_DAY) ? 1 : 0;
           const wouldExceedMax = (load + duration > MAX_MINUTES_PER_DAY) ? 1 : 0;
           const isPreExam1ForOther = preExam1DayMap.has(d) && !preExam1DayMap.get(d)!.has(exam.id);
           const daysBeforeExam = Math.max(1, Math.round((new Date(exam.exam_date).getTime() - new Date(d).getTime()) / 86400000));
 
+          let fbOverload = 0;
+          if (load + duration > 160) fbOverload = 100000;
+          else if (load + duration > 135) fbOverload = 25000;
+          else if (load + duration > PREFERRED_MINUTES_PER_DAY) fbOverload = 6000;
+
           const score =
             wouldExceedMax * 100000 +
             (isPreExam1ForOther ? 100000 : 0) +
-            wouldExceedPref * 8000 +
+            fbOverload +
             daysBeforeExam * 200 +
             count * 400 +
             hasSame * 200 +
