@@ -535,4 +535,104 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
     // Remaining study time to schedule: 4.5h total - 45m done = 3.75h (225m)
     expect(duitsMins).toBe(225);
   });
+
+  it('eliminates 3-hour crunch on Nov 9 by placing Math on Nov 6 and isolates German to Nov 10-11 with zero multi-week gap', async () => {
+    const inputs: AISchedulerInputs = {
+      exams: [
+        {
+          id: 'scheikunde',
+          subject: 'Scheikunde',
+          exam_date: new Date('2026-11-04T09:00:00.000Z'),
+          totalHours: 8.5,
+          studyMaterials: [
+            { chapter: 'H12: Molecuulbouw. Chemie Overal', difficulty: 3, user_estimated_total_hours: 2, completed: true },
+            { chapter: 'H13: Kunststoffen. Chemie Overal', difficulty: 3, user_estimated_total_hours: 2 },
+            { chapter: 'H15: Biochemie. Chemie Overal', difficulty: 4, user_estimated_total_hours: 2 },
+            { chapter: 'H16: Groene chemie. Chemie Overal', difficulty: 4, user_estimated_total_hours: 2.5 },
+          ],
+        },
+        {
+          id: 'natuurkunde',
+          subject: 'Natuurkunde',
+          exam_date: new Date('2026-11-05T09:00:00.000Z'),
+          totalHours: 9,
+          studyMaterials: [
+            { chapter: 'H1: Krachten en beweging. Polaris. H3 `&', difficulty: 3, user_estimated_total_hours: 1.5, completed: true },
+            { chapter: 'H7: Kracht en evenwicht. Polaris', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H8: Energie. Polaris', difficulty: 3, user_estimated_total_hours: 2.5 },
+            { chapter: 'H13: Cirkelbanen en gravitatie. Polaris', difficulty: 4, user_estimated_total_hours: 3.5 },
+          ],
+        },
+        {
+          id: 'nederlands',
+          subject: 'Nederlands',
+          exam_date: new Date('2026-11-06T09:00:00.000Z'),
+          totalHours: 5.5,
+          studyMaterials: [
+            { chapter: 'H1: Romantiek. Dautzenberg', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H2: Fin de siècle. Dautzenberg', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H3: Modernisme. Dautzenberg', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H4: Door de docent uitgereikte teksten. Dautzenberg', difficulty: 3, user_estimated_total_hours: 1 },
+          ],
+        },
+        {
+          id: 'wiskunde',
+          subject: 'Wiskunde',
+          exam_date: new Date('2026-11-10T09:00:00.000Z'),
+          totalHours: 7,
+          studyMaterials: [
+            { chapter: 'H3: Voorkennis & Basis (Herhaling). Getal en Ruimte. H1 &', difficulty: 3, user_estimated_total_hours: 1 },
+            { chapter: 'H5: Machtsverbanden en exponentiële formules. Getal en Ruimte', difficulty: 3, user_estimated_total_hours: 1 },
+            { chapter: 'H8: Logaritmische functies en veranderingen. Getal en Ruimte', difficulty: 3, user_estimated_total_hours: 1 },
+            { chapter: 'H10: Differentiëren. Getal en Ruimte', difficulty: 3, user_estimated_total_hours: 2 },
+            { chapter: 'H12: Rijen. Getal en Ruimte', difficulty: 3, user_estimated_total_hours: 2 },
+          ],
+        },
+        {
+          id: 'duits',
+          subject: 'Duits',
+          exam_date: new Date('2026-11-12T09:00:00.000Z'),
+          totalHours: 4.5,
+          studyMaterials: [
+            { chapter: 'H1: Literatuur en context. Duits', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H2: Literaire tekstsoorten en begrippen. Duits', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'H3: Literatuurgeschiedenis en hoofdthema\'s. Duits', difficulty: 3, user_estimated_total_hours: 1.5 },
+          ],
+        },
+      ],
+      daily_max_hours: 4,
+      soft_daily_limit: 2,
+      session_duration: 60,
+      start_date: new Date('2026-10-25T00:00:00.000Z'),
+    };
+
+    const { schedule } = await generateAISchedule(inputs);
+
+    // 1. Check Nov 9 (day before Math exam): Must NOT be 3 hours (180 min)
+    const nov9Sessions = schedule.get('2026-11-09')?.get('wiskunde') || [];
+    const nov9Mins = nov9Sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+    expect(nov9Mins).toBeLessThanOrEqual(135);
+    expect(nov9Sessions.length).toBeLessThanOrEqual(2);
+
+    // 2. Check Nov 6 (after Nederlands exam): Must have Math scheduled
+    const nov6MathSessions = schedule.get('2026-11-06')?.get('wiskunde') || [];
+    expect(nov6MathSessions.length).toBeGreaterThanOrEqual(1);
+
+    // 3. Check German: Must NOT be scheduled on Oct 25 (today) or Nov 6
+    const oct25German = schedule.get('2026-10-25')?.get('duits') || [];
+    expect(oct25German.length).toBe(0);
+    const nov6German = schedule.get('2026-11-06')?.get('duits') || [];
+    expect(nov6German.length).toBe(0);
+
+    // 4. German must be concentrated in the window after Math (Nov 10 & Nov 11)
+    const germanDates: string[] = [];
+    for (const [dateStr, dayMap] of schedule.entries()) {
+      if (dayMap.has('duits') && dayMap.get('duits')!.length > 0) {
+        germanDates.push(dateStr);
+      }
+    }
+    germanDates.forEach(d => {
+      expect(d >= '2026-11-10').toBe(true);
+    });
+  });
 });

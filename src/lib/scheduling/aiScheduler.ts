@@ -320,24 +320,21 @@ export async function generateAISchedule(
       const closestEarlierExam = earlierExams[earlierExams.length - 1];
       const earlierDateStr = closestEarlierExam.exam_date.toISOString().split('T')[0];
 
-      // If user can study after the earlier exam, that afternoon/evening is available for study
-      firstAvailablePostDay = closestEarlierExam.can_study_after_exam !== false
-        ? earlierDateStr
-        : new Date(new Date(closestEarlierExam.exam_date).getTime() + 86400000).toISOString().split('T')[0];
+      // The afternoon/evening of earlier exam days is available for studying subsequent future exams
+      firstAvailablePostDay = earlierDateStr;
 
       postPriorDays = allValid.filter(d => d >= firstAvailablePostDay! && d <= lastValidDay);
 
       if (postPriorDays.length > 0) {
         // Calculate capacity in postPriorDays:
-        // Full pre-exam days (e.g. day before exam) comfortably accommodate 2 sessions (up to 120-135m).
-        // Exam day afternoons accommodate 1-2 sessions (up to 90-120m).
-        const postSessionCapacity = postPriorDays.reduce((acc, d) => {
-          return acc + (d === earlierDateStr ? 3 : 3);
-        }, 0);
-
-        const postMinsCapacity = postPriorDays.reduce((acc, d) => {
-          return acc + (d === earlierDateStr ? 135 : Math.max(150, PREFERRED_MINUTES_PER_DAY + 30));
-        }, 0);
+        // Trailing exams (like German) with short sessions (<=50m) can comfortably take 3 sessions (up to 135m) per post-prior day.
+        // Non-trailing exams take up to 2 sessions per day (<= 120-135m) so no day gets forced into a 3-hour crunch.
+        const isTrailingExam = exam.id === sortedExams[sortedExams.length - 1].id;
+        const avgTopicMins = totalTopicMins / Math.max(1, rawTopics.length);
+        const maxSessPerDay = (isTrailingExam && avgTopicMins <= 50) ? 3 : 2;
+        const maxMinsPerDay = maxSessPerDay === 3 ? 135 : Math.min(135, PREFERRED_MINUTES_PER_DAY);
+        const postSessionCapacity = postPriorDays.length * maxSessPerDay;
+        const postMinsCapacity = postPriorDays.length * maxMinsPerDay;
 
         // If sessions fit in postPriorDays within healthy capacity, ISOLATE 100%!
         if (rawTopics.length <= postSessionCapacity && totalTopicMins <= postMinsCapacity) {
@@ -354,6 +351,15 @@ export async function generateAISchedule(
       const targetHorizonDays = Math.max(minDaysNeeded + 1, Math.ceil(rawTopics.length * 2.0));
       const horizonCount = Math.max(minDaysNeeded, Math.min(allValid.length, targetHorizonDays));
       horizonDates = allValid.slice(-horizonCount);
+    }
+
+    const maxLeadDays = Math.max(7, Math.ceil(rawTopics.length * 1.6), Math.ceil(totalTopicMins / 60 * 1.6));
+    if (!isIsolated && allValid.length > maxLeadDays) {
+      const candidateLead = allValid.slice(-maxLeadDays);
+      if (candidateLead.length * 2 >= rawTopics.length) {
+        allValid = candidateLead;
+        horizonDates = candidateLead;
+      }
     }
 
     examValidDates.set(exam.id, { allValid, horizonDates, postPriorDays, firstAvailablePostDay });
@@ -463,8 +469,8 @@ export async function generateAISchedule(
               Math.abs(Math.round((new Date(d).getTime() - new Date(sd).getTime()) / 86400000))
             )
           );
-          if (minGap > 4) {
-            gapPenalty = (minGap - 4) * 1000;
+          if (minGap > 3) {
+            gapPenalty = (minGap - 3) * 25000;
           }
         }
 
@@ -595,7 +601,7 @@ export async function generateAISchedule(
       .filter(d => {
         const c = getDayCount(d);
         const l = getDayLoad(d);
-        return c >= 3 || l > Math.max(135, avgDailyMins + 20);
+        return (c >= 3 && l > 135) || l >= 150 || (l > Math.max(135, avgDailyMins + 20) && c >= 2);
       })
       .sort((a, b) => {
         const loadDiff = getDayLoad(b) - getDayLoad(a);
@@ -626,6 +632,11 @@ export async function generateAISchedule(
 
         for (const targetDay of validDates) {
           if (targetDay === heavyDay) continue;
+          const otherDates = scheduledItems.filter(it => it.examId === item.examId && it !== item).map(it => it.dateStr);
+          if (otherDates.length > 0) {
+            const minGapToOther = Math.min(...otherDates.map(od => Math.abs(Math.round((new Date(targetDay).getTime() - new Date(od).getTime()) / 86400000))));
+            if (minGapToOther > 3) continue;
+          }
           if (blockedSet.has(targetDay)) continue;
 
           // Never invade exclusive pre-exam day of another exam
