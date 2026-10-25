@@ -301,48 +301,13 @@ export async function generateAISchedule(
     const totalTopicMins = rawTopics.reduce((sum, t) => sum + t.durationMinutes, 0);
     const minDaysNeeded = Math.ceil(totalTopicMins / PREFERRED_MINUTES_PER_DAY);
 
-    // --- EXAM ISOLATION CHECK (Sequential Focus) ---
-    // If there is an earlier exam, check if this exam can be completely isolated
-    // to the window between the earlier exam and this exam.
-    // e.g. German on Nov 12 with Math on Nov 10: if German can fit in Nov 10-11,
-    // isolate German exclusively to Nov 10-11 so it does not crowd Math or Dutch.
-    const thisExamDateStr = exam.exam_date.toISOString().split('T')[0];
-    const earlierExams = sortedExams.filter(e => {
-      const eDateStr = e.exam_date.toISOString().split('T')[0];
-      return eDateStr < thisExamDateStr;
-    });
-
-    let isIsolated = false;
-    let postPriorDays: string[] = [];
-    let firstAvailablePostDay: string | undefined;
-
-    if (earlierExams.length > 0) {
-      const closestEarlierExam = earlierExams[earlierExams.length - 1];
-      const earlierDateStr = closestEarlierExam.exam_date.toISOString().split('T')[0];
-
-      // The afternoon/evening of earlier exam days is available for studying subsequent future exams
-      firstAvailablePostDay = earlierDateStr;
-
-      postPriorDays = allValid.filter(d => d >= firstAvailablePostDay! && d <= lastValidDay);
-
-      if (postPriorDays.length > 0) {
-        // Calculate capacity in postPriorDays:
-        // Trailing exams (like German) with short sessions (<=50m) can comfortably take 3 sessions (up to 135m) per post-prior day.
-        // Non-trailing exams take up to 2 sessions per day (<= 120-135m) so no day gets forced into a 3-hour crunch.
-        const isTrailingExam = exam.id === sortedExams[sortedExams.length - 1].id;
-        const avgTopicMins = totalTopicMins / Math.max(1, rawTopics.length);
-        const maxSessPerDay = (isTrailingExam && avgTopicMins <= 50) ? 3 : 2;
-        const maxMinsPerDay = maxSessPerDay === 3 ? 135 : Math.min(135, PREFERRED_MINUTES_PER_DAY);
-        const postSessionCapacity = postPriorDays.length * maxSessPerDay;
-        const postMinsCapacity = postPriorDays.length * maxMinsPerDay;
-
-        // If sessions fit in postPriorDays within healthy capacity, ISOLATE 100%!
-        if (rawTopics.length <= postSessionCapacity && totalTopicMins <= postMinsCapacity) {
-          isIsolated = true;
-          allValid = postPriorDays;
-        }
-      }
-    }
+    // NOTE: The former hard "isolation" rule (cramming a trailing exam entirely into the days after
+    // the previous exam) is gone. The global optimiser in Pass 3 now balances the workload across all
+    // exams, which naturally lets a trailing exam use light days earlier on (e.g. the afternoon of an
+    // earlier exam day) instead of piling everything into the last two days.
+    const isIsolated = false;
+    const postPriorDays: string[] = [];
+    const firstAvailablePostDay: string | undefined = undefined;
 
     let horizonDates: string[];
     if (isIsolated) {
@@ -369,6 +334,7 @@ export async function generateAISchedule(
   }
 
   // Pass 1: Reserve dedicated final review on the day before the exam for each exam
+  const reservedReviewExams = new Set<string>();
   for (const exam of sortedExams) {
     const topics = unassignedTopicsByExam.get(exam.id);
     const dateInfo = examValidDates.get(exam.id);
@@ -382,6 +348,7 @@ export async function generateAISchedule(
       dailyLoadMinutes.set(dayBeforeExam, (dailyLoadMinutes.get(dayBeforeExam) || 0) + reviewTopic.durationMinutes);
       dailySessionsCount.set(dayBeforeExam, (dailySessionsCount.get(dayBeforeExam) || 0) + 1);
       examScheduledDays.get(exam.id)!.add(dayBeforeExam);
+      reservedReviewExams.add(exam.id);
     }
   }
 
@@ -560,150 +527,232 @@ export async function generateAISchedule(
     }
   }
 
-  // === PASS 3: WORKLOAD LEVELING & DAILY LOAD SMOOTHING ===
-  // Eliminates 3-hour / 3-session crunch days by moving sessions to lighter days
-  // where valid, ensuring a smooth ±1 session distribution across active study days.
-  interface ScheduledItem {
-    examId: string;
-    topicIndex: number;
-    durationMinutes: number;
-    isReview: boolean;
-    dateStr: string;
-  }
-
-  const scheduledItems: ScheduledItem[] = [];
-  for (const exam of sortedExams) {
-    const dates = examTargetDates.get(exam.id) || [];
-    const origTopics = examTopics.get(exam.id) || [];
-    for (let i = 0; i < origTopics.length; i++) {
-      scheduledItems.push({
-        examId: exam.id,
-        topicIndex: i,
-        durationMinutes: origTopics[i].durationMinutes,
-        isReview: isDedicatedReviewBlock(origTopics[i].content),
-        dateStr: dates[i],
-      });
+  // === PASS 3: GLOBAL SCHEDULE OPTIMISATION ===
+  // Pass 2 produces a reasonable first draft. Here we search (simulated annealing, seeded so it is
+  // fully deterministic) for the arrangement of ALL sessions across ALL exams that minimises a
+  // single cost function. This allows coordinated trades that greedy one-move leveling can never
+  // find, e.g. "move a Math session back a day so a German session can take its old slot".
+  //
+  // The cost function encodes what makes a schedule feel good:
+  //  - even daily workload (squared load) and no big jumps UP from one day to the next
+  //    (a drop in workload towards the end is fine because fewer exams remain)
+  //  - no crunch days (>135m, >2 sessions) and no empty days
+  //  - sessions of the same exam are never separated by a huge gap
+  //  - study stays reasonably close to the exam, protects the day(s) right before other exams
+  //  - exam days stay light (only the afternoon is usable)
+  const dayNumCache = new Map<string, number>();
+  const dayNum = (d: string): number => {
+    let n = dayNumCache.get(d);
+    if (n === undefined) {
+      n = Math.round(Date.parse(`${d}T00:00:00.000Z`) / 86400000);
+      dayNumCache.set(d, n);
     }
+    return n;
+  };
+
+  const examDayNums = new Map<string, number>();
+  const examDaySet = new Set<string>();
+  for (const exam of sortedExams) {
+    const examDateStr = new Date(exam.exam_date).toISOString().split('T')[0];
+    examDayNums.set(exam.id, dayNum(examDateStr));
+    examDaySet.add(examDateStr);
   }
 
-  const getDayItems = (d: string) => scheduledItems.filter(it => it.dateStr === d);
-  const getDayLoad = (d: string) => getDayItems(d).reduce((sum, it) => sum + it.durationMinutes, 0);
-  const getDayCount = (d: string) => getDayItems(d).length;
+  const optExams = sortedExams.filter(
+    e => (examTargetDates.get(e.id)?.length || 0) > 0 && examValidDates.has(e.id) && (examTopics.get(e.id)?.length || 0) > 0
+  );
 
-  const totalStudyMinutes = scheduledItems.reduce((sum, it) => sum + it.durationMinutes, 0);
-  const activeDaysList = availableDates.filter(d => getDayCount(d) > 0);
-  const avgDailyMins = Math.round(totalStudyMinutes / Math.max(1, activeDaysList.length));
+  const validDayArrays = new Map<string, string[]>();
+  const validDaySets = new Map<string, Set<string>>();
+  for (const exam of optExams) {
+    const days = examValidDates.get(exam.id)!.allValid.filter(d => !blockedSet.has(d));
+    validDayArrays.set(exam.id, days);
+    validDaySets.set(exam.id, new Set(days));
+  }
 
-  const MAX_LEVELING_ITERATIONS = 50;
-  for (let iter = 0; iter < MAX_LEVELING_ITERATIONS; iter++) {
-    // Identify heavy days (> 135 mins, or >= 3 sessions, or significantly above average daily load)
-    const heavyDays = availableDates
-      .filter(d => {
-        const c = getDayCount(d);
-        const l = getDayLoad(d);
-        return (c >= 3 && l > 135) || l >= 150 || (l > Math.max(135, avgDailyMins + 20) && c >= 2);
-      })
-      .sort((a, b) => {
-        const loadDiff = getDayLoad(b) - getDayLoad(a);
-        if (loadDiff !== 0) return loadDiff;
-        return getDayCount(b) - getDayCount(a);
-      });
+  const optState = new Map<string, string[]>();
+  for (const exam of optExams) {
+    optState.set(exam.id, [...examTargetDates.get(exam.id)!]);
+  }
 
-    if (heavyDays.length === 0) break;
+  const evaluateSchedule = (state: Map<string, string[]>): number => {
+    const load = new Map<string, number>();
+    const cnt = new Map<string, number>();
+    const longCnt = new Map<string, number>();
+    const sameCnt = new Map<string, number>();
+    let cost = 0;
 
-    let moveMade = false;
+    for (const exam of optExams) {
+      // Topics are placed chronologically (k-th topic on the k-th earliest date),
+      // so durations must be zipped with the SORTED dates to get the true daily load.
+      const dates = [...state.get(exam.id)!].sort();
+      const topics = examTopics.get(exam.id)!;
+      const examNum = examDayNums.get(exam.id)!;
 
-    for (const heavyDay of heavyDays) {
-      const heavyLoad = getDayLoad(heavyDay);
-      const heavyCount = getDayCount(heavyDay);
-      // Dedicated review sessions on the day before the exam remain fixed
-      const donorItems = getDayItems(heavyDay).filter(it => !it.isReview);
+      for (let i = 0; i < dates.length && i < topics.length; i++) {
+        const d = dates[i];
+        const dur = topics[i].durationMinutes;
+        load.set(d, (load.get(d) || 0) + dur);
+        cnt.set(d, (cnt.get(d) || 0) + 1);
 
-      if (donorItems.length === 0) continue;
+        const daysBefore = Math.max(1, examNum - dayNum(d));
+        cost += daysBefore * 4;
 
-      for (const item of donorItems) {
-        const dur = item.durationMinutes;
-        const examDatesInfo = examValidDates.get(item.examId);
-        if (!examDatesInfo) continue;
-        const validDates = examDatesInfo.allValid;
+        const p1 = preExam1DayMap.get(d);
+        if (p1 && !p1.has(exam.id)) cost += 4000;
+        const p2 = preExam2DayMap.get(d);
+        if (p2 && !p2.has(exam.id) && daysBefore > 2) cost += 60;
 
-        let bestTargetDay: string | null = null;
-        let bestTargetScore = Infinity;
-
-        for (const targetDay of validDates) {
-          if (targetDay === heavyDay) continue;
-          const otherDates = scheduledItems.filter(it => it.examId === item.examId && it !== item).map(it => it.dateStr);
-          if (otherDates.length > 0) {
-            const minGapToOther = Math.min(...otherDates.map(od => Math.abs(Math.round((new Date(targetDay).getTime() - new Date(od).getTime()) / 86400000))));
-            if (minGapToOther > 3) continue;
-          }
-          if (blockedSet.has(targetDay)) continue;
-
-          // Never invade exclusive pre-exam day of another exam
-          if (preExam1DayMap.has(targetDay) && !preExam1DayMap.get(targetDay)!.has(item.examId)) {
-            continue;
-          }
-
-          const targetLoad = getDayLoad(targetDay);
-          const targetCount = getDayCount(targetDay);
-
-          // Capacity check on target day:
-          // Target day cannot exceed daily max or become a new heavy day (> 135m, or > 150m on dedicated pre-exam day)
-          if (targetLoad + dur > MAX_MINUTES_PER_DAY) continue;
-          const maxTargetLoad = (preExam1DayMap.has(targetDay) && preExam1DayMap.get(targetDay)!.has(item.examId)) ? 150 : 135;
-          if (targetLoad + dur > maxTargetLoad) continue;
-          if (targetCount >= 2 && targetLoad + dur > PREFERRED_MINUTES_PER_DAY && !preExam1DayMap.has(targetDay)) continue;
-          const maxTargetCount = (preExam1DayMap.has(targetDay) && preExam1DayMap.get(targetDay)!.has(item.examId)) ? 3 : 2;
-          if (targetCount >= maxTargetCount) continue;
-
-          // Must strictly reduce the minute disparity between heavyDay and targetDay
-          const currentDiff = heavyLoad - targetLoad;
-          const newDiff = Math.abs((heavyLoad - dur) - (targetLoad + dur));
-          if (newDiff >= currentDiff) continue;
-
-          // Prefer target days closer to avgDailyMins and earlier in time for better prep
-          const isEarlier = targetDay < heavyDay;
-          const distToAvg = Math.abs((targetLoad + dur) - avgDailyMins);
-          const targetScore = distToAvg + (isEarlier ? 0 : 40) + targetCount * 15;
-
-          if (targetScore < bestTargetScore) {
-            bestTargetScore = targetScore;
-            bestTargetDay = targetDay;
-          }
+        if (dur >= 65) longCnt.set(d, (longCnt.get(d) || 0) + 1);
+        if (daysBefore > 2) {
+          const key = `${d}|${exam.id}`;
+          const prior = sameCnt.get(key) || 0;
+          if (prior >= 1) cost += 40;
+          sameCnt.set(key, prior + 1);
         }
 
-        if (bestTargetDay) {
-          item.dateStr = bestTargetDay;
-          moveMade = true;
-          break;
+        if (i > 0) {
+          const gap = dayNum(d) - dayNum(dates[i - 1]);
+          if (gap > 3) cost += (gap - 3) * 400;
         }
       }
-
-      if (moveMade) break;
     }
 
-    if (!moveMade) break;
-  }
+    let lastActive = -1;
+    for (let k = 0; k < availableDates.length; k++) {
+      if ((cnt.get(availableDates[k]) || 0) > 0) lastActive = k;
+    }
 
-  // Update target dates from leveled items
-  for (const item of scheduledItems) {
-    const dates = examTargetDates.get(item.examId);
-    if (dates) {
-      dates[item.topicIndex] = item.dateStr;
+    // Wind-down = the last two active days (only the final exam is still ahead)
+    const windDownStart = Math.max(0, lastActive - 1);
+    const LIGHT_DAY_FLOOR = 90;
+    let prevLoad = 0;
+    for (let k = 0; k <= lastActive; k++) {
+      const d = availableDates[k];
+      const L = load.get(d) || 0;
+      const C = cnt.get(d) || 0;
+      const isExamDay = examDaySet.has(d);
+
+      cost += (L * L) / 60;
+      // Light days are only natural in the final wind-down (few exams left). Earlier on they mean the
+      // work is badly distributed, so push study time onto them.
+      if (k < windDownStart && L < LIGHT_DAY_FLOOR) cost += ((LIGHT_DAY_FLOOR - L) * (LIGHT_DAY_FLOOR - L)) / 3;
+      if (L > MAX_MINUTES_PER_DAY) cost += (L - MAX_MINUTES_PER_DAY) * 500;
+      if (L > 135) cost += (L - 135) * (L - 135) * 3;
+      if (C > 2) cost += 600 * (C - 2);
+      if ((longCnt.get(d) || 0) > 1) cost += 400 * ((longCnt.get(d) || 0) - 1);
+
+      if (L === 0) cost += isExamDay ? 200 : 1500;
+      if (isExamDay) {
+        if (C > 2) cost += 400 * (C - 2);
+        if (L > 90) cost += ((L - 90) * (L - 90)) / 8;
+      }
+
+      if (k > 0) {
+        const rise = L - prevLoad;
+        // Workload may fall towards the end (fewer exams left) but must not jump UP by > 1 hour
+        if (rise > 60) cost += (rise - 60) * (rise - 60) * 2;
+        cost += (rise * rise) / 150;
+      }
+      prevLoad = L;
+    }
+
+    return cost;
+  };
+
+  interface MovableItem { examId: string; idx: number }
+  const movable: MovableItem[] = [];
+  for (const exam of optExams) {
+    const n = optState.get(exam.id)!.length;
+    for (let idx = 0; idx < n; idx++) {
+      // The reserved final review on the day before the exam stays fixed
+      if (idx === 0 && reservedReviewExams.has(exam.id)) continue;
+      movable.push({ examId: exam.id, idx });
     }
   }
 
-  // Re-calculate daily stats accurately after leveling
+  if (movable.length > 1) {
+    let seed = 0x9e3779b9 ^ (movable.length * 2654435761);
+    const rand = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+
+    let curCost = evaluateSchedule(optState);
+    let bestCost = curCost;
+    let bestState = new Map<string, string[]>();
+    optState.forEach((v, k) => bestState.set(k, [...v]));
+
+    const ITERATIONS = 25000;
+    const T_START = 400;
+    const T_END = 4;
+
+    for (let it = 0; it < ITERATIONS; it++) {
+      const temp = T_START * Math.pow(T_END / T_START, it / ITERATIONS);
+      const a = movable[Math.floor(rand() * movable.length)];
+      const aDates = optState.get(a.examId)!;
+      const aOld = aDates[a.idx];
+
+      let undo: () => void;
+
+      if (rand() < 0.5) {
+        // Relocate one session to another valid day
+        const pool = validDayArrays.get(a.examId)!;
+        if (pool.length === 0) continue;
+        const target = pool[Math.floor(rand() * pool.length)];
+        if (target === aOld) continue;
+        aDates[a.idx] = target;
+        undo = () => { aDates[a.idx] = aOld; };
+      } else {
+        // Swap days between two sessions of different exams
+        const b = movable[Math.floor(rand() * movable.length)];
+        if (b.examId === a.examId) continue;
+        const bDates = optState.get(b.examId)!;
+        const bOld = bDates[b.idx];
+        if (aOld === bOld) continue;
+        if (!validDaySets.get(a.examId)!.has(bOld) || !validDaySets.get(b.examId)!.has(aOld)) continue;
+        aDates[a.idx] = bOld;
+        bDates[b.idx] = aOld;
+        undo = () => { aDates[a.idx] = aOld; bDates[b.idx] = bOld; };
+      }
+
+      const newCost = evaluateSchedule(optState);
+      const delta = newCost - curCost;
+      if (delta <= 0 || rand() < Math.exp(-delta / temp)) {
+        curCost = newCost;
+        if (curCost < bestCost - 1e-9) {
+          bestCost = curCost;
+          bestState = new Map<string, string[]>();
+          optState.forEach((v, k) => bestState.set(k, [...v]));
+        }
+      } else {
+        undo();
+      }
+    }
+
+    bestState.forEach((dates, examId) => {
+      examTargetDates.set(examId, dates);
+    });
+  }
+
+  // Re-calculate daily stats accurately after optimisation (topics map onto chronologically sorted dates)
   dailyLoadMinutes.clear();
   dailySessionsCount.clear();
   for (const d of availableDates) {
     dailyLoadMinutes.set(d, 0);
     dailySessionsCount.set(d, 0);
   }
-  for (const item of scheduledItems) {
-    dailyLoadMinutes.set(item.dateStr, (dailyLoadMinutes.get(item.dateStr) || 0) + item.durationMinutes);
-    dailySessionsCount.set(item.dateStr, (dailySessionsCount.get(item.dateStr) || 0) + 1);
+  for (const exam of sortedExams) {
+    const dates = [...(examTargetDates.get(exam.id) || [])].sort();
+    const origTopics = examTopics.get(exam.id) || [];
+    for (let i = 0; i < origTopics.length && i < dates.length; i++) {
+      dailyLoadMinutes.set(dates[i], (dailyLoadMinutes.get(dates[i]) || 0) + origTopics[i].durationMinutes);
+      dailySessionsCount.set(dates[i], (dailySessionsCount.get(dates[i]) || 0) + 1);
+    }
   }
+
 
   // Sort target dates chronologically per exam and place topics onto finalSchedule
   for (const exam of sortedExams) {

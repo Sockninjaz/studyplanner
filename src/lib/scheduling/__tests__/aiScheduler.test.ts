@@ -246,7 +246,8 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
 
     const { schedule } = await generateAISchedule(inputs);
 
-    // 1. German must ONLY be scheduled on or after Math exam date (2026-11-10)
+    // 1. German must NOT all be crammed into the last 2 days: at least one session uses a lighter
+    // earlier day (e.g. afternoon of the Dutch exam day / Nov 7), but never starts weeks early.
     const germanDates: string[] = [];
     for (const [dateStr, dayMap] of schedule.entries()) {
       if (dayMap.has('duits') && dayMap.get('duits')!.length > 0) {
@@ -254,16 +255,12 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
       }
     }
     expect(germanDates.length).toBeGreaterThan(0);
-    germanDates.forEach(d => {
-      // Must not be scheduled on Nov 6, 7, 8, 9
-      expect(d >= '2026-11-10').toBe(true);
-    });
+    expect([...germanDates].sort()[0] >= '2026-11-02').toBe(true);
 
-    // 2. Nov 11 (the day before German exam) must have substantial German study (>= 2 sessions / >= 120m)
-    // instead of only 60m
+    // 2. Nov 11 (the day before German exam) still has German study
     const nov11German = schedule.get('2026-11-11')?.get('duits');
     expect(nov11German).toBeDefined();
-    expect(nov11German!.length).toBeGreaterThanOrEqual(2);
+    expect(nov11German!.length).toBeGreaterThanOrEqual(1);
 
     // 3. Math must NOT have a 3-hour crunch day (180 min) on Nov 9
     const nov9Math = schedule.get('2026-11-09')?.get('wiskunde') || [];
@@ -349,15 +346,16 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
     expect(totalGermanMins).toBe(270); // 4.5 hours * 60 = 270 min exactly
     expect(totalGermanSessions).toBe(6); // 6 sessions of 45 min each
 
-    // 2. German must ONLY be scheduled on or after Math exam date (2026-11-10) — 0 on Nov 6, 7, 8, 9
+    // 2. German is spread: at least one session before the Math exam day (not all crammed in the last 2 days)
     germanDates.forEach(d => {
-      expect(d >= '2026-11-10').toBe(true);
+      expect(d >= '2026-11-02').toBe(true);
     });
+    expect(germanDates.some(d => d < '2026-11-10')).toBe(true);
 
-    // 3. Nov 11 must have at least 2 German sessions (substantial final prep)
+    // 3. Nov 11 must still have German study
     const nov11German = schedule.get('2026-11-11')?.get('duits');
     expect(nov11German).toBeDefined();
-    expect(nov11German!.length).toBeGreaterThanOrEqual(2);
+    expect(nov11German!.length).toBeGreaterThanOrEqual(1);
 
     // 4. No day in the entire schedule has >= 180 min (max 150m on pre-exam days, <= 135m on regular days)
     for (const [dateStr, dayMap] of schedule.entries()) {
@@ -608,31 +606,46 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
 
     const { schedule } = await generateAISchedule(inputs);
 
-    // 1. Check Nov 9 (day before Math exam): Must NOT be 3 hours (180 min)
-    const nov9Sessions = schedule.get('2026-11-09')?.get('wiskunde') || [];
-    const nov9Mins = nov9Sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
-    expect(nov9Mins).toBeLessThanOrEqual(135);
-    expect(nov9Sessions.length).toBeLessThanOrEqual(2);
-
-    // 2. Check Nov 6 (after Nederlands exam): Must have Math scheduled
-    const nov6MathSessions = schedule.get('2026-11-06')?.get('wiskunde') || [];
-    expect(nov6MathSessions.length).toBeGreaterThanOrEqual(1);
-
-    // 3. Check German: Must NOT be scheduled on Oct 25 (today) or Nov 6
-    const oct25German = schedule.get('2026-10-25')?.get('duits') || [];
-    expect(oct25German.length).toBe(0);
-    const nov6German = schedule.get('2026-11-06')?.get('duits') || [];
-    expect(nov6German.length).toBe(0);
-
-    // 4. German must be concentrated in the window after Math (Nov 10 & Nov 11)
-    const germanDates: string[] = [];
-    for (const [dateStr, dayMap] of schedule.entries()) {
-      if (dayMap.has('duits') && dayMap.get('duits')!.length > 0) {
-        germanDates.push(dateStr);
+    const dayLoad = (d: string) => {
+      let mins = 0;
+      let count = 0;
+      for (const sessions of (schedule.get(d) || new Map()).values()) {
+        count += sessions.length;
+        mins += sessions.reduce((s: number, b: any) => s + b.durationMinutes, 0);
       }
+      return { mins, count };
+    };
+    const activeDays = [...schedule.keys()].filter(d => dayLoad(d).count > 0).sort();
+
+    // 1. No crunch days: at most 2 sessions and 135m anywhere (Nov 9 especially)
+    for (const d of activeDays) {
+      expect(dayLoad(d).count).toBeLessThanOrEqual(2);
+      expect(dayLoad(d).mins).toBeLessThanOrEqual(135);
     }
-    germanDates.forEach(d => {
-      expect(d >= '2026-11-10').toBe(true);
-    });
+    expect(dayLoad('2026-11-09').mins).toBeLessThanOrEqual(135);
+
+    // 2. Balanced workload: no day more than 60m heavier than the day before it
+    //    (getting lighter towards the end is fine), and no thin day before the wind-down.
+    for (let i = 1; i < activeDays.length; i++) {
+      expect(dayLoad(activeDays[i]).mins - dayLoad(activeDays[i - 1]).mins).toBeLessThanOrEqual(60);
+    }
+    for (const d of activeDays.slice(0, -2)) {
+      expect(dayLoad(d).mins).toBeGreaterThanOrEqual(90);
+      expect(dayLoad(d).count).toBeGreaterThanOrEqual(2);
+    }
+
+    // 3. German is not stuffed into the final two days: some of it sits on lighter earlier days,
+    //    but it never starts weeks ahead, and consecutive German sessions are never far apart.
+    const germanDates = activeDays.filter(d => (schedule.get(d)?.get('duits') || []).length > 0);
+    expect(germanDates.length).toBeGreaterThan(0);
+    expect(germanDates[0] >= '2026-11-02').toBe(true);
+    expect(germanDates.some(d => d < '2026-11-10')).toBe(true);
+    for (let i = 1; i < germanDates.length; i++) {
+      const gap = Math.round((Date.parse(germanDates[i]) - Date.parse(germanDates[i - 1])) / 86400000);
+      expect(gap).toBeLessThanOrEqual(3);
+    }
+
+    // 4. Math still gets Nov 6 (afternoon after the Dutch exam)
+    expect((schedule.get('2026-11-06')?.get('wiskunde') || []).length).toBeGreaterThanOrEqual(1);
   });
 });
