@@ -905,7 +905,7 @@ export default function StudyHubPage() {
         ) : (
           <div className="flex items-center gap-2">
             <h1 className="text-base font-bold text-gray-800 dark:text-white">{t('today.title')}</h1>
-            <span suppressHydrationWarning className="text-xs font-semibold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+            <span suppressHydrationWarning className="text-xs font-medium text-slate-500 dark:text-slate-400">
               {dateHeadingInfo.main}
             </span>
           </div>
@@ -953,11 +953,6 @@ export default function StudyHubPage() {
                       <h2 suppressHydrationWarning className="text-xs font-bold text-slate-900 dark:text-white truncate">
                         {dateHeadingInfo.main}
                       </h2>
-                      {dateHeadingInfo.isToday && (
-                        <span suppressHydrationWarning className="px-1.5 py-0.2 text-[9px] font-extrabold uppercase bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-md">
-                          {t('common.today')}
-                        </span>
-                      )}
                     </div>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
                       {loadingSessions ? t('common.loading') : `${sessions.length} ${sessions.length === 1 ? t('common.session') : t('common.sessions')}`}
@@ -1114,8 +1109,8 @@ export default function StudyHubPage() {
                           {(s as any).shortTitle || s.title}
                         </p>
                         {s.isCompleted && (
-                          <span className="inline-block mt-1 text-[10px] font-medium text-green-600 dark:text-green-400">
-                            ✓ Done
+                          <span className="inline-block mt-1 text-[10px] font-semibold text-[#4E774A] dark:text-[#9EC29A]">
+                            Done
                           </span>
                         )}
                       </div>
@@ -1212,14 +1207,14 @@ export default function StudyHubPage() {
                       </button>
                     )}
 
-                    {/* Round Green Toggle Button */}
+                    {/* Round Accent Green Toggle Button */}
                     <button
                       onClick={toggleComplete}
                       title={selectedSession.isCompleted ? t('today.markAsUndone') : t('today.markAsDone')}
                       className={`p-2 rounded-full border transition-all flex items-center justify-center w-10 h-10 ${
                         selectedSession.isCompleted
-                          ? 'border-green-500 bg-green-500 text-white hover:bg-green-600 hover:border-green-600 shadow-sm'
-                          : 'border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 hover:text-green-500'
+                          ? 'border-[#9EC29A] bg-[#9EC29A] text-slate-950 dark:text-slate-950 hover:bg-[#8eb58a] hover:border-[#8eb58a] shadow-sm'
+                          : 'border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-500 hover:bg-[#9EC29A]/15 dark:hover:bg-[#9EC29A]/15 hover:border-[#9EC29A]/40 hover:text-[#4E774A] dark:hover:text-[#9EC29A]'
                       }`}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1230,8 +1225,8 @@ export default function StudyHubPage() {
 
                   <div className="text-center mt-2 min-h-6">
                     {selectedSession.isCompleted ? (
-                      <p className="text-sm text-green-600 dark:text-green-400 font-bold animate-pulse">
-                        ✅ {t('today.sessionComplete')}
+                      <p className="text-xs text-[#4E774A] dark:text-[#9EC29A] font-semibold">
+                        {t('today.sessionComplete')}
                       </p>
                     ) : null}
                   </div>
