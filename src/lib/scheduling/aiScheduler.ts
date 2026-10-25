@@ -5,7 +5,7 @@ export interface ExamInput {
   subject: string;
   exam_date: Date;
   totalHours: number;
-  can_study_after_exam: boolean;
+  can_study_after_exam?: boolean;
   studyMaterials: Array<{
     chapter: string;
     difficulty: number;
@@ -95,10 +95,12 @@ export async function generateAISchedule(
       }
 
       if (remainingRatio > 0) {
-        const targetSessionMins = Math.min(90, Math.max(30, inputs.session_duration || 45)); // e.g. 30, 45, 60 mins
-        // For users wanting ~60m sessions, allow chapters up to 1.5h (90m) to be studied in a single session
-        // rather than artificially splitting a 1.5h chapter into two 45m micro-sessions.
-        const splitThreshold = targetSessionMins >= 60 ? targetSessionMins * 1.55 : targetSessionMins * 1.33;
+        const targetSessionMins = Math.min(75, Math.max(30, inputs.session_duration || 50)); // typically 45-60 min
+        // Keep individual session durations balanced around targetSessionMins.
+        // Chapters up to 75m fit in 1 single session.
+        // Larger chapters (> 75m, like 90m or 120m) are split into digestible chunks of ~45-60 min,
+        // so that a day with 2 sessions never ends up at 180 min (3 hours).
+        const splitThreshold = Math.min(75, Math.round(targetSessionMins * 1.25));
 
         for (const c of exam.studyMaterials) {
           const totalChapterMins = Math.max(30, Math.round((c.user_estimated_total_hours || 1) * 60 * remainingRatio));
@@ -107,12 +109,12 @@ export async function generateAISchedule(
             // Fits in 1 single session
             blocks.push({
               content: c.chapter,
-              durationMinutes: Math.min(90, totalChapterMins)
+              durationMinutes: Math.min(75, totalChapterMins)
             });
           } else {
             // Split into digestible chunks around targetSessionMins
             const numChunks = Math.max(2, Math.ceil(totalChapterMins / targetSessionMins));
-            const chunkDuration = Math.min(90, Math.max(30, Math.round(totalChapterMins / numChunks / 5) * 5));
+            const chunkDuration = Math.min(75, Math.max(30, Math.round(totalChapterMins / numChunks / 5) * 5));
             for (let chunkIdx = 1; chunkIdx <= numChunks; chunkIdx++) {
               blocks.push({
                 content: numChunks > 1 ? `${c.chapter} (${partWord} ${chunkIdx}/${numChunks})` : c.chapter,
@@ -248,19 +250,18 @@ export async function generateAISchedule(
       postPriorDays = allValid.filter(d => d >= firstAvailablePostDay! && d <= lastValidDay);
 
       if (postPriorDays.length > 0) {
-        // Calculate capacity in postPriorDays
-        const targetSessionMins = Math.min(90, Math.max(30, inputs.session_duration || 45));
-        const maxSessionsPerFullDay = Math.max(2, Math.floor(PREFERRED_MINUTES_PER_DAY / targetSessionMins));
-
+        // Calculate capacity in postPriorDays:
+        // Full pre-exam days (e.g. day before exam) comfortably accommodate 2 sessions (up to 120-135m).
+        // Exam day afternoons accommodate 1-2 sessions (up to 90-120m).
         const postSessionCapacity = postPriorDays.reduce((acc, d) => {
-          return acc + (d === earlierDateStr ? 1 : maxSessionsPerFullDay);
+          return acc + (d === earlierDateStr ? 2 : 3);
         }, 0);
 
         const postMinsCapacity = postPriorDays.reduce((acc, d) => {
-          return acc + (d === earlierDateStr ? Math.min(90, PREFERRED_MINUTES_PER_DAY) : PREFERRED_MINUTES_PER_DAY);
+          return acc + (d === earlierDateStr ? 105 : Math.max(150, PREFERRED_MINUTES_PER_DAY + 30));
         }, 0);
 
-        // If all sessions fit in the window between earlier exam and this exam, ISOLATE 100%!
+        // If sessions fit in postPriorDays, or if within healthy capacity, ISOLATE 100%!
         if (rawTopics.length <= postSessionCapacity || totalTopicMins <= postMinsCapacity) {
           isIsolated = true;
           allValid = postPriorDays;
@@ -323,8 +324,11 @@ export async function generateAISchedule(
       // Check if postPriorDays still has capacity:
       const postDaysAvailable = postPriorDays && postPriorDays.length > 0;
       const postDaysHaveCapacity = postDaysAvailable && postPriorDays.some(pd => {
+        const curCount = dailySessionsCount.get(pd) || 0;
         const curLoad = dailyLoadMinutes.get(pd) || 0;
-        return curLoad + duration <= PREFERRED_MINUTES_PER_DAY;
+        const maxDayCount = (pd === firstAvailablePostDay) ? 2 : 3;
+        const maxDayLoad = (pd === firstAvailablePostDay) ? 120 : Math.max(150, PREFERRED_MINUTES_PER_DAY + 30);
+        return curCount < maxDayCount && (curLoad + duration <= maxDayLoad);
       });
 
       for (let i = candidatePool.length - 1; i >= 0; i--) {
@@ -332,7 +336,6 @@ export async function generateAISchedule(
         const count = dailySessionsCount.get(d) || 0;
         const load = dailyLoadMinutes.get(d) || 0;
         const hasSame = examScheduledDays.get(exam.id)?.has(d) ? 1 : 0;
-        const wouldExceedPref = (load + duration > PREFERRED_MINUTES_PER_DAY) ? 1 : 0;
         const wouldExceedMax = (load + duration > MAX_MINUTES_PER_DAY) ? 1 : 0;
 
         const isPreExam1ForThis = preExam1DayMap.has(d) && preExam1DayMap.get(d)!.has(exam.id);
@@ -387,10 +390,25 @@ export async function generateAISchedule(
           }
         }
 
-        // Spillover penalty: if post-prior gap days still have capacity, strongly penalize days before the prior exam
+        // Check session length: prevent two long sessions (>= 65m) on the same day
+        const hasExistingLong = (count > 0 && Math.round(load / count) >= 65);
+        const wouldDoubleLong = (hasExistingLong && duration >= 65) ? 1 : 0;
+
+        // Overload penalty:
+        // Strongly penalize days exceeding 135 mins, strictly forbid 160+ mins (prevents 180m days)
+        let overloadPenalty = 0;
+        if (load + duration > 160) {
+          overloadPenalty = 90000;
+        } else if (load + duration > 135) {
+          overloadPenalty = 25000;
+        } else if (load + duration > PREFERRED_MINUTES_PER_DAY) {
+          overloadPenalty = 6000 + (load + duration - PREFERRED_MINUTES_PER_DAY) * 100;
+        }
+
+        // Spillover penalty: if post-prior gap days still have capacity, strictly forbid spilling before the prior exam
         let prePriorPenalty = 0;
         if (postDaysHaveCapacity && firstAvailablePostDay && d < firstAvailablePostDay) {
-          prePriorPenalty = 25000;
+          prePriorPenalty = 100000;
         }
 
         const score =
@@ -398,7 +416,8 @@ export async function generateAISchedule(
           (isPreExam1ForOther ? 100000 : 0) +
           (isPreExam2ForOther ? 40000 : 0) +
           prePriorPenalty +
-          wouldExceedPref * 8000 +
+          wouldDoubleLong * 90000 +
+          overloadPenalty +
           recencyPenalty +
           countPenalty +
           sameExamPenalty +
@@ -489,17 +508,17 @@ export async function generateAISchedule(
 
   const MAX_LEVELING_ITERATIONS = 50;
   for (let iter = 0; iter < MAX_LEVELING_ITERATIONS; iter++) {
-    // Identify heavy days (>= 3 sessions, or significantly above average daily load)
+    // Identify heavy days (> 135 mins, or >= 3 sessions, or significantly above average daily load)
     const heavyDays = availableDates
       .filter(d => {
         const c = getDayCount(d);
         const l = getDayLoad(d);
-        return c >= 3 || (c >= 2 && l > Math.max(150, avgDailyMins + 30));
+        return c >= 3 || l > Math.max(135, avgDailyMins + 20);
       })
       .sort((a, b) => {
-        const countDiff = getDayCount(b) - getDayCount(a);
-        if (countDiff !== 0) return countDiff;
-        return getDayLoad(b) - getDayLoad(a);
+        const loadDiff = getDayLoad(b) - getDayLoad(a);
+        if (loadDiff !== 0) return loadDiff;
+        return getDayCount(b) - getDayCount(a);
       });
 
     if (heavyDays.length === 0) break;
@@ -535,15 +554,16 @@ export async function generateAISchedule(
           const targetLoad = getDayLoad(targetDay);
           const targetCount = getDayCount(targetDay);
 
-          // Capacity check on target day
+          // Capacity check on target day:
+          // Target day cannot exceed daily max or become a new heavy day (> 135m, or > 150m on dedicated pre-exam day)
           if (targetLoad + dur > MAX_MINUTES_PER_DAY) continue;
-          if (targetCount >= 2 && targetLoad + dur > PREFERRED_MINUTES_PER_DAY) continue;
+          const maxTargetLoad = (preExam1DayMap.has(targetDay) && preExam1DayMap.get(targetDay)!.has(item.examId)) ? 150 : 135;
+          if (targetLoad + dur > maxTargetLoad) continue;
+          if (targetCount >= 2 && targetLoad + dur > PREFERRED_MINUTES_PER_DAY && !preExam1DayMap.has(targetDay)) continue;
+          const maxTargetCount = (preExam1DayMap.has(targetDay) && preExam1DayMap.get(targetDay)!.has(item.examId)) ? 3 : 2;
+          if (targetCount >= maxTargetCount) continue;
 
-          // Target day must have strictly less sessions / load
-          if (targetCount >= heavyCount) continue;
-          if (targetLoad + dur >= heavyLoad) continue;
-
-          // Must strictly reduce the disparity between the two days
+          // Must strictly reduce the minute disparity between heavyDay and targetDay
           const currentDiff = heavyLoad - targetLoad;
           const newDiff = Math.abs((heavyLoad - dur) - (targetLoad + dur));
           if (newDiff >= currentDiff) continue;
@@ -551,7 +571,7 @@ export async function generateAISchedule(
           // Prefer target days closer to avgDailyMins and earlier in time for better prep
           const isEarlier = targetDay < heavyDay;
           const distToAvg = Math.abs((targetLoad + dur) - avgDailyMins);
-          const targetScore = distToAvg + (isEarlier ? 0 : 40) + targetCount * 25;
+          const targetScore = distToAvg + (isEarlier ? 0 : 40) + targetCount * 15;
 
           if (targetScore < bestTargetScore) {
             bestTargetScore = targetScore;

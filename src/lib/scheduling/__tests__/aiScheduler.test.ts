@@ -270,7 +270,7 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
     const nov9MathMins = nov9Math.reduce((sum, b) => sum + b.durationMinutes, 0);
     expect(nov9MathMins).toBeLessThan(180);
 
-    // 4. No active day across the entire calendar exceeds 150 minutes or 2 sessions
+    // 4. No active day across the entire calendar exceeds 135 minutes or 2 sessions
     for (const [dateStr, dayMap] of schedule.entries()) {
       let totalMins = 0;
       let totalCount = 0;
@@ -279,8 +279,82 @@ describe('aiScheduler - Exam Isolation and Workload Leveling', () => {
         totalMins += sessions.reduce((s, b) => s + b.durationMinutes, 0);
       }
       if (totalCount > 0) {
-        const subjectsSummary = Array.from(dayMap.entries()).map(([subj, sess]) => `${subj}: ${sess.length} (${sess.map(s => s.content).join(', ')})`).join(' | ');
-        console.log(`Day ${dateStr}: ${totalCount} sessions (${totalMins}m) -> ${subjectsSummary}`);
+        expect(totalMins).toBeLessThanOrEqual(135);
+        expect(totalCount).toBeLessThanOrEqual(2);
+      }
+    }
+  });
+
+  it('prevents 180-min days and isolates trailing exam even when it has 4+ sessions from larger materials', async () => {
+    const inputs: AISchedulerInputs = {
+      exams: [
+        {
+          id: 'scheikunde',
+          subject: 'Scheikunde',
+          exam_date: new Date('2026-11-04T09:00:00.000Z'),
+          totalHours: 4.5,
+          studyMaterials: [
+            { chapter: 'Zuren & Basen', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'Redoxreacties', difficulty: 3, user_estimated_total_hours: 1.5 },
+          ],
+        },
+        {
+          id: 'wiskunde',
+          subject: 'Wiskunde',
+          exam_date: new Date('2026-11-10T09:00:00.000Z'),
+          totalHours: 6,
+          can_study_after_exam: true,
+          studyMaterials: [
+            { chapter: 'Algebra', difficulty: 3, user_estimated_total_hours: 1 },
+            { chapter: 'Meetkunde', difficulty: 3, user_estimated_total_hours: 1 },
+            { chapter: 'Goniometrie', difficulty: 3, user_estimated_total_hours: 1 },
+            { chapter: 'Functies', difficulty: 3, user_estimated_total_hours: 1 },
+          ],
+        },
+        {
+          id: 'duits',
+          subject: 'Duits',
+          exam_date: new Date('2026-11-12T09:00:00.000Z'),
+          totalHours: 4.5,
+          can_study_after_exam: true,
+          studyMaterials: [
+            { chapter: 'Grammatik & Naamvallen', difficulty: 3, user_estimated_total_hours: 1.5 },
+            { chapter: 'Leseverstehen & Woorden', difficulty: 3, user_estimated_total_hours: 1.5 },
+          ],
+        },
+      ],
+      daily_max_hours: 4,
+      soft_daily_limit: 2,
+      session_duration: 60,
+      start_date: new Date('2026-10-25T00:00:00.000Z'),
+    };
+
+    const { schedule } = await generateAISchedule(inputs);
+
+    // 1. German must ONLY be scheduled on or after Math exam date (2026-11-10)
+    for (const [dateStr, dayMap] of schedule.entries()) {
+      if (dayMap.has('duits') && dayMap.get('duits')!.length > 0) {
+        expect(dateStr >= '2026-11-10').toBe(true);
+      }
+    }
+
+    // 2. Nov 11 must have at least 2 German sessions (substantial final prep)
+    const nov11German = schedule.get('2026-11-11')?.get('duits');
+    expect(nov11German).toBeDefined();
+    expect(nov11German!.length).toBeGreaterThanOrEqual(2);
+
+    // 3. No day in the entire schedule has >= 180 min (max 150m on pre-exam days, <= 135m on regular days)
+    for (const [dateStr, dayMap] of schedule.entries()) {
+      let dayMins = 0;
+      for (const [, sessions] of dayMap.entries()) {
+        for (const s of sessions) {
+          expect(s.durationMinutes).toBeLessThanOrEqual(75);
+          dayMins += s.durationMinutes;
+        }
+      }
+      expect(dayMins).toBeLessThanOrEqual(150);
+      if (dateStr !== '2026-11-11' && dateStr !== '2026-11-03') {
+        expect(dayMins).toBeLessThanOrEqual(135);
       }
     }
   });
