@@ -910,15 +910,7 @@ export default function StudyHubPage() {
             </span>
           </div>
         )}
-        <div className="flex items-center gap-2">
-          {dayFinishEstimate && (
-            <span suppressHydrationWarning className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md">
-              <svg className="w-3 h-3 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              {dayFinishEstimate.time}
-            </span>
-          )}
-          <span suppressHydrationWarning className="text-xs text-gray-400 dark:text-slate-500">{dateHeadingInfo.date}</span>
-        </div>
+        <span suppressHydrationWarning className="text-xs text-gray-400 dark:text-slate-500">{dateHeadingInfo.date}</span>
       </div>
 
       {/* Desktop / iPad: 2-column layout / Mobile phone: single panel */}
@@ -932,28 +924,20 @@ export default function StudyHubPage() {
         `}>
           <div className="px-3 py-2.5 border-b border-gray-100 dark:border-slate-800 flex-shrink-0 hidden md:flex items-center justify-between gap-1">
             {selectedSession ? (
-              <div className="flex items-center justify-between w-full">
-                <button
-                  onClick={() => {
-                    setSelectedSession(null);
-                    if (typeof window !== 'undefined') {
-                      const url = new URL(window.location.href);
-                      url.searchParams.delete('session');
-                      window.history.replaceState({}, '', url.toString());
-                    }
-                  }}
-                  className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 whitespace-nowrap transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
-                  {t('common.back')} ({dateHeadingInfo.main})
-                </button>
-                {dayFinishEstimate && (
-                  <span suppressHydrationWarning className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <svg className="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    {t('today.dayFinishBy')}: <span className="font-bold text-slate-800 dark:text-slate-200 tabular-nums">{dayFinishEstimate.time}</span>
-                  </span>
-                )}
-              </div>
+              <button
+                onClick={() => {
+                  setSelectedSession(null);
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('session');
+                    window.history.replaceState({}, '', url.toString());
+                  }
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 whitespace-nowrap transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                {t('common.back')} ({dateHeadingInfo.main})
+              </button>
             ) : (
               <>
                 <div className="flex items-center gap-1 min-w-0">
@@ -977,7 +961,6 @@ export default function StudyHubPage() {
                     </div>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
                       {loadingSessions ? t('common.loading') : `${sessions.length} ${sessions.length === 1 ? t('common.session') : t('common.sessions')}`}
-                      {dayFinishEstimate && ` • ${t('today.endsAt')} ${dayFinishEstimate.time}`}
                     </p>
                   </div>
                   <button
@@ -1075,24 +1058,12 @@ export default function StudyHubPage() {
           {/* Session list */}
           <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-1.5 min-h-0">
             {!loadingSessions && dayFinishEstimate && (
-              <div
+              <p
                 suppressHydrationWarning
-                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/30 border border-indigo-100 dark:border-indigo-900/50 text-xs text-indigo-900 dark:text-indigo-200 shadow-xs mb-1.5"
+                className="text-xs text-slate-500 dark:text-slate-400 px-1 py-1 font-normal"
               >
-                <div className="w-6 h-6 rounded-lg bg-indigo-500/15 dark:bg-indigo-400/15 flex items-center justify-center shrink-0">
-                  <svg className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="font-medium text-slate-600 dark:text-slate-300">
-                    {t('today.finishBy')}{' '}
-                  </span>
-                  <span className="font-extrabold text-indigo-700 dark:text-indigo-300 tabular-nums text-sm">
-                    {dayFinishEstimate.time}
-                  </span>
-                </div>
-              </div>
+                {t('today.finishBy')} {dayFinishEstimate.time}
+              </p>
             )}
             {loadingSessions ? (
               <div className="flex justify-center py-10">
@@ -1204,27 +1175,12 @@ export default function StudyHubPage() {
 
                   {/* Finish estimate for this session */}
                   {sessionFinishEstimate && (
-                    <div
+                    <p
                       suppressHydrationWarning
-                      className="flex flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-full bg-indigo-50/90 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 text-indigo-700 dark:text-indigo-300 shadow-xs max-w-xs text-center mt-1 mb-1"
+                      className="text-xs text-slate-500 dark:text-slate-400 text-center mt-2 mb-1 font-normal"
                     >
-                      <div className="flex items-center gap-1.5 text-xs font-semibold">
-                        <svg className="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>
-                          {sessionFinishEstimate.isRunning ? t('today.endsAt') : t('today.sessionFinishBy')}:{' '}
-                          <strong className="font-extrabold tabular-nums text-indigo-950 dark:text-indigo-100 text-xs">
-                            {sessionFinishEstimate.time}
-                          </strong>
-                        </span>
-                      </div>
-                      {dayFinishEstimate && dayFinishEstimate.unfinishedCount > 1 && (
-                        <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-medium">
-                          ({t('today.dayFinishBy')}: {dayFinishEstimate.time})
-                        </p>
-                      )}
-                    </div>
+                      {sessionFinishEstimate.isRunning ? t('today.endsAt') : t('today.sessionFinishBy')}: {sessionFinishEstimate.time}
+                    </p>
                   )}
 
                   {/* Timer controls */}
