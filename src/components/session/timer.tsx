@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTimer } from './timer-context';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { calculateFinishTimeRounded } from '@/lib/dateUtils';
 
 interface Props {
   duration: number; // in minutes
@@ -11,6 +13,12 @@ interface Props {
 }
 
 export default function Timer({ duration, onComplete, sessionId, session }: Props) {
+  const { locale, t } = useLanguage();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     activeSessionId,
     mode: globalMode,
@@ -98,6 +106,28 @@ export default function Timer({ duration, onComplete, sessionId, session }: Prop
           }`}>
           {formatTime(timeLeft)}
         </div>
+
+        {/* Finish Time Estimate (Rounded up to nearest half hour) */}
+        {mounted && (
+          <div
+            suppressHydrationWarning
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-50/90 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 text-xs text-indigo-700 dark:text-indigo-300 shadow-xs mb-4"
+          >
+            <svg className="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>
+              {mode === 'session' && !isPaused
+                ? (locale === 'nl' ? 'Klaar om:' : 'Ends at:')
+                : (locale === 'nl' ? 'Als je nu begint, ben je klaar om:' : 'If you start now, you\'ll end at:')}{' '}
+              <strong className="font-extrabold text-indigo-950 dark:text-indigo-100 tabular-nums">
+                {calculateFinishTimeRounded(
+                  mode !== 'idle' ? Math.max(1, Math.ceil(timeLeft / 60)) : currentDuration
+                )}
+              </strong>
+            </span>
+          </div>
+        )}
 
         {/* Progress Bar */}
         {(mode === 'session' || mode === 'break') && (
