@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import LandingPage from '@/components/landing/LandingPage';
 
 export const metadata = {
@@ -10,8 +11,15 @@ export const metadata = {
 export default async function Home(props: {
   searchParams?: Promise<{ preview?: string }>;
 }) {
-  const searchParams = await props.searchParams;
-  const session = await getServerSession();
+  const searchParams = props.searchParams ? await props.searchParams : undefined;
+  
+  let session = null;
+  try {
+    session = await getServerSession(authOptions);
+  } catch (err) {
+    console.error('Failed to get session on landing page:', err);
+  }
+
   if (session?.user && !searchParams?.preview) {
     redirect('/today');
   }
